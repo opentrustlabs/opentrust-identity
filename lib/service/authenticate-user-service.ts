@@ -434,7 +434,7 @@ class AuthenticateUserService extends IdentityService {
             if(user !== null){
                 userCredential = await identityDao.getUserCredentialForAuthentication(user.userId);
                 if(!userCredential){
-                    response.authenticationError = ERROR_CODES.EC00109;  
+                    response.authenticationError = ERROR_CODES.EC00117;  
                     return response;
                 }
             }
@@ -728,7 +728,7 @@ class AuthenticateUserService extends IdentityService {
                 if(user !== null){
                     userCredential = await identityDao.getUserCredentialForAuthentication(user.userId);
                     if(!userCredential){
-                        response.authenticationError = ERROR_CODES.EC00109;
+                        response.authenticationError = ERROR_CODES.EC00117;
                         return response;
                     }
                 }
@@ -1081,7 +1081,7 @@ class AuthenticateUserService extends IdentityService {
         }
         const arrUserCredentials: Array<UserCredential> = await identityDao.getUserCredentials(userId);
         if(arrUserCredentials.length === 0){
-            response.authenticationError = ERROR_CODES.EC00109;
+            response.authenticationError = ERROR_CODES.EC00117;
             return response;
         }
         
@@ -1506,7 +1506,7 @@ class AuthenticateUserService extends IdentityService {
         if(userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
             const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
             if(!userCredential){
-                return {isValid: false, errorDetail: ERROR_CODES.EC00109, isDuress: false};
+                return {isValid: false, errorDetail: ERROR_CODES.EC00117, isDuress: false};
             }
             valid = this.validateUserCredentials(userCredential, authenticationToken as string);
             error = ERROR_CODES.EC00117;
