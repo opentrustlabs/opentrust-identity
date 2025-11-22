@@ -60,6 +60,12 @@ a.undecorated {
     border-radius: 4px;
 }
 
+.left-navigation-section-header {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 2px;    
+}
+
 .left-navigation {
     display: inline-flex;
     align-items: center;

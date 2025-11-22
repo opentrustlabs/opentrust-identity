@@ -21,6 +21,7 @@ import LanguageIcon from '@mui/icons-material/Language';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import Logout from '@mui/icons-material/Logout';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import WorkHistoryOutlinedIcon from '@mui/icons-material/WorkHistoryOutlined';
 import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, DEFAULT_BACKGROUND_COLOR, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, JOBS_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
@@ -213,16 +214,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         />                        
                     </Stack>
 
-                    <Stack spacing={0} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
-                        <Divider sx={{marginBottom: "8px"}} ></Divider>
-                        <Box sx={{ mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                IDENTITY MANAGEMENT
-                            </Typography>
-                        </Box>
-                        <Divider></Divider>
-                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
-                            <div  className="left-navigation">
+                    <Stack spacing={0} padding={"8px"} color={"#616161"} fontSize={"0.9em"} marginTop={"8px"} >
+                        <div className="left-navigation-section-header">
+                            <span style={{fontWeight: "bolder"}}>Identity Management</span>                            
+                            < NavigateNextIcon />
+                        </div>
+                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&                            
+                            <div className="left-navigation">
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >Tenants</Link>                        
                             </div>                
@@ -245,16 +243,14 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} >Users</Link>
                             </div>
                         }
-                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
+                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&                            
                             <>
-                                <Box sx={{mt: 1, mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                        Authorization
-                                    </Typography>                                
-                                </Box>
-                                <Divider></Divider>
+                                <Divider sx={{margin: "8px 0px"}}></Divider>
+                                <div className="left-navigation-section-header">
+                                    <span style={{fontWeight: "bolder"}}>Authorization</span>
+                                    < NavigateNextIcon />
+                                </div>
                             </>
-                            
                         }
                         {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE], profile?.scope || []) &&
                             <div className="left-navigation" >
@@ -274,14 +270,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} >Rate Limits</Link>
                             </div>
                         }
-                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&                            
+                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) && 
                             <>
-                                <Box sx={{mt: 1, mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                        Authentication
-                                    </Typography>
-                                </Box>                            
-                                <Divider></Divider>
+                                <Divider sx={{margin: "8px 0px"}}></Divider>
+                                <div className="left-navigation-section-header">
+                                    <span style={{fontWeight: "bolder"}}>Authentication</span>
+                                    < NavigateNextIcon />
+                                </div>
                             </>
                         }
                         {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
@@ -305,12 +300,11 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         }
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE], profile?.scope) &&                            
                             <>
-                                <Box sx={{mt: 1,  mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                        System
-                                    </Typography>
-                                </Box>
-                                <Divider></Divider>
+                                <Divider sx={{margin: "8px 0px"}}></Divider>
+                                <div className="left-navigation-section-header">
+                                    <span style={{fontWeight: "bolder"}}>System</span>
+                                    < NavigateNextIcon />
+                                </div>
                             </>
                         }
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(SYSTEM_SETTINGS_READ_SCOPE, profile?.scope) &&
@@ -465,12 +459,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         }
                     </Grid2>
                     <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
-                        <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >                            
-                            <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
-                                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                    IDENTITY MANAGEMENT
-                                </Typography>
-                            </Box>                            
+                        <Stack spacing={1.5} padding={"8px"} fontSize={"0.85em"} marginTop={"4px"} >
+                            <>
+                                <div className="left-navigation-section-header">
+                                    <span style={{fontWeight: "bolder"}}>Identity Management</span>
+                                    < NavigateNextIcon />
+                                </div>
+                            </>                          
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>                
                                     <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
@@ -495,12 +490,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
                                 </div>
                             }
-                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
-                                <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
-                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                        Authorization
-                                    </Typography>                                
-                                </Box>                            
+                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&                                
+                                <>
+                                    <div className="left-navigation-section-header">
+                                        <span style={{fontWeight: "bolder"}}>Authorization</span>
+                                        < NavigateNextIcon />
+                                    </div>
+                                </>  
                             }
                             {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
@@ -520,12 +516,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
                                 </div>
                             }
-                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
-                                <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
-                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                        Authentication
-                                    </Typography>                                
-                                </Box>  
+                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&                                
+                                <>
+                                    <div className="left-navigation-section-header">
+                                        <span style={{fontWeight: "bolder"}}>Authentication</span>
+                                        < NavigateNextIcon />
+                                    </div>
+                                </>  
                             }
                             {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
@@ -548,11 +545,12 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 </div>
                             }
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE], profile?.scope) &&
-                                <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
-                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                        System
-                                    </Typography>                                
-                                </Box> 
+                                <>
+                                    <div className="left-navigation-section-header">
+                                        <span style={{fontWeight: "bolder"}}>System</span>
+                                        < NavigateNextIcon />
+                                    </div>
+                                </>  
                             }
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(SYSTEM_SETTINGS_READ_SCOPE, profile?.scope) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}> 
@@ -582,7 +580,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                         setDrawerOpen(false);
                                         setOpenLanguageSelector(true);
                                     }}
-                                    style={{display: "flex", alignItems: "center", cursor: "pointer", marginBottom: "8px"}}
+                                    style={{display: "flex", alignItems: "center", cursor: "pointer", marginBottom: "16px"}}
                                 >
                                     <div>
                                     <LanguageIcon sx={{marginRight: "8px"}} fontSize="small" />
