@@ -133,6 +133,7 @@ const SecretEntry: React.FC = () => {
                                 spacing={2}
                             >
                                 <Button 
+                                    disabled={!secretValue || secretValue.length < 8}
                                     onClick={() => {
                                         enterSecretValue({
                                             variables: {
