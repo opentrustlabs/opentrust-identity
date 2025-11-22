@@ -132,7 +132,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     return (
         <>
             {!breakPoints.isMedium && 
-                <div style={{position: "sticky", top: "5px"}}>  
+                <div>  
                     <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>                                              
                         <Autocomplete 
                             disabled={profile === null || !containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile.scope)}
