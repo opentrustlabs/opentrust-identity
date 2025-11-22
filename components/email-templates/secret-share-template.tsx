@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Body, Container, Head, Html, Preview, Text, Row, Column, Section, Button } from '@react-email/components';
 import { TenantLookAndFeel } from '@/graphql/generated/graphql-types';
-import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, QUERY_PARAM_TENANT_ID } from '@/utils/consts';
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from '@/utils/consts';
 import { IntlProvider, useIntl } from "react-intl";
 import { DEFAULT_LANGUAGE, messages } from '@/locales/localization-utils';
 
