@@ -633,7 +633,7 @@ const Login: React.FC<LoginProps>= ({
                                             </Button>
                                         </Link>
 
-                                        <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
+                                        <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>{intl.formatMessage({id: "NEED_TO_CREATE_AN_ACCOUNT"})}</div>
                                     </Stack>
                                 </Grid2>
                             }

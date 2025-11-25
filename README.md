@@ -21,7 +21,7 @@ Support for Mongo, Aurora, Spanner, and Cockroach is part of the future developm
 
 Since most open source IAM tools only support relational databases, and among those, frequently only
 the open source databases, this makes it difficult, if not impossible, for many organizations to adopt
-open source IAM tools, especially if the organization is running cloud-native application and 
+open source IAM tools, especially if the organization is running cloud-native applications and 
 is using NoSQL databases, or if the organization only supports commercial databases such as MSSQL
 and Oracle.
 
