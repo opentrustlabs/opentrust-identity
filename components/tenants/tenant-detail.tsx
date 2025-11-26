@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Box, Checkbox, Chip, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField, Tooltip } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Box, Chip, CircularProgress, Divider, FormControlLabel, MenuItem, Paper, Snackbar, Stack, Switch, TextField, Tooltip } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
@@ -24,7 +24,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BusinessIcon from '@mui/icons-material/Business';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
 import PasswordRulesConfiguration from "./password-rules-config";
@@ -275,7 +274,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 />
                             }
                             <Paper
-                                elevation={0}
+                                elevation={1}
                                 sx={{
                                     p: 3,
                                     border: '1px solid',
@@ -283,30 +282,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     borderRadius: 2,
                                 }}
                             >
-                                {/* Section Header */}
-                                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                                    <Box
-                                        sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 2,
-                                            bgcolor: 'primary.50',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}
-                                    >
-                                        <InfoOutlinedIcon color="primary" />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="h6" fontWeight={600}>
-                                            Configuration
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Tenant settings, authentication options, and rate limits
-                                        </Typography>
-                                    </Box>
-                                </Stack>
 
                                 <Grid2 container size={12} spacing={3}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
@@ -319,11 +294,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
                                                 value={tenantInput.tenantName}
                                                 fullWidth={true}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                    },
-                                                }}
                                             />
                                             <TextField
                                                 disabled={disableInputs}
@@ -335,22 +305,23 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 multiline={true}
                                                 rows={3}
                                                 onChange={(evt) => { tenantInput.tenantDescription = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                    },
-                                                }}
                                             />
-                                        </Stack>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Tenant Type</div>
-                                            {tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                                <TextField disabled={true} name="tenantType" id="tenantType" value={TENANT_TYPES_DISPLAY.get(tenant.tenantType)} fullWidth={true} size="small" />
-                                            }
-                                            {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                                                <Select
+
+                                            {/* Tenant Type */}
+                                            {tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? (
+                                                <TextField
+                                                    disabled={true}
+                                                    label="Tenant Type"
+                                                    name="tenantType"
+                                                    id="tenantType"
+                                                    value={TENANT_TYPES_DISPLAY.get(tenant.tenantType)}
+                                                    fullWidth={true}
+                                                />
+                                            ) : (
+                                                <TextField
                                                     disabled={disableInputs}
-                                                    size="small"
+                                                    select
+                                                    label="Tenant Type"
                                                     fullWidth={true}
                                                     value={tenantInput.tenantType}
                                                     onChange={(evt) => { tenantInput.tenantType = evt.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true);}}
@@ -359,35 +330,57 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     <MenuItem value={TENANT_TYPE_IDENTITY_MANAGEMENT}>{TENANT_TYPES_DISPLAY.get(TENANT_TYPE_IDENTITY_MANAGEMENT)}</MenuItem>
                                                     <MenuItem value={TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES}>{TENANT_TYPES_DISPLAY.get(TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES)}</MenuItem>
                                                     <MenuItem value={TENANT_TYPE_SERVICES}>{TENANT_TYPES_DISPLAY.get(TENANT_TYPE_SERVICES)}</MenuItem>
-                                                </Select>
-                                            }
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div style={{textDecoration: "underline"}}>Object ID</div>
-                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
-                                                <Grid2  size={11}>
-                                                    {tenant.tenantId}
-                                                </Grid2>
-                                                <Grid2 size={1}>
-                                                    <ContentCopyIcon 
-                                                        sx={{cursor: "pointer"}}
-                                                        onClick={() => {
-                                                            copyContentToClipboard(tenant.tenantId, "Tenant ID copied to clipboard");
-                                                        }}
-                                                    />
-                                                </Grid2>
-                                            </Grid2>                                                                                        
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Federated OIDC Provider Constraint</div>
-                                            <Select
+                                                </TextField>
+                                            )}
+
+                                            {/* Object ID - Read-only */}
+                                            <Box>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, mb: 1, display: 'block' }}>
+                                                    Object ID
+                                                </Typography>
+                                                <Paper
+                                                    elevation={0}
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: 'grey.50',
+                                                        border: '1px solid',
+                                                        borderColor: 'divider',
+                                                        borderRadius: 2,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                        {tenant.tenantId}
+                                                    </Typography>
+                                                    <Tooltip title="Copy to clipboard">
+                                                        <ContentCopyIcon
+                                                            sx={{
+                                                                cursor: 'pointer',
+                                                                ml: 1,
+                                                                fontSize: 18,
+                                                                color: 'text.secondary',
+                                                                '&:hover': { color: 'primary.main' }
+                                                            }}
+                                                            onClick={() => {
+                                                                copyContentToClipboard(tenant.tenantId, "Tenant ID copied to clipboard");
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </Paper>
+                                            </Box>
+
+                                            {/* Federated OIDC Provider Constraint */}
+                                            <TextField
                                                 disabled={disableInputs}
                                                 required={true}
-                                                size="small"
+                                                select
+                                                label="Federated OIDC Provider Constraint"
                                                 fullWidth={true}
                                                 value={tenantInput.federatedAuthenticationConstraint}
-                                                onChange={(evt) => { 
-                                                    tenantInput.federatedAuthenticationConstraint = evt.target.value; 
+                                                onChange={(evt) => {
+                                                    tenantInput.federatedAuthenticationConstraint = evt.target.value;
                                                     // If the tenant should ONLY use external IdPs for login, remove
                                                     // self-registration, anonymous user, verify email on registration,
                                                     // migrate legacy users, login by phone, allow password recovery, require captcha, allow
@@ -400,8 +393,8 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                         tenantInput.allowLoginByPhoneNumber = false;
                                                         tenantInput.verifyEmailOnSelfRegistration = false;
                                                         tenantInput.migrateLegacyUsers = false;
-                                                    }                                                    
-                                                    setTenantInput({ ...tenantInput }); 
+                                                    }
+                                                    setTenantInput({ ...tenantInput });
                                                     setOverviewDirty(true);
                                                 }}
                                             >
@@ -409,166 +402,222 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 <MenuItem value={FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED}>{FEDERATED_AUTHN_CONSTRAINT_DISPLAY.get(FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED)}</MenuItem>
                                                 <MenuItem value={FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}>{FEDERATED_AUTHN_CONSTRAINT_DISPLAY.get(FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE)}</MenuItem>
                                                 <MenuItem value={FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE}>{FEDERATED_AUTHN_CONSTRAINT_DISPLAY.get(FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE)}</MenuItem>
-                                            </Select>
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>
-                                                <span>Default Rate Limit</span>
-                                                {totalRateUsed !== null &&
-                                                    <span> (Total used: {totalRateUsed}) </span>
-                                                }
-                                            </div>
-                                            <TextField name="defaultRateLimit" id="defaultRateLimit" 
+                                            </TextField>
+
+                                            {/* Default Rate Limit */}
+                                            <TextField
+                                                label="Default Rate Limit"
+                                                name="defaultRateLimit"
+                                                id="defaultRateLimit"
                                                 disabled={tenantInput.allowUnlimitedRate === true || disableInputs === true}
                                                 onChange={(evt) => {
-                                                    const n = parseInt(evt.target.value); 
+                                                    const n = parseInt(evt.target.value);
                                                     if(n){
-                                                        tenantInput.defaultRateLimit = n;                                                         
+                                                        tenantInput.defaultRateLimit = n;
                                                     }
                                                     else{
-                                                        tenantInput.defaultRateLimit = undefined; 
+                                                        tenantInput.defaultRateLimit = undefined;
                                                     }
-                                                    setTenantInput({...tenantInput}); 
-                                                    setOverviewDirty(true); 
+                                                    setTenantInput({...tenantInput});
+                                                    setOverviewDirty(true);
                                                 }}
                                                 type="number"
-                                                value={tenantInput.defaultRateLimit || ""} fullWidth={true} size="small" 
+                                                value={tenantInput.defaultRateLimit || ""}
+                                                fullWidth={true}
+                                                helperText={totalRateUsed !== null ? `Total used: ${totalRateUsed}` : undefined}
                                             />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Default Rate Limit Period (minutes)</div>
-                                            <TextField 
-                                                disabled={true}                                                
+
+                                            {/* Default Rate Limit Period */}
+                                            <TextField
+                                                label="Default Rate Limit Period (minutes)"
+                                                disabled={true}
                                                 type="number"
-                                                name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes"                                                 
-                                                value={tenantInput.allowUnlimitedRate ? "" : DEFAULT_RATE_LIMIT_PERIOD_MINUTES} 
-                                                fullWidth={true} 
-                                                size="small" 
+                                                name="defaultRateLimitPeriodMinutes"
+                                                id="defaultRateLimitPeriodMinutes"
+                                                value={tenantInput.allowUnlimitedRate ? "" : DEFAULT_RATE_LIMIT_PERIOD_MINUTES}
+                                                fullWidth={true}
                                             />
-                                        </Grid2>
+                                        </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
-                                            <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs}
-                                                    checked={tenantInput.enabled}
-                                                    onChange={(_, checked: boolean) => {tenantInput.enabled = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                p: 1.5,
+                                                borderRadius: 2,
+                                                bgcolor: 'grey.50',
+                                                height: '100%',
+                                            }}
+                                        >                                            
+                                            <Stack spacing={1} >
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs}
+                                                            checked={tenantInput.enabled}
+                                                            onChange={(_, checked: boolean) => {tenantInput.enabled = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Enabled"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>                                            
-                                            <Grid2 alignContent={"center"} size={10}>Allow unlimited API rates</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs}
-                                                    checked={tenantInput.allowUnlimitedRate === true}
-                                                    onChange={(_, checked: boolean) => {
-                                                        tenantInput.allowUnlimitedRate = checked;                                                         
-                                                        if(checked){
-                                                            tenantInput.defaultRateLimit = undefined;
-                                                            tenantInput.defaultRateLimitPeriodMinutes = undefined;
-                                                        }
-                                                        else{
-                                                            tenantInput.defaultRateLimitPeriodMinutes = DEFAULT_RATE_LIMIT_PERIOD_MINUTES;                                                            
-                                                        }
-                                                        setTenantInput({...tenantInput}); 
-                                                        setOverviewDirty(true);
-                                                    }}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs}
+                                                            checked={tenantInput.allowUnlimitedRate === true}
+                                                            onChange={(_, checked: boolean) => {
+                                                                tenantInput.allowUnlimitedRate = checked;
+                                                                if(checked){
+                                                                    tenantInput.defaultRateLimit = undefined;
+                                                                    tenantInput.defaultRateLimitPeriodMinutes = undefined;
+                                                                }
+                                                                else{
+                                                                    tenantInput.defaultRateLimitPeriodMinutes = DEFAULT_RATE_LIMIT_PERIOD_MINUTES;
+                                                                }
+                                                                setTenantInput({...tenantInput});
+                                                                setOverviewDirty(true);
+                                                            }}
+                                                        />
+                                                    }
+                                                    label="Allow unlimited API rates"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.allowUserSelfRegistration === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                            checked={tenantInput.allowUserSelfRegistration === true}
+                                                            onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Allow user self-registration"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Allow anonymous users</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.allowAnonymousUsers === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                            checked={tenantInput.allowAnonymousUsers === true}
+                                                            onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Allow anonymous users"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Allow social login</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs}
-                                                    checked={tenantInput.allowSocialLogin === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.allowSocialLogin = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs}
+                                                            checked={tenantInput.allowSocialLogin === true}
+                                                            onChange={(_, checked: boolean) => {tenantInput.allowSocialLogin = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Allow social login"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Verify email on registration</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.verifyEmailOnSelfRegistration === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                            checked={tenantInput.verifyEmailOnSelfRegistration === true}
+                                                            onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Verify email on registration"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Migrate legacy users</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.migrateLegacyUsers === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                            checked={tenantInput.migrateLegacyUsers === true}
+                                                            onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Migrate legacy users"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Allow login by phone number</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.allowLoginByPhoneNumber === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                            checked={tenantInput.allowLoginByPhoneNumber === true}
+                                                            onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Allow login by phone number"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.allowForgotPassword === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                            checked={tenantInput.allowForgotPassword === true}
+                                                            onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                        />
+                                                    }
+                                                    label="Allow password recovery"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || captchaConfigExists === false || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.registrationRequireCaptcha === true}
-                                                    onChange={(_, checked: boolean) => {
-                                                        tenantInput.registrationRequireCaptcha = checked;
-                                                        setTenantInput({...tenantInput});
-                                                        setOverviewDirty(true);
-                                                    }}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs || captchaConfigExists === false || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                            checked={tenantInput.registrationRequireCaptcha === true}
+                                                            onChange={(_, checked: boolean) => {
+                                                                tenantInput.registrationRequireCaptcha = checked;
+                                                                setTenantInput({...tenantInput});
+                                                                setOverviewDirty(true);
+                                                            }}
+                                                        />
+                                                    }
+                                                    label="Require CAPTCHA on Registration"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>                                            
-                                            <Grid2 alignContent={"center"} size={10}>Require Terms And Conditions Acceptance</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs}
-                                                    checked={tenantInput.registrationRequireTermsAndConditions === true}
-                                                    onChange={(_, checked: boolean) => {
-                                                        tenantInput.registrationRequireTermsAndConditions = checked;
-                                                        setTenantInput({...tenantInput});
-                                                        setOverviewDirty(true);
-                                                    }}
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            disabled={disableInputs}
+                                                            checked={tenantInput.registrationRequireTermsAndConditions === true}
+                                                            onChange={(_, checked: boolean) => {
+                                                                tenantInput.registrationRequireTermsAndConditions = checked;
+                                                                setTenantInput({...tenantInput});
+                                                                setOverviewDirty(true);
+                                                            }}
+                                                        />
+                                                    }
+                                                    label="Require Terms And Conditions Acceptance"
+                                                    sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>                                            
-                                            <Grid2 size={12} marginTop={"8px"} marginBottom={"16px"}>
-                                                <div>Terms And Conditions URI</div>
-                                                <TextField name="termsAndConditionsUri" id="termsAndConditionsUri" 
+                                            </Stack>
+                                            <Box sx={{ mt: 2 }}>
+                                                <TextField
+                                                    label="Terms And Conditions URI"
+                                                    name="termsAndConditionsUri"
+                                                    id="termsAndConditionsUri"
                                                     disabled={disableInputs === true}
-                                                    onChange={(evt) => {                                                            
-                                                        tenantInput.termsAndConditionsUri = evt.target.value;                                                                                                                     
-                                                        setTenantInput({...tenantInput}); 
-                                                        setOverviewDirty(true); 
+                                                    onChange={(evt) => {
+                                                        tenantInput.termsAndConditionsUri = evt.target.value;
+                                                        setTenantInput({...tenantInput});
+                                                        setOverviewDirty(true);
                                                     }}
-                                                    value={tenantInput.termsAndConditionsUri || ""} fullWidth={true} size="small" 
+                                                    value={tenantInput.termsAndConditionsUri || ""}
+                                                    fullWidth={true}
                                                 />
-                                            </Grid2>
-                                        </Grid2>
+                                            </Box>
+                                        </Paper>
                                     </Grid2>                                    
                                 </Grid2>                                
                                 <DetailSectionActionHandler

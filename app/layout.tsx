@@ -22,6 +22,32 @@ import { InternationalizationContextProvider } from "@/components/contexts/inter
 
 const theme = createTheme({    
     components: {
+        MuiTextField: {
+            styleOverrides: {
+                root: {
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                    },
+                    '& .MuiFilledInput-root': {
+                        borderRadius: '16px 16px 0 0',
+                    }
+                }
+            }
+        },
+        MuiSelect: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 2,
+                }
+            }
+        },
+        MuiAutocomplete: {
+            styleOverrides: {
+                inputRoot: {
+                    borderRadius: 2,
+                }
+            }
+        },
         MuiButton: {
             defaultProps: {
                 

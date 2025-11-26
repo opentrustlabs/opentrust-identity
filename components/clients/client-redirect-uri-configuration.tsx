@@ -95,7 +95,7 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
 
     return (
-        <Typography component="div">
+        <Typography  component="div">
             {errorMessage &&
                 <Grid2 marginBottom={"16px"} size={12} >
                     <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>

@@ -5,7 +5,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
 import KeyIcon from '@mui/icons-material/Key';
 import PersonIcon from '@mui/icons-material/Person';
-import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import BusinessIcon from '@mui/icons-material/Business';
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
@@ -130,7 +130,7 @@ const SearchResultIconRenderer: React.FC<SearchResultIconRendererProps> = ({
     }
     else if(objectType === SearchResultType.Tenant){
         return (
-            <SettingsApplicationsIcon />
+            <BusinessIcon />
         )
     }
     else if(objectType === SearchResultType.User){

@@ -6,6 +6,7 @@ import Dialog from "@mui/material/Dialog";
 import { Alert, Button, DialogActions, DialogContent } from "@mui/material";
 import { useMutation } from "@apollo/client";
 import { MARK_FOR_DELETE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
 
 
 export interface SubmitMarkForDeleteProps {
@@ -85,10 +86,11 @@ const SubmitMarkForDelete: React.FC<SubmitMarkForDeleteProps> = ({
                     </DialogActions>
                 </Dialog>
             }
-            <AutoDeleteOutlinedIcon 
-                sx={{color: "white", cursor: "pointer"}}
-                onClick={() => setShowConfirmDialogOpen(true)}
-            />
+            <div style={{height: 32, width: 32, display: "flex", alignItems: 'center', justifyContent: 'center',backgroundColor: DEFAULT_BACKGROUND_COLOR, color: "white", cursor: "pointer", borderRadius: "4px"}}>
+                <AutoDeleteOutlinedIcon                    
+                    onClick={() => setShowConfirmDialogOpen(true)}
+                />
+            </div>
         </React.Fragment>
     )
 }

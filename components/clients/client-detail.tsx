@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Box, Chip, CircularProgress, Divider, FormControlLabel, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, Tooltip } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Box, Chip, CircularProgress, Divider, FormControlLabel, InputAdornment, MenuItem, Paper, Snackbar, Stack, Switch, TextField, Tooltip } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
@@ -13,8 +13,6 @@ import GroupIcon from '@mui/icons-material/Group';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import SecurityIcon from '@mui/icons-material/Security';
 import TimerIcon from '@mui/icons-material/Timer';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -96,7 +94,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     })
 
     return (
-        <Box>
+        <Typography component={"div"} >
             <BreadcrumbComponent breadCrumbs={[
                 {
                     href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
@@ -121,8 +119,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
 
             <Grid2 container size={12} spacing={3} sx={{ mb: 2 }}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
-                    <Stack spacing={3}>
-                        {/* Header with Status and Actions */}
+                    <Stack spacing={2}>
                         <Paper
                             elevation={0}
                             sx={{
@@ -165,9 +162,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 size="small"
                                                 color={client.enabled ? "success" : "default"}
                                                 sx={{ fontWeight: 500 }}
-                                            />
+                                            />                                            
                                         </Stack>
-                                    </Box>
+                                    </Box>                                    
                                 </Stack>
                                 {isMarkedForDelete !== true && canDeleteClient &&
                                     <SubmitMarkForDelete
@@ -191,7 +188,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
                                     />
-                                }
+                                }                                
                             </Stack>
                         </Paper>
 
@@ -206,39 +203,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 message={"This client has been marked for deletion. No changes to the client are permitted."}
                             />
                         }
-
-                        {/* Main Configuration Section */}
                         <Paper
                             elevation={1}
                             sx={{
                                 p: 1
                             }}
                         >
-                            {/* Section Header */}
-                            {/* <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                                <Box
-                                    sx={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 2,
-                                        bgcolor: 'primary.50',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    <InfoOutlinedIcon color="primary" />
-                                </Box>
-                                <Box>
-                                    <Typography variant="h6" fontWeight={600}>
-                                        Basic Information
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Configure client name, type, and description
-                                    </Typography>
-                                </Box>
-                            </Stack> */}
-
                             <Grid2 container size={12} spacing={3}>
                                 {/* Left Column - Basic Info */}
                                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 6, xl: 6 }}>
@@ -255,11 +225,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 setClientUpdateInput({ ...clientUpdateInput });
                                                 setMarkDirty(true);
                                             }}
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                },
-                                            }}
                                         />
 
                                         <TextField
@@ -275,11 +240,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 clientUpdateInput.clientDescription = evt.target.value;
                                                 setClientUpdateInput({ ...clientUpdateInput });
                                                 setMarkDirty(true);
-                                            }}
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                },
                                             }}
                                         />
 
@@ -298,11 +258,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 }
                                                 setClientUpdateInput({ ...clientUpdateInput });
                                                 setMarkDirty(true);
-                                            }}
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                },
                                             }}
                                         >
                                             {CLIENT_TYPES.map((val: string) => (
@@ -383,11 +338,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 setClientUpdateInput({ ...clientUpdateInput });
                                                 setMarkDirty(true);
                                             }}
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                },
-                                            }}
                                         />
                                     </Stack>
                                 </Grid2>
@@ -404,16 +354,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         }}
                                     >
                                         <Stack spacing={2.5}>
-                                            {/* Settings Section Header */}
-                                            <Stack direction="row" spacing={1.5} alignItems="center">
-                                                <SecurityIcon color="action" sx={{ fontSize: 20 }} />
-                                                <Typography variant="subtitle1" fontWeight={600}>
-                                                    Settings
-                                                </Typography>
-                                            </Stack>
-
-                                            <Divider />
-
                                             {/* Toggle Switches */}
                                             <FormControlLabel
                                                 control={
@@ -429,10 +369,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 }
                                                 label={
                                                     <Stack>
-                                                        <Typography variant="body2" fontWeight={500}>Enabled</Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            Client can authenticate and obtain tokens
-                                                        </Typography>
+                                                        <Typography variant="body2" fontWeight={500}>Enabled</Typography>                                                        
                                                     </Stack>
                                                 }
                                             />
@@ -521,11 +458,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         </InputAdornment>
                                                     ),
                                                 }}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                    },
-                                                }}
                                             />
 
                                             <TextField
@@ -555,11 +487,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         </InputAdornment>
                                                     ),
                                                 }}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                    },
-                                                }}
                                             />
 
                                             <TextField
@@ -580,11 +507,6 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                     setMarkDirty(true);
                                                 }}
                                                 fullWidth
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                    },
-                                                }}
                                             />
                                         </Stack>
                                     </Paper>
@@ -606,7 +528,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
 
                         {/* Redirect URI Configuration */}
                         {client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT &&
-                            <Box>
+                            <Grid2 size={12} marginBottom={"16px"}>
                                 {!isMarkedForDelete &&
                                     <Accordion
                                         defaultExpanded={true}
@@ -621,7 +543,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
                                             </div>
                                         </AccordionSummary>
-                                        <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                                        <AccordionDetails>
                                             <ClientRedirectUriConfiguration
                                                 oidcEnabled={client.oidcEnabled}
                                                 clientId={client.clientId}
@@ -637,7 +559,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         </AccordionDetails>
                                     </Accordion>
                                 }
-                            </Box>
+                            </Grid2>
                         }
 
                         {/* Authentication Groups */}
@@ -656,7 +578,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 <GroupIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
                                             </div>
                                         </AccordionSummary>
-                                        <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                                        <AccordionDetails>
                                             <ClientAuthenticationGroupConfiguration
                                                 tenantId={client.tenantId}
                                                 clientId={client.clientId}
@@ -681,10 +603,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                     <Accordion
                                     >
                                         <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"redirect-uri-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
                                     >
                                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                                             <PolicyIcon /><div style={{ marginLeft: "8px" }}>
@@ -697,7 +618,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             </div>
                                         </div>
                                     </AccordionSummary>
-                                        <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                                        <AccordionDetails>
                                             <ScopeRelConfiguration
                                                 tenantId={client.tenantId}
                                                 id={client.clientId}
@@ -783,7 +704,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                     secretObjectType={SecretObjectType.ClientSecret}
                 />
             }
-        </Box>
+        </Typography>
     )
 }
 
