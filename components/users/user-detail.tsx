@@ -322,34 +322,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 }
                             </Stack>
                         </Paper>
-                        {/* <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
-                            <Grid2 size={11}>Overview</Grid2>
-                            <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && canDeleteUser &&
-                                    <SubmitMarkForDelete
-                                        objectId={user.userId}
-                                        objectType={MarkForDeleteObjectType.User}
-                                        confirmationMessage={`Confirm deletion of user: ${user.firstName} ${user.lastName}. Once submitted the operation cannot be undone.`}
-                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
-                                            setShowMutationBackdrop(false);
-                                            if (successful) {
-                                                setShowMutationSnackbar(true);
-                                                setIsMarkedForDelete(true);
-                                            }
-                                            else {
-                                                if (errorMessage) {
-                                                    setErrorMessage(intl.formatMessage({ id: errorMessage }));
-                                                }
-                                                else {
-                                                    setErrorMessage(intl.formatMessage({ id: ERROR_CODES.DEFAULT.errorKey }));
-                                                }
-                                            }
-                                        }}
-                                        onDeleteStart={() => setShowMutationBackdrop(true)}
-                                    />
-                                }
-                            </Grid2>
-                        </Grid2> */}
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
                                 <Grid2 size={12}>
@@ -599,9 +571,10 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <Paper
                                                 variant="outlined"
                                                 sx={{
-                                                    p: 1.0,
+                                                    p: 1.5,
                                                     borderRadius: 2,
-                                                    height: '100%',
+                                                    height: '100%',                                                    
+                                                    bgcolor: 'grey.50',
                                                 }}
                                             >
                                                 <Stack spacing={3}>

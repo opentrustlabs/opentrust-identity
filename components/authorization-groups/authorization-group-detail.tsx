@@ -1,17 +1,18 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Checkbox, Paper, TextField, Alert, Backdrop, CircularProgress, Snackbar } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Paper, TextField, Alert, Backdrop, CircularProgress, Snackbar, Stack, Box, Tooltip, FormControlLabel, Switch } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { AuthorizationGroup, AuthorizationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { AUTHORIZATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { AUTHORIZATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, DEFAULT_BACKGROUND_COLOR, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonIcon from '@mui/icons-material/Person';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PolicyIcon from '@mui/icons-material/Policy';
+import PeopleIcon from '@mui/icons-material/People';
 import TenantHighlight from "../tenants/tenant-highlight";
 import RelationshipConfigurationComponent from "../relationship-config/relationship-configuration-component";
 import { useMutation } from "@apollo/client";
@@ -126,7 +127,66 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
+                        <Paper
+                            elevation={0}
+
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <PeopleIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {authorizationGroup.groupName}
+                                        </Typography>                                        
+                                    </Box>
+                                </Stack>
+                                {isMarkedForDelete !== true && canDeleteAuthzGroup &&
+                                    <SubmitMarkForDelete 
+                                        objectId={authorizationGroup.groupId}
+                                        objectType={MarkForDeleteObjectType.AuthorizationGroup}
+                                        confirmationMessage={`Confirm deletion of authorization group: ${authorizationGroup.groupName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));                                                    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                }                                                
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Stack>
+                        </Paper>
+                        {/* <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
                                 {isMarkedForDelete !== true && canDeleteAuthzGroup &&
@@ -153,7 +213,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                     />
                                 }
                             </Grid2>
-                        </Grid2>
+                        </Grid2> */}
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
                                 <Grid2 size={12} marginBottom={"8px"}>
@@ -165,50 +225,61 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                     message={"This authorization group has been marked for deletion. No changes to the group are permitted."}
                                 />
                             }
-                            <Paper elevation={0} sx={{ padding: "8px" }}>
+                            <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Group Name</div>
+                                        <Stack spacing={3}>
                                             <TextField name="authzGroupName" id="authzGroupName" 
                                                 disabled={disableInputs}
                                                 value={authzGroupInput.groupName} 
                                                 onChange={(evt) => {authzGroupInput.groupName = evt.target.value; setAuthzGroupInput({...authzGroupInput}); setMarkDirty(true)}}
-                                                fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Group Description</div>
+                                                fullWidth={true}
+                                                label="Group Name" 
+                                            />
+
                                             <TextField name="authzGroupDescription" id="authzGroupDescription" 
                                                 disabled={disableInputs}
                                                 multiline={true}
                                                 rows={2}
                                                 value={authzGroupInput.groupDescription} 
                                                 onChange={(evt) => {authzGroupInput.groupDescription = evt.target.value; setAuthzGroupInput({...authzGroupInput}); setMarkDirty(true)}}
-                                                fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div style={{textDecoration: "underline"}}>Object ID</div>
-                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
-                                                <Grid2  size={11}>
-                                                    {authorizationGroup.groupId}
-                                                </Grid2>
-                                                <Grid2 size={1}>
-                                                    <ContentCopyIcon 
-                                                        sx={{cursor: "pointer"}}
-                                                        onClick={() => {
-                                                            copyContentToClipboard(authorizationGroup.groupId, "AuthZ ID copied to clipboard");
-                                                        }}
-                                                    />
-                                                </Grid2>
-                                            </Grid2>
-                                        </Grid2>
-                                        
+                                                fullWidth={true} 
+                                                label="Group Description"
+                                            />
+
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                    Object ID
+                                                </Typography>
+                                                <Paper
+                                                    variant="outlined"
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: 'grey.50',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                        {authorizationGroup.groupId}
+                                                    </Typography>
+                                                    <Tooltip title="Copy to clipboard">
+                                                        <ContentCopyIcon
+                                                            sx={{ cursor: "pointer", ml: 1, color: 'action.active' }}
+                                                            onClick={() => {
+                                                                copyContentToClipboard(authorizationGroup.groupId, "AuthZ ID copied to clipboard");
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </Paper>
+                                            </Box>
+                                        </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 container size={12} marginBottom={"8px"}>
-                                            <Grid2 alignContent={"center"} size={11}>Default</Grid2>
-                                            <Grid2 size={1}>
-                                                <Checkbox
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
                                                     disabled={disableInputs}
                                                     name="default" 
                                                     checked={authzGroupInput.default}
@@ -218,12 +289,15 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                         setMarkDirty(true);
                                                     }}
                                                 />
-                                            </Grid2>
-                                        </Grid2>
-                                        <Grid2 container size={12} marginBottom={"8px"}>
-                                            <Grid2 alignContent={"center"} size={11}>Allow for anonymous users</Grid2>
-                                            <Grid2 size={1}>
-                                                <Checkbox 
+                                            }
+                                            label="Default"
+                                            sx={{ margin: "4px", fontSize: "revert", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
+                                        />
+
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
                                                     disabled={disableInputs}
                                                     name="allowForAnonymous"
                                                     checked={authzGroupInput.allowForAnonymousUsers}
@@ -233,10 +307,16 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                         setMarkDirty(true);
                                                     }}
                                                 />
-                                            </Grid2>
-                                        </Grid2>                                        
-                                    </Grid2>                                    
+                                            }
+                                            label="Allow for Anonymous Users"
+                                            sx={{ margin: "4px", fontSize: "revert", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
+                                        />
+                                    </Grid2>    
                                 </Grid2>
+                            </Paper>
+                            <Paper elevation={1} sx={{ padding: "8px" }}>
+                                
                                 <DetailSectionActionHandler
                                     onDiscardClickedHandler={() => {
                                         setAuthzGroupInput(initInput);
