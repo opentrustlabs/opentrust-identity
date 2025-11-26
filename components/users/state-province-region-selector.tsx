@@ -57,9 +57,8 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
             <Autocomplete
                 disabled={isDisabled}                                           
                 sx={{paddingTop: "8px"}}
-                size="small"
                 freeSolo={true}
-                renderInput={(params) => <TextField {...params} label="" autoComplete="off" />}
+                renderInput={(params) => <TextField {...params} label="State / Province / Region" autoComplete="off" />}
                 options={
                     loading ? [] : 
                     !data ? [] :

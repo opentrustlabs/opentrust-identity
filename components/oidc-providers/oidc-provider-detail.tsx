@@ -3,13 +3,12 @@ import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, MarkForDeleteO
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { CLIENT_TYPES_DISPLAY, DEFAULT_BACKGROUND_COLOR, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SECRET_ENTRY_DELEGATE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SECRET_ENTRY_DELEGATE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import Checkbox from "@mui/material/Checkbox";
 import Paper from "@mui/material/Paper";
 import Accordion from "@mui/material/Accordion";
 import { AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, Select, MenuItem, Autocomplete, InputAdornment, Dialog, DialogContent, DialogActions, Button, Box, Chip, Stack, Tooltip, FormControlLabel, Switch } from "@mui/material";
@@ -333,7 +332,6 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             />
                                             <TextField
                                                 select
-
                                                 label="Provider Type"
                                                 fullWidth={true}
                                                 value={oidcProviderInput.federatedOIDCProviderType}
@@ -354,7 +352,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
 
                                             <Box>
                                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                                    Federated OIDC Provider ID
+                                                    Object ID
                                                 </Typography>
                                                 <Paper
                                                     variant="outlined"
