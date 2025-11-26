@@ -51,6 +51,24 @@ const theme = createTheme({
                 }
             }
         },
+        MuiSwitch: {
+            styleOverrides: {
+                switchBase: {
+                    // Controls the thumb (circle) color when checked
+                    "&.Mui-checked": {
+                        color: DEFAULT_BACKGROUND_COLOR,
+                    },
+                    // Controls the track color when checked
+                    "&.Mui-checked + .MuiSwitch-track": {
+                        backgroundColor: `${DEFAULT_BACKGROUND_COLOR} !important`,
+                        opacity: 0.5,
+                    }
+                },
+                track: {
+                    // Default unchecked track styling is fine
+                }
+            }
+        },
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {

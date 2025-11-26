@@ -1,11 +1,11 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Box, Checkbox, Chip, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField, Tooltip } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { CAPTCHA_CONFIG_SCOPE, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_DELETE_SCOPE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, DEFAULT_BACKGROUND_COLOR, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_DELETE_SCOPE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { MarkForDeleteObjectType, Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
 import { CAPTCHA_CONFIG_QUERY, TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
@@ -21,6 +21,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import BusinessIcon from '@mui/icons-material/Business';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
 import PasswordRulesConfiguration from "./password-rules-config";
@@ -178,15 +182,56 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
                                                
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
-                            <Grid2 size={11}>Overview</Grid2>
-                            {tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                <Grid2 size={1}></Grid2>
-                            }
-                            {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                                <Grid2 size={1} display={"flex"} >
-                                    {isMarkedForDelete !== true && canDeleteTenant &&
-                                        <SubmitMarkForDelete 
+                        {/* Header Card */}
+                        <Grid2 size={12}>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    p: 2,
+                                    mb: 2,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 2,
+                                }}
+                            >
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: 2,
+                                                bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                            }}
+                                        >
+                                            <BusinessIcon sx={{ fontSize: 28 }} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h5" fontWeight={600}>
+                                                {tenant.tenantName}
+                                            </Typography>
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                                                <Chip
+                                                    label={TENANT_TYPES_DISPLAY.get(tenant.tenantType)}
+                                                    size="small"
+                                                    sx={{ fontWeight: 500 }}
+                                                />
+                                                <Chip
+                                                    icon={tenant.enabled ? <CheckCircleIcon /> : <CancelIcon />}
+                                                    label={tenant.enabled ? "Enabled" : "Disabled"}
+                                                    size="small"
+                                                    color={tenant.enabled ? "success" : "default"}
+                                                    sx={{ fontWeight: 500 }}
+                                                />
+                                            </Stack>
+                                        </Box>
+                                    </Stack>
+                                    {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && isMarkedForDelete !== true && canDeleteTenant &&
+                                        <SubmitMarkForDelete
                                             objectId={tenant.tenantId}
                                             objectType={MarkForDeleteObjectType.Tenant}
                                             confirmationMessage={`Confirm deletion of tenant: ${tenant.tenantName}. Once submitted the operation cannot be undone.`}
@@ -198,18 +243,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 }
                                                 else{
                                                     if(errorMessage){
-                                                        setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                        setErrorMessage(intl.formatMessage({id: errorMessage}));
                                                     }
                                                     else{
                                                         setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
-                                                    } 
+                                                    }
                                                 }
                                             }}
                                             onDeleteStart={() => setShowMutationBackdrop(true)}
                                         />
                                     }
-                                </Grid2>
-                            }
+                                </Stack>
+                            </Paper>
                         </Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
@@ -225,28 +270,78 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </Grid2>
                             } 
                             {isMarkedForDelete === true &&
-                                <MarkForDeleteAlert 
+                                <MarkForDeleteAlert
                                     message={"This tenant has been marked for deletion. No changes to the tenant are permitted."}
                                 />
                             }
-                            <Paper sx={{ padding: "8px" }} elevation={1}>                                
-                                <Grid2 container size={12} spacing={2}>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    p: 3,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 2,
+                                }}
+                            >
+                                {/* Section Header */}
+                                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+                                    <Box
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            borderRadius: 2,
+                                            bgcolor: 'primary.50',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <InfoOutlinedIcon color="primary" />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h6" fontWeight={600}>
+                                            Configuration
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Tenant settings, authentication options, and rate limits
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+
+                                <Grid2 container size={12} spacing={3}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Tenant Name</div>
+                                        <Stack spacing={3}>
                                             <TextField
                                                 disabled={disableInputs}
-                                                name="tenantName" id="tenantName" onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }} value={tenantInput.tenantName} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Tenant Descripton</div>
-                                            <TextField  
-                                                disabled={disableInputs}
-                                                name="tenantDescription" id="tenantDescription" 
-                                                value={tenantInput.tenantDescription} fullWidth={true} size="small" multiline={true} rows={2} 
-                                                onChange={(evt) => { tenantInput.tenantDescription = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
+                                                label="Tenant Name"
+                                                name="tenantName"
+                                                id="tenantName"
+                                                onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
+                                                value={tenantInput.tenantName}
+                                                fullWidth={true}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                    },
+                                                }}
                                             />
-                                        </Grid2>
+                                            <TextField
+                                                disabled={disableInputs}
+                                                label="Tenant Description"
+                                                name="tenantDescription"
+                                                id="tenantDescription"
+                                                value={tenantInput.tenantDescription}
+                                                fullWidth={true}
+                                                multiline={true}
+                                                rows={3}
+                                                onChange={(evt) => { tenantInput.tenantDescription = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                    },
+                                                }}
+                                            />
+                                        </Stack>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Type</div>
                                             {tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&

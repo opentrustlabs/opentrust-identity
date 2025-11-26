@@ -7,8 +7,8 @@ import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
 import KeyIcon from '@mui/icons-material/Key';
 import PersonIcon from '@mui/icons-material/Person';
-import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
+import BusinessIcon from '@mui/icons-material/Business';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
@@ -221,13 +221,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         </div>
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&                            
                             <div className="left-navigation">
-                                <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                                <BusinessIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >Tenants</Link>                        
                             </div>                
                         }      
                         {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                             <div className="left-navigation">
-                                <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                                <BusinessIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                             </div>                
                         }
@@ -468,13 +468,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             </>                          
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>                
-                                    <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                                    <BusinessIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
                                 </div>
                             }
                             {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
-                                    <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                                    <BusinessIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                                 </div>                
                             }
@@ -492,6 +492,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             }
                             {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&                                
                                 <>
+                                    <Divider sx={{margin: "4px 0px"}}></Divider>
                                     <div className="left-navigation-section-header">
                                         <span style={{fontWeight: "bolder"}}>Authorization</span>
                                         < NavigateNextIcon />
@@ -518,6 +519,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             }
                             {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&                                
                                 <>
+                                    <Divider sx={{margin: "4px 0px"}}></Divider>
                                     <div className="left-navigation-section-header">
                                         <span style={{fontWeight: "bolder"}}>Authentication</span>
                                         < NavigateNextIcon />
@@ -546,6 +548,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             }
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE], profile?.scope) &&
                                 <>
+                                    <Divider sx={{margin: "4px 0px"}}></Divider>
                                     <div className="left-navigation-section-header">
                                         <span style={{fontWeight: "bolder"}}>System</span>
                                         < NavigateNextIcon />
