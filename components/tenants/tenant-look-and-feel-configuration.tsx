@@ -18,6 +18,7 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 import { useIntl } from 'react-intl';
 import { containsScope } from "@/utils/authz-utils";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
@@ -38,6 +39,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     const intl = useIntl();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
     const initInput: TenantLookAndFeelInput = {
         tenantid: tenantId,
@@ -189,9 +191,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
             }
             <Dialog 
                 onClose={() => setBackgroundColorPickerOpen(false)}
-                open={backgroundColorPickerOpen}
-                maxWidth="sm"
-                fullWidth={true}
+                open={backgroundColorPickerOpen}                
             >
                 <DialogTitle>Select background color</DialogTitle>
                 <DialogContent>
@@ -249,10 +249,10 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     <Stack direction={"row"}>
                         <div style={{marginRight: "16px"}}>
                             {tenantLookAndFeelInput.authenticationlogo &&
-                                <img style={{height: "45px"}} src={`data:image/svg+xml;base64,${btoa(tenantLookAndFeelInput.authenticationlogo)}`}></img>
+                                <img style={{height: !breakPoints.isMedium ? "45px": "25px"}} src={`data:image/svg+xml;base64,${btoa(tenantLookAndFeelInput.authenticationlogo)}`}></img>
                             }                        
                             {tenantLookAndFeelInput.authenticationlogouri &&                        
-                                <img style={{height: "45px"}} src={tenantLookAndFeelInput.authenticationlogouri} loading="lazy" alt="Authentication Header Logo"></img>                            
+                                <img style={{height: !breakPoints.isMedium ? "45px": "25px"}} src={tenantLookAndFeelInput.authenticationlogouri} loading="lazy" alt="Authentication Header Logo"></img>                            
                             }
                         </div>
                         <div style={{alignContent: "center", alignItems: "center"}}>
@@ -302,14 +302,15 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     </Stack>
                 </Grid2>                
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Background Color</div>
-                    <Grid2  container spacing={2} size={12}>
+                    
+                    <Grid2 display="flex" alignItems={"center"} container spacing={2} size={12}>
                         <Grid2  size={11}>
                             <TextField name="backgroundColor" id="backgroundColor"
                                 disabled={readOnly}
                                 value={tenantLookAndFeelInput.authenticationheaderbackgroundcolor || ""}
                                 onChange={(evt) => { tenantLookAndFeelInput.authenticationheaderbackgroundcolor = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="Background Color"
                             />
                         </Grid2>
                         <Grid2 size={1}>
@@ -320,14 +321,15 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     </Grid2>
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Text Color</div>
-                    <Grid2 container spacing={2} size={12}>
+                    
+                    <Grid2 display="flex" alignItems={"center"} container spacing={2} size={12}>
                         <Grid2 size={11}>
                             <TextField name="textColor" id="textColor"
                                 disabled={readOnly}
                                 value={tenantLookAndFeelInput.authenticationheadertextcolor || ""}
                                 onChange={(evt) => { tenantLookAndFeelInput.authenticationheadertextcolor = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="Text Color"
                             />
                         </Grid2>
                         <Grid2 size={1}>
@@ -341,12 +343,13 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     </Grid2>
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Header Text</div>                    
+                                   
                     <TextField name="headerText" id="headerText"
                         disabled={readOnly}
                         value={tenantLookAndFeelInput.authenticationheadertext || ""}
                         onChange={(evt) => { tenantLookAndFeelInput.authenticationheadertext = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                        fullWidth={true} size="small"
+                        fullWidth={true} 
+                        label="Header Text"
                     />                        
                 </Grid2>
                 
@@ -367,13 +370,14 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                             </Grid2>
                             <Divider>OR</Divider>
                             <Grid2 marginTop={"8px"} container size={12}>
-                                <Grid2 size={12}>Logo URI</Grid2>
+                                
                                 <Grid2 size={12}>
                                     <TextField
                                         disabled={readOnly}
                                         value={tenantLookAndFeelInput.authenticationlogouri}
                                         onChange={(evt) => { tenantLookAndFeelInput.authenticationlogouri = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                                        fullWidth={true} size="small"
+                                        fullWidth={true} 
+                                        label="Logo URI"
                                     />
                                 </Grid2>
                             </Grid2>

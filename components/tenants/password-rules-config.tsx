@@ -8,7 +8,7 @@ import { PasswordConfigInput, PortalUserProfile, TenantPasswordConfig } from "@/
 import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import { Alert, Autocomplete, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, MenuItem, Select, Typography } from "@mui/material";
+import { Alert, Autocomplete, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, MenuItem, Paper, Select, Switch, Typography } from "@mui/material";
 import { PASSWORD_CONFIGURATION_DELETION_MUTATION, PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
@@ -187,7 +187,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     </DialogActions>
                 </Dialog>
             }
-            <Grid2 container size={12} spacing={2}>
+            <Grid2 marginTop={"8px"} container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
@@ -200,37 +200,40 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 }
                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <Grid2 marginBottom={"16px"}>
-                        <div>Password Minimum Length</div>
+                        
                         <TextField name="passwordMinLength" id="passwordMinLength"
                             disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.passwordMinLength > 0 ? passwordConfigInput.passwordMinLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMinLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Password Minimum Length"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Password Maximum Length</div>
+                        
                         <TextField name="passwordMaxLength" id="passwordMaxLength"
                             disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.passwordMaxLength > 0 ? passwordConfigInput.passwordMaxLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMaxLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Password Maximum Length"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Maximum Consecutive Length Of Identical Characters</div>
+                        
                         <TextField name="maxConsecutiveRepeatingChars" id="maxConsecutiveRepeatingChars"
                             disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.maxRepeatingCharacterLength && passwordConfigInput.maxRepeatingCharacterLength > 0 ? passwordConfigInput.maxRepeatingCharacterLength : ""}
                             onChange={(evt) => { passwordConfigInput.maxRepeatingCharacterLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Maximum Consecutive Length Of Identical Characters"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Password History Period</div>
+                        
                         <TextField name="passwordHistoryPeriod" id="passwordHistoryPeriod"
                             disabled={readOnly}
                             type="number"
@@ -241,11 +244,12 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                 setPasswordConfigInput({ ...passwordConfigInput }); 
                                 setMarkDirty(true); 
                             }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Password History Period"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Change Password Period (days)</div>
+                        
                         <TextField name="passwordRotationPeriodDays" id="passwordRotationPeriodDays"
                             disabled={readOnly}
                             type="number"
@@ -256,15 +260,16 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                 setPasswordConfigInput({ ...passwordConfigInput }); 
                                 setMarkDirty(true); 
                             }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Change Password Period (days)"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Password Hashing Algorithm</div>
-                        <Select
+                        <TextField
+                            select
                             disabled={readOnly}
                             required={true}
-                            size="small"
+                            label="Password Hashing Algorithm"
                             fullWidth={true}
                             value={passwordConfigInput.passwordHashingAlgorithm}
                             onChange={(evt) => { 
@@ -281,64 +286,103 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                     <MenuItem value={algorithm} key={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>                                    
                                 )
                             )}
-                        </Select>
+                        </TextField>
                     </Grid2>
                 </Grid2>
 
                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Uppercase
-                        </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                disabled={readOnly}
-                                checked={passwordConfigInput.requireUpperCase === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireUpperCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                    <Paper elevation={0} 
+                        variant="outlined"
+                        sx={{
+                            p: 2.5,
+                            borderRadius: 2,
+                            bgcolor: 'grey.50',
+                            height: '100%',
+                        }}                    
+                    >                        
+                    <Grid2 container size={12}>                        
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireUpperCase === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireUpperCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Uppercase"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
                             />
                         </Grid2>
+                        
 
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Lowercase
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireLowerCase === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireLowerCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Lowercase"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                            
                         </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                disabled={readOnly}
-                                checked={passwordConfigInput.requireLowerCase === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireLowerCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            />
+                        
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireNumbers === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireNumbers = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Numbers"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                             
                         </Grid2>
-
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Numbers
+                        
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireSpecialCharacters === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireSpecialCharacters = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Special Characters"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                             
                         </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                disabled={readOnly}
-                                checked={passwordConfigInput.requireNumbers === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireNumbers = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            />
-                        </Grid2>
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Special Characters
-                        </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                disabled={readOnly}
-                                checked={passwordConfigInput.requireSpecialCharacters === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireSpecialCharacters = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            />
-                        </Grid2>
+                        
                         <Grid2 marginTop={"8px"} alignContent={"center"} size={10}>
-                            <div>Special Characters Allowed</div>
+                            
                             <TextField name="specialCharactersAllowed" id="specialCharactersAllowed"
                                 disabled={readOnly}
                                 value={passwordConfigInput.specialCharactersAllowed}
                                 onChange={(evt) => { passwordConfigInput.specialCharactersAllowed = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="Special Characters Allowed"
                             />
                         </Grid2>
+                        
                     </Grid2>
+                    </Paper>
                 </Grid2>
             </Grid2>
             <Divider sx={{ marginTop: "16px" }} />
@@ -346,32 +390,32 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <Grid2 size={12}>
                         <Grid2 container size={12} marginBottom={"16px"}>
-                            <Grid2 alignContent={"center"} size={11}>Require Multi-factor Authentication</Grid2>
-                            <Grid2 size={1}>
-                                <Checkbox
-                                    disabled={readOnly}
-                                    checked={passwordConfigInput.requireMfa === true}                                
-                                    onChange={(_, checked: boolean) => {
-                                        if(checked === false){
-                                            passwordConfigInput.mfaTypesRequired = "";
-                                        }
-                                        passwordConfigInput.requireMfa = checked;
-                                        setPasswordConfigInput({ ...passwordConfigInput });
-                                        setMarkDirty(true);
-                                    }}
-                                />
-                            </Grid2>                        
-                        </Grid2>
-                        <Grid2 alignContent={"center"} size={12}>
-                            MFA Types Required
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireMfa === true}                                
+                                        onChange={(_, checked: boolean) => {
+                                            if(checked === false){
+                                                passwordConfigInput.mfaTypesRequired = "";
+                                            }
+                                            passwordConfigInput.requireMfa = checked;
+                                            setPasswordConfigInput({ ...passwordConfigInput });
+                                            setMarkDirty(true);
+                                        }}
+                                    />
+                                }
+                                label="Require Multi-factor Authentication"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                                                  
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
                             <Autocomplete                                
                                 id="mfaTypes"
                                 multiple={true}
-                                size="small"
-                                sx={{ paddingTop: "8px" }}
-                                renderInput={(params) => <TextField {...params} label="" />}
+                                sx={{ paddingTop: "8px" }}                                
+                                renderInput={(params) => <TextField {...params} label="MFA Types Required" />}
                                 options={
                                     MFA_AUTH_TYPES
                                     .filter(

@@ -215,11 +215,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             </Typography>
                                             <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
                                                 <Chip
-                                                    label={TENANT_TYPES_DISPLAY.get(tenant.tenantType)}
-                                                    size="small"
-                                                    sx={{ fontWeight: 500 }}
-                                                />
-                                                <Chip
                                                     icon={tenant.enabled ? <CheckCircleIcon /> : <CancelIcon />}
                                                     label={tenant.enabled ? "Enabled" : "Disabled"}
                                                     size="small"

@@ -8,7 +8,7 @@ import { PortalUserProfile, TenantLoginFailurePolicy, TenantLoginFailurePolicyIn
 import { DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, LOGIN_FAILURE_POLICY_TYPE_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import { Alert, Button, Dialog, DialogActions, DialogContent, MenuItem, Select, Typography } from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, MenuItem, Typography } from "@mui/material";
 import { LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION, REMOVE_LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
@@ -150,7 +150,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                 </Dialog>
             }
         
-            <Grid2 container size={12} spacing={2}>
+            <Grid2 marginTop={"8px"} container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <div>{errorMessage}</div>
@@ -162,11 +162,12 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                     </Grid2>
                 }
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Login Failure Policy Type</div>
-                    <Select
+                    
+                    <TextField
                         disabled={readOnly}
                         required={true}
-                        size="small"
+                        select
+                        label="Login Failure Policy Type"
                         fullWidth={true}
                         value={failurePolicyInput.loginFailurePolicyType}
                         onChange={ (evt) => {
@@ -184,20 +185,21 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                     >
                         <MenuItem value={LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT}>{LOGIN_FAILURE_POLICY_TYPE_DISPLAY.get(LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT)}</MenuItem>
                         <MenuItem value={LOGIN_FAILURE_POLICY_PAUSE}>{LOGIN_FAILURE_POLICY_TYPE_DISPLAY.get(LOGIN_FAILURE_POLICY_PAUSE)}</MenuItem>
-                    </Select>
+                    </TextField>
 
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Failure Threshold</div>
+                    
                     <TextField name="failureThreshold" id="failureThreshold" 
                         disabled={readOnly}
                         value={failurePolicyInput.failureThreshold || ""} 
                         onChange={(evt) => {failurePolicyInput.failureThreshold = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
-                        fullWidth={true} size="small" 
+                        fullWidth={true} 
+                        label="Failure Threshold"
                     />
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Pause Duration (in minutes)</div>
+                    
                     <TextField name="pauseDuration" id="pauseDuration" 
                         disabled={readOnly || ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE) }
                         value={
@@ -205,11 +207,12 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                             "" :
                             failurePolicyInput.pauseDurationMinutes || ""} 
                         onChange={(evt) => {failurePolicyInput.pauseDurationMinutes = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
-                        fullWidth={true} size="small" 
+                        fullWidth={true} 
+                        label="Pause Duration (in minutes)"
                     />
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Maximum Login Failures</div>
+                    
                     <TextField name="maximumLoginFailures" id="maximumLoginFailures" 
                         disabled={readOnly || failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_PAUSE}
                         value={
@@ -217,7 +220,9 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                             "" :
                             failurePolicyInput.maximumLoginFailures || DEFAULT_MAXIMUM_LOGIN_FAILURES} 
                         onChange={(evt) => {failurePolicyInput.maximumLoginFailures = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
-                        fullWidth={true} size="small" />
+                        fullWidth={true}
+                        label="Maximum Login Failures" 
+                    />
                 </Grid2>                
             </Grid2>
             <DetailSectionActionHandler

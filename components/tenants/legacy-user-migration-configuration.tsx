@@ -84,7 +84,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
     if (tenantLegacyUserMigrationConfigInput) return (
 
         <>
-            <Grid2 container size={12} spacing={2}>
+            <Grid2 marginTop={"8px"} container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <div>{errorMessage}</div>
@@ -98,30 +98,33 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                 {allowLegacyUserMigration &&
                     <React.Fragment>
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                            <div>Authentication URI</div>
+                            
                             <TextField name="authenticationUri" id="authenticationUri"
                                 disabled={readOnly || allowLegacyUserMigration !== true}
                                 value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.authenticationUri : ""}
                                 onChange={(evt) => { tenantLegacyUserMigrationConfigInput.authenticationUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="Authentication URI"
                             />
                         </Grid2>
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                            <div>User Profile URI</div>
+                            
                             <TextField name="userProfileUri" id="userProfileUri"
                                 disabled={readOnly || allowLegacyUserMigration !== true}
                                 value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.userProfileUri : ""}
                                 onChange={(evt) => { tenantLegacyUserMigrationConfigInput.userProfileUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="User Profile URI"
                             />
                         </Grid2>
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                            <div>User Name-Check URI</div>
+                            
                             <TextField name="namecheckUri" id="namecheckUri"
                                 disabled={readOnly || allowLegacyUserMigration !== true}
                                 value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.usernameCheckUri : ""}
                                 onChange={(evt) => { tenantLegacyUserMigrationConfigInput.usernameCheckUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="User Name-Check URI"
                             />
                         </Grid2>
 
