@@ -11,7 +11,7 @@ import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
 import Accordion from "@mui/material/Accordion";
-import { AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, Select, MenuItem, Autocomplete, InputAdornment, Dialog, DialogContent, DialogActions, Button, Box, Chip, Stack, Tooltip, FormControlLabel, Switch } from "@mui/material";
+import { AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, MenuItem, Autocomplete, InputAdornment, Dialog, DialogContent, DialogActions, Button, Box, Chip, Stack, Tooltip, FormControlLabel, Switch } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import { useMutation } from "@apollo/client";
@@ -34,7 +34,6 @@ import { containsScope } from "@/utils/authz-utils";
 import FederatedOIDCProviderTenantConfiguration from "./oidc-provider-tenant-configuration";
 import { ERROR_CODES } from "@/lib/models/error";
 import { useIntl } from 'react-intl';
-import client from "../apollo-client/apollo-client";
 
 
 export interface FederatedOIDCProviderDetailProps {

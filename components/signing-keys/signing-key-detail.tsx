@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import { DEFAULT_BACKGROUND_COLOR, KEY_DELETE_SCOPE, KEY_SECRET_VIEW_SCOPE, KEY_UPDATE_SCOPE, KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Alert, Backdrop, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField, Tooltip } from "@mui/material";
+import { Alert, Backdrop, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Snackbar, Stack, TextField, Tooltip } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';

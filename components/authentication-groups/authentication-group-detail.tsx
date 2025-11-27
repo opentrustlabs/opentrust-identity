@@ -1,7 +1,7 @@
 "use client";
 import { AuthenticationGroup, AuthenticationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, DEFAULT_BACKGROUND_COLOR, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Typography, Grid2, Paper, TextField, Checkbox, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, Stack, Box, Tooltip, FormControlLabel, Switch } from "@mui/material";
+import { Typography, Grid2, Paper, TextField, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, Stack, Box, Tooltip, FormControlLabel, Switch } from "@mui/material";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
