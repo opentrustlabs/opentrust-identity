@@ -162,7 +162,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                 </Dialog>
             }
 
-            <Grid2 container size={12} spacing={2}>
+            <Grid2 marginTop={"8px"} container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
@@ -176,13 +176,12 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                 {allowAnonymousUsers &&
                     <React.Fragment>
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                            <div>Default Country</div>
+                            
                             <Autocomplete
                                 id="defaultCountry"
                                 disabled={readOnly || allowAnonymousUsers !== true}
-                                sx={{ paddingTop: "8px" }}
-                                size="small"
-                                renderInput={(params) => <TextField {...params} label="" />}
+                                sx={{ paddingTop: "8px" }}                                
+                                renderInput={(params) => <TextField {...params} label="Default Country" />}
                                 options={
                                     [{ countryCode: "", country: "" }, ...COUNTRY_CODES].map(
                                         (cc: CountryCodeDef) => {
@@ -200,13 +199,12 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                             />
                         </Grid2>
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                            <div>Default Language</div>
+                            
                             <Autocomplete
                                 id="defaultLanguage"
                                 disabled={readOnly || allowAnonymousUsers !== true}
-                                sx={{ paddingTop: "8px" }}
-                                size="small"
-                                renderInput={(params) => <TextField {...params} label="" />}
+                                sx={{ paddingTop: "8px" }}                            
+                                renderInput={(params) => <TextField {...params} label="Default Language" />}
                                 options={
                                     [{ languageCode: "", language: "" }, ...LANGUAGE_CODES].map(
                                         (lc: LanguageCodeDef) => {
@@ -224,13 +222,14 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                             />
                         </Grid2>
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                            <div>Token Time-To-Live (in seconds)</div>
+                            
                             <TextField name="tokenTTLSeconds" id="tokenTTLSeconds"
                                 type="number"
                                 disabled={readOnly || allowAnonymousUsers !== true}
                                 value={allowAnonymousUsers !== true ? "" : tenantAnonymousUserConfigInput.tokenttlseconds > 0 ? tenantAnonymousUserConfigInput.tokenttlseconds : ""}
                                 onChange={(evt) => { tenantAnonymousUserConfigInput.tokenttlseconds = parseInt(evt.target.value || "0"); setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="Token Time-To-Live (in seconds)"
                             />
                         </Grid2>
                     </React.Fragment>
