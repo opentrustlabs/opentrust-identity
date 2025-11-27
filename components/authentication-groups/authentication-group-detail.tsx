@@ -1,13 +1,14 @@
 "use client";
 import { AuthenticationGroup, AuthenticationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
-import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Typography, Grid2, Paper, TextField, Checkbox, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert } from "@mui/material";
+import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, DEFAULT_BACKGROUND_COLOR, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Typography, Grid2, Paper, TextField, Checkbox, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, Stack, Box, Tooltip, FormControlLabel, Switch } from "@mui/material";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonIcon from '@mui/icons-material/Person';
+import GroupIcon from '@mui/icons-material/Group';
 import TenantHighlight from "../tenants/tenant-highlight";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMutation } from "@apollo/client";
@@ -129,9 +130,40 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"}  container size={12}>
-                            <Grid2 size={11}>Overview</Grid2>
-                            <Grid2 size={1} display={"flex"} >
+                        <Paper
+                            elevation={0}
+
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <GroupIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {authenticationGroup.authenticationGroupName}
+                                        </Typography>                                        
+                                    </Box>
+                                </Stack>
                                 {isMarkedForDelete !== true && canDeleteAuthnGroup &&
                                     <SubmitMarkForDelete 
                                         objectId={authenticationGroup.authenticationGroupId}
@@ -155,8 +187,8 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
                                     />
                                 }
-                            </Grid2>
-                        </Grid2>
+                            </Stack>
+                        </Paper>                        
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
                                 <Grid2 size={12} marginBottom={"8px"}>
@@ -171,57 +203,76 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                             <Paper elevation={0} sx={{ padding: "8px" }}>                                
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Group Name</div>
+                                        <Stack spacing={3}>
+
                                             <TextField name="authnGroupName" id="authnGroupName" 
                                                 disabled={disableInputs}
                                                 value={authnGroupInput.authenticationGroupName} 
                                                 onChange={(evt) => {authnGroupInput.authenticationGroupName = evt.target.value; setMarkDirty(true); setAuthnGroupInput({...authnGroupInput})}}                                            
-                                                fullWidth={true} size="small" 
+                                                fullWidth={true} 
+                                                label="Group Name"
                                             />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Group Description</div>
+
                                             <TextField  
                                                 disabled={disableInputs}
                                                 name="authnGroupDescription" id="authnGroupDescription" 
-                                                value={authnGroupInput.authenticationGroupDescription} fullWidth={true} size="small" multiline={true} rows={2}
+                                                value={authnGroupInput.authenticationGroupDescription} 
+                                                fullWidth={true} 
+                                                label="Group Description"
+                                                multiline={true} rows={2}
                                                 onChange={(evt) => {authnGroupInput.authenticationGroupDescription = evt.target.value; setMarkDirty(true); setAuthnGroupInput({...authnGroupInput})}}
                                             />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div style={{textDecoration: "underline"}}>Object ID</div>
-                                            <Grid2 marginTop={"8px"} container size={12}>
-                                                <Grid2  size={11}>
-                                                    {authenticationGroup.authenticationGroupId}
-                                                </Grid2>
-                                                <Grid2 size={1}>
-                                                    <ContentCopyIcon 
-                                                        sx={{cursor: "pointer"}}
-                                                        onClick={() => {
-                                                            copyContentToClipboard(authenticationGroup.authenticationGroupId, "AuthN ID copied to clipboard");
-                                                        }}
-                                                    />
-                                                </Grid2>
-                                            </Grid2>
-                                        </Grid2>
+
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                    Object ID
+                                                </Typography>
+                                                <Paper
+                                                    variant="outlined"
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: 'grey.50',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                        {authenticationGroup.authenticationGroupId}
+                                                    </Typography>
+                                                    <Tooltip title="Copy to clipboard">
+                                                        <ContentCopyIcon
+                                                            sx={{ cursor: "pointer", ml: 1, color: 'action.active' }}
+                                                            onClick={() => {
+                                                                copyContentToClipboard(authenticationGroup.authenticationGroupId, "AuthN ID copied to clipboard");
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </Paper>
+                                            </Box>
+                                        </Stack>                                        
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 container size={12} marginBottom={"16px"}>
-                                            <Grid2 alignContent={"center"} size={11}>Default</Grid2>
-                                            <Grid2 size={1}>
-                                                <Checkbox 
-                                                    disabled={disableInputs}
-                                                    name="defaultGroup"
-                                                    checked={authnGroupInput.defaultGroup}
-                                                    onChange={(_, checked) => {
-                                                        authnGroupInput.defaultGroup = checked;
-                                                        setAuthnGroupInput({...authnGroupInput})
-                                                        setMarkDirty(true);
-                                                    }}
-                                                />
-                                            </Grid2>
-                                        </Grid2>                                      
+                                        <Stack spacing={3}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        disabled={disableInputs}
+                                                        name="defaultGroup"
+                                                        checked={authnGroupInput.defaultGroup}
+                                                        onChange={(_, checked) => {
+                                                            authnGroupInput.defaultGroup = checked;
+                                                            setAuthnGroupInput({...authnGroupInput})
+                                                            setMarkDirty(true);
+                                                        }}
+                                                    />
+                                                }
+                                                label="Default"
+                                                sx={{ margin: "4px", fontSize: "revert", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
+                                            />
+                                        </Stack>
+                                                                           
                                     </Grid2>                                    
                                 </Grid2> 
                                 <DetailSectionActionHandler

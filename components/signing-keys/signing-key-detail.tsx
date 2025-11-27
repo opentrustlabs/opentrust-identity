@@ -3,11 +3,14 @@ import { MarkForDeleteObjectType, SecretObjectType, SigningKey, SigningKeyUpdate
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
-import { KEY_DELETE_SCOPE, KEY_SECRET_VIEW_SCOPE, KEY_UPDATE_SCOPE, KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, TextField } from "@mui/material";
+import { DEFAULT_BACKGROUND_COLOR, KEY_DELETE_SCOPE, KEY_SECRET_VIEW_SCOPE, KEY_UPDATE_SCOPE, KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Alert, Backdrop, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField, Tooltip } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import KeyIcon from '@mui/icons-material/Key';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import ContactConfiguration from "../contacts/contact-configuration";
@@ -144,9 +147,54 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
-                            <Grid2 size={11}>Overview</Grid2>
-                            <Grid2 size={1} display={"flex"} >
+                        <Paper
+                            elevation={0}
+
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <KeyIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {signingKey.keyName}
+                                        </Typography>
+                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                                            <Chip
+                                                label={signingKey.keyType}
+                                                size="small"
+                                                sx={{ fontWeight: 500 }}
+                                            />
+                                            <Chip
+                                                icon={signingKey.keyStatus === SIGNING_KEY_STATUS_ACTIVE ? <CheckCircleIcon /> : <CancelIcon />}
+                                                label={signingKey.keyStatus === SIGNING_KEY_STATUS_ACTIVE ? "Active" : "Revoked"}
+                                                size="small"
+                                                color={signingKey.keyStatus === SIGNING_KEY_STATUS_ACTIVE ? "success" : "default"}
+                                                sx={{ fontWeight: 500 }}
+                                            />                                            
+                                        </Stack>
+                                    </Box>
+                                </Stack>
                                 {isMarkedForDelete !== true && canDeleteKey &&
                                     <SubmitMarkForDelete 
                                         objectId={signingKey.keyId}
@@ -170,8 +218,9 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
                                     />
                                 }
-                            </Grid2>
-                        </Grid2>
+                            </Stack>
+                        </Paper>
+                        
                         <Grid2 size={12}>
                             {errorMessage &&
                                 <Grid2 size={12} marginBottom={"8px"}>
@@ -187,29 +236,30 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                 <Grid2 container size={12} spacing={2}>
                                     
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Key Name / Alias</div>
+                                        <Stack spacing={3}>
                                             <TextField                                                 
                                                 name="keyName" id="keyName" 
                                                 value={keyUpdateInput.keyName} 
                                                 onChange={(evt) => {keyUpdateInput.keyName = evt.target.value; setKeyUpdateInput({...keyUpdateInput}); setMarkDirty(true)}}
                                                 disabled={keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED || disableInputs === true}
-                                                fullWidth={true} size="small" 
+                                                fullWidth={true} 
+                                                label="Key Name / Alias"
                                             />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Status</div>
+
                                             {keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED &&
                                                 <TextField                                                     
                                                     name="keyStatus" 
                                                     id="keyStatus" 
                                                     value={keyUpdateInput.status} 
-                                                    disabled={true} fullWidth={true} size="small" />
+                                                    disabled={true} fullWidth={true} 
+                                                    label="Status"
+                                                />
                                             }
                                             {keyUpdateInput.status !== SIGNING_KEY_STATUS_REVOKED &&
-                                                <Select
+                                                <TextField
+                                                    select
                                                     disabled={disableInputs}
-                                                    size="small"
+                                                    label="Status"
                                                     fullWidth={true}
                                                     value={keyUpdateInput.status}
                                                     name="keyStatus"
@@ -221,40 +271,65 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                 >                                                    
                                                     <MenuItem value={SIGNING_KEY_STATUS_ACTIVE} >{SIGNING_KEY_STATUS_ACTIVE}</MenuItem>
                                                     <MenuItem value={SIGNING_KEY_STATUS_REVOKED} >{SIGNING_KEY_STATUS_REVOKED}</MenuItem>
-                                                </Select>
-                                            }                                            
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div style={{textDecoration: "underline"}}>Object ID</div>
-                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
-                                                <Grid2  size={11}>
-                                                    {signingKey.keyId}
-                                                </Grid2>
-                                                <Grid2 size={1}>
-                                                    <ContentCopyIcon 
-                                                        sx={{cursor: "pointer"}}
-                                                        onClick={() => {
-                                                            copyContentToClipboard(signingKey.keyId, "Key ID copied to clipboard");
-                                                        }}
-                                                    />
-                                                </Grid2>
-                                            </Grid2>
-                                        </Grid2>
-                                        
+                                                </TextField>
+                                            } 
+
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                    Object ID
+                                                </Typography>
+                                                <Paper
+                                                    variant="outlined"
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: 'grey.50',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                        {signingKey.keyId}
+                                                    </Typography>
+                                                    <Tooltip title="Copy to clipboard">
+                                                        <ContentCopyIcon
+                                                            sx={{ cursor: "pointer", ml: 1, color: 'action.active' }}
+                                                            onClick={() => {
+                                                                copyContentToClipboard(signingKey.keyId, "Key ID copied to clipboard");
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </Paper>
+                                            </Box>
+                                        </Stack>                                        
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                    <Grid2 marginBottom={"16px"}>
-                                            <div>Key Type</div>
-                                            <TextField name="keyType" id="keyType" value={signingKey.keyType} disabled={true} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Key Use</div>
-                                            <TextField name="keyUse" id="keyUse" value={KEY_USE_DISPLAY.get(signingKey.keyUse || "")} disabled={true} fullWidth={true} size="small" /> 
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Expires</div>
-                                            <TextField name="keyExpiration" id="keyExpiration" value={formatISODateFromMs(signingKey.expiresAtMs, "")} disabled={true} fullWidth={true} size="small" />
-                                        </Grid2>                                       
+                                        <Stack spacing={3}>
+                                            <TextField name="keyType" id="keyType" 
+                                                value={signingKey.keyType} 
+                                                disabled={true} 
+                                                fullWidth={true} 
+                                                label="Key Type"
+                                            />
+
+                                            <TextField 
+                                                name="keyUse" 
+                                                id="keyUse" 
+                                                value={KEY_USE_DISPLAY.get(signingKey.keyUse || "")} 
+                                                disabled={true} 
+                                                fullWidth={true} 
+                                                label="Key Use"
+                                            /> 
+
+                                            <TextField 
+                                                name="keyExpiration" 
+                                                id="keyExpiration" 
+                                                value={formatISODateFromMs(signingKey.expiresAtMs, "")} 
+                                                disabled={true} 
+                                                fullWidth={true} 
+                                                label="Expires"
+                                            />
+                                        </Stack>                                        
                                     </Grid2>
                                 </Grid2>
                                 <DetailSectionActionHandler

@@ -345,7 +345,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                         bgcolor: 'grey.50',
                                                         border: '1px solid',
                                                         borderColor: 'divider',
-                                                        borderRadius: 2,
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'space-between',
