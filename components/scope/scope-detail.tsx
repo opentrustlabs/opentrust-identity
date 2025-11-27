@@ -2,7 +2,7 @@
 import { MarkForDeleteObjectType, PortalUserProfile, Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_DELETE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_DELETE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -31,6 +31,11 @@ import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { ERROR_CODES } from "@/lib/models/error";
 import { useIntl } from 'react-intl';
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
+import PolicyIcon from '@mui/icons-material/Policy';
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
 
 
 export interface ScopeDetailProps {
@@ -100,9 +105,47 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
-                            <Grid2 size={11}>Overview</Grid2>
-                            <Grid2 size={1} display={"flex"} >
+                        <Paper
+                            elevation={0}
+
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <PolicyIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {scope.scopeName}
+                                        </Typography>
+                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                                            <Chip
+                                                label={SCOPE_USE_DISPLAY.get(scope.scopeUse)}
+                                                size="small"
+                                                sx={{ fontWeight: 500 }}
+                                            />                                           
+                                        </Stack>                                        
+                                    </Box>
+                                </Stack>
                                 {isMarkedForDelete !== true && scope.scopeUse !== SCOPE_USE_IAM_MANAGEMENT && canDeleteScope &&
                                     <SubmitMarkForDelete 
                                         objectId={scope.scopeId}
@@ -126,8 +169,8 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
                                     />
                                 }
-                            </Grid2>
-                        </Grid2>
+                            </Stack>
+                        </Paper>
                         <Grid2 size={12}>
                             {errorMessage &&
                                 <Grid2 size={12} marginBottom={"8px"}>
@@ -147,32 +190,29 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         </Grid2>
                                     }
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Name</div>
+                                        <Stack spacing={3}>                                            
                                             <TextField 
                                                 disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || disableInputs === true} 
                                                 name="scopeName" 
                                                 id="scopeName" 
                                                 value={scopeUpdateInput.scopeName} 
                                                 fullWidth={true} 
-                                                size="small" 
+                                                label="Scope Name"
                                                 onChange={(evt) => {
                                                     scopeUpdateInput.scopeName = evt.target.value;
                                                     setScopeUpdateInput({...scopeUpdateInput});
                                                     setMarkDirty(true);
                                                 }}
                                                 
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Description</div>
+                                            />                                        
+                                        
                                             <TextField
                                                 disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || disableInputs === true}
                                                 name="scopeDescription"
                                                 id="scopeDescription"
                                                 value={scopeUpdateInput.scopeDescription}
                                                 fullWidth={true}
-                                                size="small"
+                                                label="Scope Description"
                                                 multiline={true}
                                                 rows={2}
                                                 onChange={(evt) => {
@@ -181,29 +221,47 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                                     setMarkDirty(true);
                                                 }}
                                             />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div style={{textDecoration: "underline"}}>Object ID</div>
-                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
-                                                <Grid2  size={11}>
-                                                    {scope.scopeId}
-                                                </Grid2>
-                                                <Grid2 size={1}>
-                                                    <ContentCopyIcon 
-                                                        sx={{cursor: "pointer"}}
-                                                        onClick={() => {
-                                                            copyContentToClipboard(scope.scopeId, "Scope ID copied to clipboard");
-                                                        }}
-                                                    />
-                                                </Grid2>
-                                            </Grid2>
-                                        </Grid2>
+
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                    Object ID
+                                                </Typography>
+                                                <Paper
+                                                    variant="outlined"
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: 'grey.50',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                        {scope.scopeId}
+                                                    </Typography>
+                                                    <Tooltip title="Copy to clipboard">
+                                                        <ContentCopyIcon
+                                                            sx={{ cursor: "pointer", ml: 1, color: 'action.active' }}
+                                                            onClick={() => {
+                                                                copyContentToClipboard(scope.scopeId, "Scope ID copied to clipboard");
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </Paper>
+                                            </Box>                                        
+                                        </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Scope Use</div>
-                                            <TextField disabled={true} name="scopeUse" id="scopeUse" value={SCOPE_USE_DISPLAY.get(scope.scopeUse)} fullWidth={true} size="small" />
-                                        </Grid2>                                        
+                                        <Stack spacing={3}>
+                                            <TextField 
+                                                disabled={true} 
+                                                name="scopeUse" 
+                                                id="scopeUse" 
+                                                value={SCOPE_USE_DISPLAY.get(scope.scopeUse)} 
+                                                fullWidth={true} 
+                                                label="Scope Use"
+                                            />
+                                        </Stack>
                                     </Grid2>
                                 </Grid2>
                                 <DetailSectionActionHandler

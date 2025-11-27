@@ -186,34 +186,6 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                 }
                             </Stack>
                         </Paper>
-                        {/* <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
-                            <Grid2 size={11}>Overview</Grid2>
-                            <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && canDeleteAuthzGroup &&
-                                    <SubmitMarkForDelete 
-                                        objectId={authorizationGroup.groupId}
-                                        objectType={MarkForDeleteObjectType.AuthorizationGroup}
-                                        confirmationMessage={`Confirm deletion of authorization group: ${authorizationGroup.groupName}. Once submitted the operation cannot be undone.`}
-                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
-                                            setShowMutationBackdrop(false);
-                                            if(successful){
-                                                setShowMutationSnackbar(true);
-                                                setIsMarkedForDelete(true);
-                                            }
-                                            else{
-                                                if(errorMessage){
-                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));                                                    
-                                                }
-                                                else{
-                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
-                                                }                                                
-                                            }
-                                        }}
-                                        onDeleteStart={() => setShowMutationBackdrop(true)}
-                                    />
-                                }
-                            </Grid2>
-                        </Grid2> */}
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
                                 <Grid2 size={12} marginBottom={"8px"}>

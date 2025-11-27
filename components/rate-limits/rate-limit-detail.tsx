@@ -2,7 +2,7 @@
 import { MarkForDeleteObjectType, RateLimitServiceGroup, RateLimitServiceGroupUpdateInput, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -31,6 +31,10 @@ import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { ERROR_CODES } from "@/lib/models/error";
 import { useIntl } from 'react-intl';
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
+import SpeedIcon from '@mui/icons-material/Speed';
+import Tooltip from "@mui/material/Tooltip";
 
 
 export interface RateLimitDetailProps {
@@ -103,7 +107,70 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
+                        <Paper
+                            elevation={0}
+
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <SpeedIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {rateLimitDetail.servicegroupname}
+                                        </Typography>                                        
+                                    </Box>
+                                </Stack>
+                                {isMarkedForDelete !== true && canDeleteRateLimit &&
+                                    <SubmitMarkForDelete 
+                                        objectId={rateLimitDetail.servicegroupid}
+                                        objectType={MarkForDeleteObjectType.RateLimitServiceGroup}
+                                        confirmationMessage={`Confirm deletion of rate limit: ${rateLimitDetail.servicegroupname}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                } 
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Stack>
+                        </Paper>
+
+
+
+
+                        {/* <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
                                 {isMarkedForDelete !== true && canDeleteRateLimit &&
@@ -130,7 +197,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     />
                                 }
                             </Grid2>
-                        </Grid2>
+                        </Grid2> */}
                     </Grid2>
                     <Grid2 size={12} marginBottom={"16px"} marginTop={"16px"}>
                         {errorMessage &&
@@ -147,47 +214,61 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                             <Grid2 container size={12} spacing={2}>
                                 
                                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div>Service Group Name</div>
+                                    <Stack spacing={3}>
+
                                         <TextField
                                             disabled={disableInputs}
                                             required name="serviceGroupName" id="serviceGroupName"
                                             onChange={(evt) => { serviceGroupInput.servicegroupname = evt?.target.value; setServiceGroupInput({ ...serviceGroupInput }); setMarkDirty(true); }}
                                             value={serviceGroupInput.servicegroupname}
                                             fullWidth={true}
-                                            size="small" />
-                                    </Grid2>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div style={{textDecoration: "underline"}}>Object ID</div>
-                                        <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
-                                            <Grid2  size={11}>
-                                                {rateLimitDetail.servicegroupid}
-                                            </Grid2>
-                                            <Grid2 size={1}>
-                                                <ContentCopyIcon 
-                                                    sx={{cursor: "pointer"}}
-                                                    onClick={() => {
-                                                        copyContentToClipboard(rateLimitDetail.servicegroupid, "Service Group ID copied to clipboard");
-                                                    }}
-                                                />
-                                            </Grid2>
-                                        </Grid2>
-                                    </Grid2>
+                                            label="Service Group Name"
+                                        />
+
+                                        <Box>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                Object ID
+                                            </Typography>
+                                            <Paper
+                                                variant="outlined"
+                                                sx={{
+                                                    p: 1.5,
+                                                    bgcolor: 'grey.50',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                }}
+                                            >
+                                                <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                    {rateLimitDetail.servicegroupid}
+                                                </Typography>
+                                                <Tooltip title="Copy to clipboard">
+                                                    <ContentCopyIcon
+                                                        sx={{ cursor: "pointer", ml: 1, color: 'action.active' }}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(rateLimitDetail.servicegroupid, "Service Group ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                            </Paper>
+                                        </Box>
+                                    </Stack>
                                 </Grid2>
                                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div>Service Group Description</div>
+                                    <Stack spacing={3}>
+                                        
                                         <TextField
                                             disabled={disableInputs}
                                             name="serviceGroupDescription" id="serviceGroupDescription"
                                             value={serviceGroupInput.servicegroupdescription}
                                             fullWidth={true}
-                                            size="small"
+                                            label="Service Group Description"
                                             multiline={true}
                                             rows={2}
                                             onChange={(evt) => { serviceGroupInput.servicegroupdescription = evt?.target.value; setServiceGroupInput({ ...serviceGroupInput }); setMarkDirty(true); }}
                                         />
-                                    </Grid2>
+                                    
+                                    </Stack>
                                 </Grid2>
                             </Grid2>
                             <DetailSectionActionHandler
