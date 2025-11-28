@@ -60,7 +60,9 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
     const {data, loading, error} = useQuery(AUTHENTICATION_GROUPS_QUERY, {
         variables: {
             userId: userId
-        }
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
     const [authenticationGroupUserAddMutation] = useMutation(AUTHENTICATION_GROUP_USER_ADD_MUTATION, {
@@ -176,7 +178,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
                 <Dialog
                     open={showTenantInfo}
                     onClose={() => setShowTenantInfo(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth={true}
                 >
                     <DialogContent>

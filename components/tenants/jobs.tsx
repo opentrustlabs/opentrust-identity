@@ -1,11 +1,11 @@
 "use client";
-import { MarkForDelete, PortalUserProfile, SchedulerLock } from "@/graphql/generated/graphql-types";
+import { MarkForDelete, MarkForDeleteObjectType, PortalUserProfile, SchedulerLock } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { useQuery } from "@apollo/client";
 import { RUNNING_JOBS_QUERY } from "@/graphql/queries/oidc-queries";
 import { containsScope } from "@/utils/authz-utils";
-import { JOBS_READ_SCOPE } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, JOBS_READ_SCOPE } from "@/utils/consts";
 import { useAuthSessionContext } from "../contexts/auth-session-context";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
@@ -17,6 +17,8 @@ import { formatISODateFromMs } from "@/utils/date-utils";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Link from "next/link";
+import WorkHistoryOutlinedIcon from '@mui/icons-material/WorkHistoryOutlined';
+import { Paper, Stack, Box } from "@mui/material";
 
 const MAP_DELETION_OBJECT_TYPE_TO_VALUE: Map<string, string> = new Map([
     ["AUTHENTICATION_GROUP", "Authentication Group"],
@@ -92,10 +94,43 @@ const RunningJobs: React.FC = () => {
         <Typography component={"div"}>
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
-                    <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
-                            <Grid2 size={12}>Jobs Data</Grid2>
-                        </Grid2>
+                    <Grid2 marginTop={"8px"} container size={12} spacing={2}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <WorkHistoryOutlinedIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            Jobs Data
+                                        </Typography>                                        
+                                    </Box>
+                                </Stack>
+                                
+                            </Stack>
+                        </Paper>
                     </Grid2>
                     <Grid2 size={12} fontWeight={"bold"} marginTop={"16px"} sx={{textDecoration: "underline"}}>Items marked for deletion</Grid2>
                     <Grid2 fontWeight={"bold"} container size={12} marginTop={"16px"} marginBottom={"8px"}>

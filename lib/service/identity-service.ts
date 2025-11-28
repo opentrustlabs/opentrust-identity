@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail, TenantRestrictedAuthenticationDomainRel, TenantLookAndFeel, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail, TenantRestrictedAuthenticationDomainRel, TenantLookAndFeel, PortalUserProfile, AuthorizationGroup, AuthenticationGroup, UserScopeRel } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -22,11 +22,16 @@ import { randomUUID } from "crypto";
 import JwtServiceUtils from "./jwt-service-utils";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
+import AuthorizationGroupDao from "../dao/authorization-group-dao";
+import AuthenticationGroupDao from "../dao/authentication-group-dao";
+import ScopeDao from "../dao/scope-dao";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-// const searchClient: OpenSearchClient = getOpenSearchClient();
+const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
+const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
@@ -421,6 +426,27 @@ class IdentityService {
                     data: JSON.stringify({userId, tenantId})
                 });
                 await identityDao.removeUserFromTenant(tenantId, userId);
+
+                let authzGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getUserAuthorizationGroups(userId);
+                authzGroups = authzGroups.filter(
+                    (g: AuthorizationGroup) => g.tenantId === tenantId
+                );
+                for(let i = 0; i < authzGroups.length; i++){
+                    await authorizationGroupDao.removeUserFromAuthorizationGroup(userId, authzGroups[i].groupId);
+                }
+
+                let authnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, undefined, userId);
+                authnGroups = authnGroups.filter(
+                    (g: AuthenticationGroup) => g.tenantId === tenantId
+                );
+                for(let i = 0; i < authnGroups.length; i++){
+                    await authenticationGroupDao.removeUserFromAuthenticationGroup(userId, authnGroups[i].authenticationGroupId);
+                }
+
+                let userScopes: Array<UserScopeRel> = await scopeDao.getUserScopeRels(userId, tenantId);
+                for(let i = 0; i < userScopes.length; i++){
+                    await scopeDao.removeScopeFromUser(tenantId, userId, userScopes[i].scopeId);
+                }
             }
         }        
         return Promise.resolve();

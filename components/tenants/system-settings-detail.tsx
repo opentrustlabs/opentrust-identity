@@ -1,10 +1,10 @@
 "use client";
-import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, PortalUserProfile, SecretObjectType, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
-import { Alert, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, InputAdornment, Paper, Snackbar, TextField, Typography } from "@mui/material";
+import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, MarkForDeleteObjectType, PortalUserProfile, SecretObjectType, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
+import { Alert, Backdrop, Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, InputAdornment, Paper, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
-import { CAPTCHA_CONFIG_SCOPE, DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, SYSTEM_SETTINGS_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, DEFAULT_BACKGROUND_COLOR, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { containsScope } from "@/utils/authz-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useMutation, useQuery } from "@apollo/client";
@@ -15,6 +15,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
+import SettingsIcon from '@mui/icons-material/Settings';
 
 
 export interface SystemSettingsDetailProps {
@@ -181,9 +182,42 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
             }
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
-                    <Grid2 container size={12} spacing={2} marginTop={"16px"}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
-                            <Grid2 size={12}>System Settings</Grid2>
+                    <Grid2 container size={12} spacing={2} marginTop={"8px"}>
+                        <Grid2 size={12}>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    p: 2,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 2,
+                                }}
+                            >
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box
+                                            sx={{
+                                                width: 48,
+                                                height: 48,
+                                                borderRadius: 2,
+                                                bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                            }}
+                                        >
+                                            <SettingsIcon sx={{ fontSize: 28 }} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h5" fontWeight={600}>
+                                                System Settings
+                                            </Typography>
+                                            
+                                        </Box>
+                                    </Stack>                                    
+                                </Stack>
+                            </Paper>
                         </Grid2>
                     </Grid2>
                     <Grid2 container spacing={1} >
@@ -202,58 +236,66 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     <Grid2 size={1}>
                                         {systemSettings.softwareVersion}
                                     </Grid2>
-                                    <Grid2 size={11}>
-                                        Allow recovery emails
-                                    </Grid2>
-                                    <Grid2 size={1}>
-                                        <Checkbox
-                                            sx={{ height: "25px", width: "25px" }}
-                                            value={systemSettingsUpdateInput.allowRecoveryEmail}
-                                            checked={systemSettingsUpdateInput.allowRecoveryEmail}
-                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
-                                            onChange={(_, checked: boolean) => {                                                
-                                                systemSettingsUpdateInput.allowRecoveryEmail = checked;
-                                                setMarkDirty(true);
-                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
-                                            }}
+                                    <Grid2 size={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    value={systemSettingsUpdateInput.allowRecoveryEmail}
+                                                    checked={systemSettingsUpdateInput.allowRecoveryEmail}
+                                                    disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
+                                                    onChange={(_, checked: boolean) => {                                                
+                                                        systemSettingsUpdateInput.allowRecoveryEmail = checked;
+                                                        setMarkDirty(true);
+                                                        setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                                    }}
+                                                />
+                                            }
+                                            label="Allow recovery emails"
+                                            sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
+                                        />
+                                    </Grid2>                                   
+                                    <Grid2 size={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    value={systemSettingsUpdateInput.allowDuressPassword}
+                                                    checked={systemSettingsUpdateInput.allowDuressPassword}
+                                                    disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
+                                                    onChange={(_, checked: boolean) => {                                                
+                                                        systemSettingsUpdateInput.allowDuressPassword = checked;
+                                                        setMarkDirty(true);
+                                                        setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                                    }}
+                                                />
+                                            }
+                                            label="Allow duress passwords"
+                                            sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
                                         />
                                     </Grid2>
-                                    <Grid2 size={11}>
-                                        Allow duress passwords:
-                                    </Grid2>
-                                    <Grid2 size={1}>
-                                        <Checkbox
-                                            sx={{ height: "25px", width: "25px" }}
-                                            value={systemSettingsUpdateInput.allowDuressPassword}
-                                            checked={systemSettingsUpdateInput.allowDuressPassword}
-                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
-                                            onChange={(_, checked: boolean) => {                                                
-                                                systemSettingsUpdateInput.allowDuressPassword = checked;
-                                                setMarkDirty(true);
-                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
-                                            }}
+                                    <Grid2 size={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    value={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
+                                                    checked={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
+                                                    disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
+                                                    onChange={(_, checked: boolean) => {                                                
+                                                        systemSettingsUpdateInput.enablePortalAsLegacyIdp = checked;
+                                                        setMarkDirty(true);
+                                                        setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                                    }}
+                                                />
+                                            }
+                                            label="Enable Portal as Legacy IdP"
+                                            sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
                                         />
                                     </Grid2>
-                                    <Grid2 size={11}>
-                                        Enable Portal as Legacy IdP:
-                                    </Grid2>
-                                    <Grid2 size={1}>
-                                        <Checkbox
-                                            sx={{ height: "25px", width: "25px" }}
-                                            value={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
-                                            checked={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
-                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
-                                            onChange={(_, checked: boolean) => {                                                
-                                                systemSettingsUpdateInput.enablePortalAsLegacyIdp = checked;
-                                                setMarkDirty(true);
-                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
-                                            }}
-                                        />
-                                    </Grid2>
-                                    <Grid2 marginBlock={"8px"} size={12}>
-                                        <div>Root Client ID:</div>
+                                    <Grid2 marginBlock={"8px"} size={12}>                                        
                                         <TextField
-                                            size="small"
+                                            label="Root Client ID"
                                             fullWidth={true}
                                             value={systemSettingsUpdateInput.rootClientId}
                                             onChange={(evt) => {
@@ -264,9 +306,8 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         />                                        
                                     </Grid2>
                                     <Grid2 marginBlock={"8px"} size={12}>
-                                        <div>Audit Record Retention Period (Days). Defaults to {DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS}</div>
                                         <TextField
-                                            size="small"
+                                            label={`Audit Record Retention Period (Days). Defaults to ${DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS}`}
                                             fullWidth={true}
                                             type="number"
                                             value={systemSettingsUpdateInput.auditRecordRetentionPeriodDays}
@@ -281,9 +322,9 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         />                                        
                                     </Grid2>
                                     <Grid2 marginBlock={"8px"} size={12}>
-                                        <div>No-Reply Email</div>
+                                        
                                         <TextField
-                                            size="small"
+                                            label="No-Reply Email"
                                             fullWidth={true}
                                             value={systemSettingsUpdateInput.noReplyEmail || ""}
                                             onChange={(evt) => {
@@ -295,9 +336,9 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     </Grid2>
 
                                     <Grid2 marginBlock={"8px"} size={12}>
-                                        <div>Contact Email</div>
+                                        
                                         <TextField
-                                            size="small"
+                                            label="Contact Email"
                                             fullWidth={true}
                                             value={systemSettingsUpdateInput.contactEmail || ""}
                                             onChange={(evt) => {
@@ -361,7 +402,6 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     </Grid2>
                                     <Grid2 alignItems={"center"} container size={12} spacing={1}>                                        
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Alias</div>
                                             <TextField
                                                 id="captchaAlias" name="captchaAlias"
                                                 onChange={(evt) => {
@@ -370,12 +410,12 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.alias}
-                                                size="small"
+                                                label="Alias"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Project ID (Optional)</div>
+                                            
                                             <TextField
                                                 id="projectId" name="projectId"
                                                 onChange={(evt) => {
@@ -384,13 +424,12 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.projectId}
-                                                size="small"
+                                                label="Project ID (Optional)"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
 
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Site Key</div>
+                                        <Grid2 marginBottom={"8px"} size={12}>                                            
                                             <TextField
                                                 id="siteKey" name="siteKey"
                                                 onChange={(evt) => {
@@ -399,7 +438,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.siteKey}
-                                                size="small"
+                                                label="Site Key"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
@@ -415,7 +454,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                             setCaptchaConfigInput({ ...captchaConfigInput });
                                                             setCaptchaConfigMarkDirty(true);
                                                         }}
-                                                        fullWidth={true} size="small"
+                                                        fullWidth={true}                                                         
                                                         slotProps={{
                                                             input: {
                                                                 endAdornment: (
@@ -439,7 +478,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 <Grid2 container size={12} spacing={1}>
                                                     <Grid2 size={10}>
                                                         {(!data || data.getCaptchaConfig === null) &&
-                                                            <TextField disabled={true} size="small" fullWidth={true} sx={{backgroundColor: "#efefef"}}></TextField>
+                                                            <TextField disabled={true}  fullWidth={true} sx={{backgroundColor: "#efefef"}}></TextField>
                                                         }
                                                         {data && data.getCaptchaConfig &&
                                                             <div>*******************************************</div>
@@ -463,22 +502,25 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             }
                                         </Grid2>
 
-                                        <Grid2 size={11} marginBottom={"8px"}>
-                                            Use ReCaptcha V3
-                                        </Grid2>
-                                        <Grid2 size={1}>
-                                            <Checkbox
-                                                checked={captchaConfigInput.useCaptchaV3 === true}
-                                                onChange={(_, checked: boolean) => {
-                                                    captchaConfigInput.useCaptchaV3 = checked;
-                                                    setCaptchaConfigInput({...captchaConfigInput});
-                                                    setCaptchaConfigMarkDirty(true);
-                                                }}
+                                        <Grid2 size={12} marginBottom={"8px"}>                                            
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={captchaConfigInput.useCaptchaV3 === true}
+                                                        onChange={(_, checked: boolean) => {
+                                                            captchaConfigInput.useCaptchaV3 = checked;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                            setCaptchaConfigMarkDirty(true);
+                                                        }}
+                                                    />
+                                                }
+                                                label="Use ReCaptcha V3"
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
                                             />
                                         </Grid2>
 
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Min. Score Threshold (for V3 ReCaptcha) 0.0 to 1.0</div>
                                             <TextField
                                                 disabled={captchaConfigInput.useCaptchaV3 === false}
                                                 type="number"
@@ -502,23 +544,28 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);                                                    
                                                 }}
                                                 value={captchaConfigInput.useCaptchaV3 ? captchaConfigInput.minScoreThreshold : ""}
-                                                size="small"
+                                                label="Min. Score Threshold (for V3 ReCaptcha) 0.0 to 1.0"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
-                                        <Grid2 size={11} marginBottom={"8px"}>
-                                            Use Enterprise ReCaptcha
-                                        </Grid2>
-                                        <Grid2 size={1}>
-                                            <Checkbox
-                                                checked={captchaConfigInput.useEnterpriseCaptcha === true}
-                                                onChange={(_, checked: boolean) => {
-                                                    captchaConfigInput.useEnterpriseCaptcha = checked;
-                                                    setCaptchaConfigInput({...captchaConfigInput});
-                                                    setCaptchaConfigMarkDirty(true);
-                                                }}
+                                        <Grid2 size={12} marginBottom={"8px"}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={captchaConfigInput.useEnterpriseCaptcha === true}
+                                                        onChange={(_, checked: boolean) => {
+                                                            captchaConfigInput.useEnterpriseCaptcha = checked;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                            setCaptchaConfigMarkDirty(true);
+                                                        }}
+                                                    />
+                                                }
+                                                label="Use Enterprise ReCaptcha"
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
                                             />
                                         </Grid2>
+                                        
                                     </Grid2>
                                     <Grid2 size={12}>
                                         <DetailSectionActionHandler

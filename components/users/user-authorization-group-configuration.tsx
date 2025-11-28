@@ -59,7 +59,9 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     const {data, loading, error} = useQuery(USER_AUTHORIZATION_GROUP_QUERY, {
         variables: {
             userId: userId
-        }
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
     const [authorizationGroupUserAddMutation] = useMutation(AUTHORIZATION_GROUP_USER_ADD_MUTATION, {
@@ -97,7 +99,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
     
     return (
-        <>
+        <React.Fragment>
             {showAddDialog &&
                 <Dialog
                     open={showAddDialog}
@@ -173,7 +175,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                 <Dialog
                     open={showTenantInfo}
                     onClose={() => setShowTenantInfo(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth={true}
                 >
                     <DialogContent>
@@ -223,7 +225,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                 }                
             </Typography>
             
-            
+            <React.Fragment key={data.getUserAuthorizationGroups.length}>
             {data.getUserAuthorizationGroups.map(                                            
                 (authzGroup: AuthorizationGroup) => (
                     <Typography key={`${authzGroup.groupId}`} component={"div"} >
@@ -261,8 +263,9 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                     </Typography>                                                
                 )
             )}
+            </React.Fragment>
         
-        </>
+        </React.Fragment>
     )
 }
 

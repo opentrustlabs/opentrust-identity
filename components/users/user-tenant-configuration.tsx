@@ -13,7 +13,7 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import { UserTenantRelView, PortalUserProfile, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { DEFAULT_BACKGROUND_COLOR, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_TENANT_REL_TYPES_DISPLAY } from "@/utils/consts";
-import { Alert, Dialog, Tooltip } from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, Tooltip } from "@mui/material";
 import { USER_TENANT_REL_ASSIGN_MUTATION, USER_TENANT_REL_REMOVE_MUTATION, USER_TENANT_REL_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Link from "next/link";
@@ -48,21 +48,26 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     const [canRemoveRel] = React.useState<boolean>(containsScope(TENANT_USER_REMOVE_SCOPE, profile?.scope || []));
     const [canAddRel] = React.useState<boolean>(containsScope(TENANT_USER_ASSIGN_SCOPE, profile?.scope || []));
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
+    const [tenantIdToRemove, setTenantIdToRemove] = React.useState<string | null>(null);
+    const [showRemoveDialog, setShowRemoveDialog] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
-    const {data, loading, error} = useQuery(USER_TENANT_RELS_QUERY, {
+    const {data, loading, error, refetch} = useQuery(USER_TENANT_RELS_QUERY, {
         variables: {
             userId: userId
         },
         onCompleted(data) {
             onLoadCompleted(data.getUserTenantRels);
         },
+        fetchPolicy: "network-only",
+        nextFetchPolicy: "network-only",
         notifyOnNetworkStatusChange: true
     });
 
     const [updateUserTenantRelMutation] = useMutation(USER_TENANT_REL_UPDATE_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
@@ -74,23 +79,25 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     const [removeUserFromTenantMutation] = useMutation(USER_TENANT_REL_REMOVE_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
         },
-        refetchQueries: [USER_TENANT_RELS_QUERY]
+        //refetchQueries: [USER_TENANT_RELS_QUERY]
     });
 
     const [assignUserToTenantMutation] = useMutation(USER_TENANT_REL_ASSIGN_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
         },
-        refetchQueries: [USER_TENANT_RELS_QUERY]
+        //refetchQueries: [USER_TENANT_RELS_QUERY]
     });
 
 
@@ -127,6 +134,37 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
                         }
                         submitButtonText="Submit"
                     />                 
+                </Dialog>
+            }
+            {showRemoveDialog &&
+                <Dialog
+                    open={showRemoveDialog}
+                    onClose={() => setShowRemoveDialog(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>Confirm removal of user from tenant</Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => setShowRemoveDialog(false)}
+                        >Cancel</Button>
+                        <Button
+                            onClick={() => {
+                                onUpdateStart();
+                                setShowRemoveDialog(false);
+                                removeUserFromTenantMutation({
+                                    variables: {
+                                        userId: userId,
+                                        tenantId: tenantIdToRemove
+                                    }
+                                })
+                                
+                            }}
+                        >Confirm</Button>
+                    </DialogActions>
+
                 </Dialog>
             }
             <Typography component={"div"} fontWeight={"bold"} >
@@ -213,13 +251,8 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
                                 {userTenantRelView.relType === USER_TENANT_REL_TYPE_GUEST && canRemoveRel &&
                                     <RemoveCircleOutlineIcon 
                                         onClick={() => {
-                                            onUpdateStart();
-                                            removeUserFromTenantMutation({
-                                                variables: {
-                                                    userId: userTenantRelView.userId,
-                                                    tenantId: userTenantRelView.tenantId
-                                                }
-                                            })
+                                            setTenantIdToRemove(userTenantRelView.tenantId);
+                                            setShowRemoveDialog(true);
                                         }}
                                         sx={{cursor: "pointer"}}
                                     />

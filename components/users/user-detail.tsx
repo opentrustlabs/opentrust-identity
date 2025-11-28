@@ -754,7 +754,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 onUpdateStart={() => {
                                                     setShowMutationBackdrop(true);
                                                 }}
-                                            />
+                                            />                                            
                                         }
                                     </AccordionDetails>
                                 </Accordion>
