@@ -2,7 +2,7 @@
 import { AuthorizationGroupCreateInput } from "@/graphql/generated/graphql-types";
 import { AUTHORIZATION_GROUP_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
-import { Alert, Button, Checkbox, DialogActions, DialogContent, DialogTitle, Grid2, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, FormControlLabel, Switch, DialogActions, DialogContent, DialogTitle, Grid2, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
@@ -102,24 +102,32 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
                                 />
                             </Grid2>
                             <Grid2 size={12} container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={11}>Default</Grid2>
-                                <Grid2 size={1}>
-                                    <Checkbox 
-                                        name="default"
-                                        checked={authzGroupInput.default}
-                                        onChange={(_, checked) => {authzGroupInput.default = checked; setAuthzGroupInput({...authzGroupInput})}}
-                                    />
-                                </Grid2>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="default"
+                                            checked={authzGroupInput.default}
+                                            onChange={(_, checked) => {authzGroupInput.default = checked; setAuthzGroupInput({...authzGroupInput})}}
+                                        />
+                                    }
+                                    label="Default"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />                                  
                             </Grid2>
                             <Grid2 size={12} container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={11}>Allow for anonymous users</Grid2>
-                                <Grid2 size={1}>
-                                    <Checkbox 
-                                        name="allowForAnonymous"
-                                        checked={authzGroupInput.allowForAnonymousUsers}
-                                        onChange={(_, checked) => {authzGroupInput.allowForAnonymousUsers = checked; setAuthzGroupInput({...authzGroupInput})}}
-                                    />
-                                </Grid2>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="allowForAnonymous"
+                                            checked={authzGroupInput.allowForAnonymousUsers}
+                                            onChange={(_, checked) => {authzGroupInput.allowForAnonymousUsers = checked; setAuthzGroupInput({...authzGroupInput})}}
+                                        />
+                                    }
+                                    label="Allow for anonymous users"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />                                         
                             </Grid2>
                         
                     </Grid2>

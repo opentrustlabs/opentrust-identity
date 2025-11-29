@@ -2,7 +2,7 @@
 import { AuthenticationGroupCreateInput } from "@/graphql/generated/graphql-types";
 import { AUTHENTICATION_GROUP_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
-import { Alert, Button, Checkbox, DialogActions, DialogContent, DialogTitle, Grid2, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid2, Stack, Switch, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
@@ -104,15 +104,18 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
                                 />
                             </Grid2>
                             <Grid2 size={12} container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={11}>Default</Grid2>
-                                <Grid2 size={1}>
-                                    <Checkbox 
-                                        checked={authnGroupInput.defaultGroup}
-                                        onChange={(_, checked) => {authnGroupInput.defaultGroup = checked; setAuthnGroupInput({...authnGroupInput})}}
-                                    />
-                                </Grid2>
-                            </Grid2>
-                        
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={authnGroupInput.defaultGroup}
+                                            onChange={(_, checked) => {authnGroupInput.defaultGroup = checked; setAuthnGroupInput({...authnGroupInput})}}
+                                        />
+                                    }
+                                    label="Default"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />                                
+                            </Grid2>                        
                     </Grid2>
 
                 </Typography>

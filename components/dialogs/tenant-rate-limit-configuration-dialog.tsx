@@ -4,10 +4,11 @@ import { TENANT_DETAIL_QUERY, TENANT_RATE_LIMIT_REL_QUERY } from "@/graphql/quer
 import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid2 from "@mui/material/Grid2";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
@@ -111,22 +112,30 @@ const TenatRateLimitConfigurationDialog: React.FC<TenatRateLimitConfigurationDia
                     <Grid2 marginBottom={"16px"} size={9} >
                         <span>{total || 0}</span>
                     </Grid2>
-                    <Grid2 size={11}>Allow unlimited</Grid2>
-                    <Grid2 size={1}>
-                        <Checkbox
-                            checked={allowUnlimited}
-                            onChange={(_, checked: boolean) => {
-                                setAllowUnlimited(checked);
-                                if (checked) {
-                                    setLimit(null);
-                                    setRateLimitPeriodMinutes(null);
-                                }
-                                else {
-                                    setRateLimitPeriodMinutes(DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
-                                }
-                            }}
+                    <Grid2 size={12}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    name="allowUnlimited"
+                                    checked={allowUnlimited}
+                                    onChange={(_, checked: boolean) => {
+                                        setAllowUnlimited(checked);
+                                        if (checked) {
+                                            setLimit(null);
+                                            setRateLimitPeriodMinutes(null);
+                                        }
+                                        else {
+                                            setRateLimitPeriodMinutes(DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
+                                        }
+                                    }}
+                                />
+                            }
+                            label="Allow unlimited"
+                            sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                            labelPlacement="start"
                         />
                     </Grid2>
+                    
                     <Grid2 size={12}>Limit</Grid2>
                     <Grid2 size={12} marginBottom={"16px"}>
                         <TextField

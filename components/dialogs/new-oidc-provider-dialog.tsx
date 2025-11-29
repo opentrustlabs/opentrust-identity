@@ -3,7 +3,7 @@ import { FederatedOidcProviderCreateInput } from "@/graphql/generated/graphql-ty
 import { FEDERATED_OIDC_PROVIDER_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_RESPONSE_TYPE_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
-import { Alert, Autocomplete, Button, Checkbox, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Button, FormControlLabel, Switch, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
@@ -207,36 +207,41 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     fullWidth={true} size="small" />
                             </Grid2>
                             <Grid2 container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={11}>
-                                    Allow Refresh Tokens
-                                </Grid2>
-                                <Grid2 size={1}>
-                                    <Checkbox
-                                        id="refreshTokensAllowed"
-                                        checked={oidcProviderInput.refreshTokenAllowed}
-                                        onChange={(_, checked: boolean) => {
-                                            oidcProviderInput.refreshTokenAllowed = checked;
-                                            setOIDCProviderInput({ ...oidcProviderInput });
-                                        }}
-                                    />
-                                </Grid2>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            id="refreshTokensAllowed"
+                                            checked={oidcProviderInput.refreshTokenAllowed}
+                                            onChange={(_, checked: boolean) => {
+                                                oidcProviderInput.refreshTokenAllowed = checked;
+                                                setOIDCProviderInput({ ...oidcProviderInput });
+                                            }}
+                                        />
+                                    }
+                                    label="Allow Refresh Tokens"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />
                             </Grid2>
                             <Grid2 container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={11}>
-                                    Use PKCE
-                                </Grid2>
-                                <Grid2 size={1}>
-                                    <Checkbox
-                                        checked={oidcProviderInput.usePkce}
-                                        onChange={(_, checked: boolean) => {
-                                            oidcProviderInput.usePkce = checked;
-                                            if (!checked && oidcProviderInput.clientAuthType === OIDC_CLIENT_AUTH_TYPE_NONE) {
-                                                oidcProviderInput.clientAuthType = OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST;
-                                            }
-                                            setOIDCProviderInput({ ...oidcProviderInput });
-                                        }}
-                                    />
-                                </Grid2>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="usePKCE"
+                                            checked={oidcProviderInput.usePkce}
+                                            onChange={(_, checked: boolean) => {
+                                                oidcProviderInput.usePkce = checked;
+                                                if (!checked && oidcProviderInput.clientAuthType === OIDC_CLIENT_AUTH_TYPE_NONE) {
+                                                    oidcProviderInput.clientAuthType = OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST;
+                                                }
+                                                setOIDCProviderInput({ ...oidcProviderInput });
+                                            }}
+                                        />
+                                    }
+                                    label="Use PKCE"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />                                
                             </Grid2>
                             <Grid2 marginBottom={"8px"}>
                                 <div>Authentication Type</div>
