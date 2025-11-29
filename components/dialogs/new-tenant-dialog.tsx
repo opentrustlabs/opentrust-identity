@@ -267,6 +267,7 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
                                             onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput})}}
                                         />
                                     }
+                                    
                                     label="Allow password recovery"
                                     sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
                                     labelPlacement="start"
@@ -283,6 +284,7 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
                                     label="Require CAPTCHA on Registration"
                                     sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
                                     labelPlacement="start"
+                                    
                                 />
 
                             </Stack>

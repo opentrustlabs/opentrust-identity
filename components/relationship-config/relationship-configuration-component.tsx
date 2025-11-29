@@ -12,7 +12,7 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
-import { MAX_SEARCH_PAGE_SIZE } from "@/utils/consts";
+import { DEFAULT_SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE_SIZE } from "@/utils/consts";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 
@@ -48,7 +48,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
     // CONTEXT VARIABLES
 
     // STATE VARIABLES
-    const perPage = relSearchInput && relSearchInput.perPage < MAX_SEARCH_PAGE_SIZE ? relSearchInput.perPage : 20;
+    const perPage = relSearchInput && relSearchInput.perPage < MAX_SEARCH_PAGE_SIZE ? relSearchInput.perPage : DEFAULT_SEARCH_PAGE_SIZE;
 
     const [filterTerm, setFilterTerm] = React.useState<string | null>(relSearchInput.term || "");
     const [page, setPage] = React.useState<number>(relSearchInput.page);    

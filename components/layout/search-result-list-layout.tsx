@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { useQuery } from "@apollo/client";
-import { MAX_SEARCH_PAGE_SIZE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE_SIZE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchResultType } from "@/graphql/generated/graphql-types";
 import { SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
@@ -61,7 +61,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     const isSearchPage: boolean = searchParams?.get("section")  === "search" ? true : false;
     const t = searchParams?.get("term") || "";
     
-    const perPage = pp && pp < MAX_SEARCH_PAGE_SIZE ? pp : 20;
+    const perPage = pp && pp < MAX_SEARCH_PAGE_SIZE ? pp : DEFAULT_SEARCH_PAGE_SIZE;
     
     // REF OBJECTS
     const topOfSearchList = useRef<HTMLDivElement | null>(null);

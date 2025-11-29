@@ -2,7 +2,7 @@
 import React, { useContext } from "react";
 import { useSearchParams } from 'next/navigation';
 import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-context";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_SEARCH_PAGE_SIZE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
 import SearchResultListLayout from "@/components/layout/search-result-list-layout";
 import { SearchResultType } from "@/graphql/generated/graphql-types";
@@ -35,7 +35,7 @@ const TenantLandingPage: React.FC = () => {
             {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
                 <SearchResultListLayout 
                     page={1} 
-                    perPage={20} 
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     filterInputLabel="Filter Tenants" 
                     resultType={SearchResultType.Tenant}
                     breadCrumbText=""
@@ -50,7 +50,7 @@ const TenantLandingPage: React.FC = () => {
             {section === "search" &&
                 <SearchResultListLayout
                     page={1}
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     filterInputLabel="Filter Results"
                     resultType={null}
                     breadCrumbText={""}
@@ -59,7 +59,7 @@ const TenantLandingPage: React.FC = () => {
             {section === "clients" &&
                 <SearchResultListLayout
                     page={1}
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     filterInputLabel="Filter Clients"
                     resultType={SearchResultType.Client}
                     breadCrumbText={"Client List"}
@@ -72,7 +72,7 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Users" 
                     resultType={SearchResultType.User}
                     page={1} 
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     breadCrumbText="User List"
                     sortDirection={"asc"}
                     sortField={"name"}
@@ -83,7 +83,7 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Authorization Groups" 
                     resultType={SearchResultType.AuthorizationGroup}
                     page={1} 
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     breadCrumbText="Authorization Groups"
                     sortDirection={"asc"}
                     sortField={"name"}
@@ -94,7 +94,7 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Authentication Groups" 
                     resultType={SearchResultType.AuthenticationGroup}
                     page={1} 
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     breadCrumbText="Authentication Groups"
                     sortDirection={"asc"}
                     sortField={"name"}
@@ -105,7 +105,7 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Providers" 
                     resultType={SearchResultType.OidcProvider}
                     page={1} 
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     breadCrumbText="Federated OIDC Providers"
                     sortDirection={"asc"}
                     sortField={"name"}
@@ -116,7 +116,7 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Keys" 
                     resultType={SearchResultType.Key}
                     page={1} 
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     breadCrumbText="Keys"
                     sortDirection={"asc"}
                     sortField={"name"}
@@ -127,7 +127,7 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Scope" 
                     resultType={SearchResultType.AccessControl}
                     page={1} 
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     breadCrumbText="Scope/Access Control"
                     sortDirection={"asc"}
                     sortField={"name"}
@@ -138,7 +138,7 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Rate Limits" 
                     resultType={SearchResultType.RateLimit}
                     page={1} 
-                    perPage={20}
+                    perPage={DEFAULT_SEARCH_PAGE_SIZE} 
                     breadCrumbText="Rate Limits"
                     sortDirection={"asc"}
                     sortField={"name"}

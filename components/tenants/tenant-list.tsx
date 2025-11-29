@@ -1,16 +1,16 @@
 "use client";
 import React, { useContext } from "react";
 import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
-import { Divider, Grid2, Typography } from "@mui/material";
+import { Chip, Divider, Grid2, IconButton, Paper, Stack, Typography } from "@mui/material";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
-import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { ResultListProps } from "../layout/search-result-list-layout";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import { DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
 
 
 const TenantResultList: React.FC<ResultListProps> = ({
@@ -39,68 +39,137 @@ const TenantResultList: React.FC<ResultListProps> = ({
     }
 
     return (
-        <div>
+        <main>
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                             <Grid2 size={9}>Tenant Name</Grid2>
-                            <Grid2 size={2}>Enabled</Grid2>
+                            <Grid2 size={2}>Status</Grid2>
                             <Grid2 size={1}></Grid2>
                         </Grid2>
                     </Typography>
-                    <Divider></Divider>
+                    <Divider />
+                    {searchResults.total < 1 &&
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 4,
+                                mt: 2,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                            }}
+                        >
+                            <Typography variant="body1" color="text.secondary">
+                                No tenants to display
+                            </Typography>
+                            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+                                Try adjusting your search filters
+                            </Typography>
+                        </Paper>
+                    }
 
-                    {searchResults.resultlist.map(
-                        (tenant: ObjectSearchResultItem) => (
-                            <Typography key={`${tenant.objectid}`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={9}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.objectid}`}>{tenant.name}</Link></Grid2>
-                                    <Grid2 size={2}>
-                                        {tenant.enabled &&
-                                            <CheckOutlinedIcon />
+                    <Stack spacing={1.5} sx={{ mt: 2 }}>
+                        {searchResults.resultlist.map(
+                            (tenant: ObjectSearchResultItem) => (
+                                <Paper
+                                    key={tenant.objectid}
+                                    elevation={0}
+                                    sx={{
+                                        p: 1,
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        transition: 'all 0.2s',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                            borderColor: DEFAULT_BACKGROUND_COLOR,
+                                            boxShadow: 1,
                                         }
-                                    </Grid2>
-                                    <Grid2 size={1}>
-                                        {mapViewExpanded.has(tenant.objectid) &&
-                                            <UnfoldLessOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => removeExpanded(tenant.objectid)}
-                                            />
-                                        }
-                                        {!mapViewExpanded.has(tenant.objectid) &&
-                                            <UnfoldMoreOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => setExpanded(tenant.objectid)}
-                                            />
-                                        }
-                                    </Grid2>
-                                </Grid2>
-                                {mapViewExpanded.has(tenant.objectid) &&
-                                    <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
-                                        <Grid2 size={1}></Grid2>
-                                        <Grid2 size={11} container>
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Description</Grid2>
-                                            <Grid2 size={12}>{tenant.description}</Grid2>
-
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Tenant Type</Grid2>
-                                            <Grid2 size={12}>{tenant.subtype}</Grid2>
-
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{tenant.objectid}</div>
-                                                <ContentCopyIcon 
-                                                    onClick={() => {
-                                                        copyContentToClipboard(tenant.objectid, "Tenant ID copied to clipboard");
-                                                    }}
+                                    }}
+                                >
+                                    <Grid2 container size={12} spacing={1} alignItems="center">
+                                        <Grid2 size={9}>
+                                            <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.objectid}`}>
+                                                    <Typography fontWeight={600}>{tenant.name}</Typography>
+                                                </Link>
+                                            </Stack>
+                                        </Grid2>
+                                        <Grid2 size={2}>
+                                            {tenant.enabled ? (
+                                                <Chip
+                                                    label="Active"
+                                                    size="small"
+                                                    color="success"
+                                                    sx={{ borderRadius: 1, fontWeight: 600 }}
                                                 />
-                                            </Grid2>
+                                            ) : (
+                                                <Chip
+                                                    label="Disabled"
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ borderRadius: 1 }}
+                                                />
+                                            )}
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => mapViewExpanded.has(tenant.objectid) ? removeExpanded(tenant.objectid) : setExpanded(tenant.objectid)}
+                                            >
+                                                {mapViewExpanded.has(tenant.objectid) ?
+                                                    <UnfoldLessOutlinedIcon fontSize="small" /> :
+                                                    <UnfoldMoreOutlinedIcon fontSize="small" />
+                                                }
+                                            </IconButton>
                                         </Grid2>
                                     </Grid2>
-                                }
-                            </Typography>
-                        )
-                    )}
+                                    {mapViewExpanded.has(tenant.objectid) &&
+                                        <Stack sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }} spacing={2}>
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Description
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    {tenant.description || 'No description provided'}
+                                                </Typography>
+                                            </div>
+
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Tenant Type
+                                                </Typography>
+                                                <Typography variant="body2">{tenant.subtype}</Typography>
+                                            </div>
+
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Object ID
+                                                </Typography>
+                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                                        {tenant.objectid}
+                                                    </Typography>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => {
+                                                            copyContentToClipboard(tenant.objectid, "Tenant ID copied to clipboard");
+                                                        }}
+                                                    >
+                                                        <ContentCopyIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Stack>
+                                            </div>
+                                        </Stack>
+                                    }
+                                </Paper>
+                            )
+                        )}
+                    </Stack>
                 </>
             }
             {!c.isMedium &&
@@ -110,43 +179,106 @@ const TenantResultList: React.FC<ResultListProps> = ({
                             <Grid2 size={2}>Tenant Name</Grid2>
                             <Grid2 size={3.6}>Tenant Description</Grid2>
                             <Grid2 size={2}>Tenant Type</Grid2>
-                            <Grid2 size={1}>Enabled</Grid2>
-                            <Grid2 size={3}>Object ID</Grid2>
-                            <Grid2 size={0.4}></Grid2>
+                            <Grid2 size={1}>Status</Grid2>
+                            <Grid2 size={3.4}>Object ID</Grid2>
                         </Grid2>
                     </Typography>
-                    <Divider></Divider>
-
-                    {searchResults.resultlist.map(
-                        (tenant: ObjectSearchResultItem) => (
-                            <Typography key={`${tenant.objectid}`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={2}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.objectid}`}>{tenant.name}</Link></Grid2>
-                                    <Grid2 size={3.6}>{tenant.description}</Grid2>
-                                    <Grid2 size={2}>{tenant.subtype}</Grid2>
-                                    <Grid2 size={1}>
-                                        {tenant.enabled &&
-                                            <CheckOutlinedIcon />
-                                        }
-                                    </Grid2>
-                                    <Grid2 size={3} columnGap={1} >{tenant.objectid}</Grid2>
-                                    <Grid2 size={0.4}>
-                                        <ContentCopyIcon 
-                                            sx={{cursor: "pointer"}}
-                                            onClick={() => {
-                                                copyContentToClipboard(tenant.objectid, "Tenant ID copied to clipboard");
-                                            }}
-                                        
-                                        />
-                                    </Grid2>
-                                </Grid2>
+                    <Divider />
+                    {searchResults.total < 1 &&
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 4,
+                                mt: 2,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                            }}
+                        >
+                            <Typography variant="body1" color="text.secondary">
+                                No tenants to display
                             </Typography>
-                        )
-                    )}
+                            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+                                Try adjusting your search filters
+                            </Typography>
+                        </Paper>
+                    }
+
+                    <Stack spacing={1.5} sx={{ mt: 2 }}>
+                        {searchResults.resultlist.map(
+                            (tenant: ObjectSearchResultItem) => (
+                                <Paper
+                                    key={tenant.objectid}
+                                    elevation={0}
+                                    sx={{
+                                        p: 1,
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        transition: 'all 0.2s',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                            borderColor: DEFAULT_BACKGROUND_COLOR,
+                                            boxShadow: 1,
+                                        }
+                                    }}
+                                >
+                                    <Grid2 container size={12} spacing={1} alignItems="center">
+                                        <Grid2 size={2}>
+                                            <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.objectid}`}>
+                                                <Typography fontWeight={600} noWrap>{tenant.name}</Typography>
+                                            </Link>
+                                        </Grid2>
+                                        <Grid2 size={3.6}>
+                                            <Typography variant="body2" color="text.secondary" noWrap>
+                                                {tenant.description || 'No description'}
+                                            </Typography>
+                                        </Grid2>
+                                        <Grid2 size={2}>
+                                            <Typography variant="body2">{tenant.subtype}</Typography>
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            {tenant.enabled ? (
+                                                <Chip
+                                                    label="Active"
+                                                    size="small"
+                                                    color="success"
+                                                    sx={{ borderRadius: 1, fontWeight: 600 }}
+                                                />
+                                            ) : (
+                                                <Chip
+                                                    label="Disabled"
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ borderRadius: 1 }}
+                                                />
+                                            )}
+                                        </Grid2>
+                                        <Grid2 size={3.4}>
+                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>
+                                                    {tenant.objectid}
+                                                </Typography>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => {
+                                                        copyContentToClipboard(tenant.objectid, "Tenant ID copied to clipboard");
+                                                    }}
+                                                >
+                                                    <ContentCopyIcon fontSize="small" />
+                                                </IconButton>
+                                            </Stack>
+                                        </Grid2>
+                                    </Grid2>
+                                </Paper>
+                            )
+                        )}
+                    </Stack>
                 </>
             }
-        </div>
+        </main>
 
     )
 }
