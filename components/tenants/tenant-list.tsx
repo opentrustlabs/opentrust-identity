@@ -10,7 +10,6 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { ResultListProps } from "../layout/search-result-list-layout";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
-import { DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
 
 
 const TenantResultList: React.FC<ResultListProps> = ({
@@ -78,18 +77,7 @@ const TenantResultList: React.FC<ResultListProps> = ({
                                 <Paper
                                     key={tenant.objectid}
                                     elevation={0}
-                                    sx={{
-                                        p: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        transition: 'all 0.2s',
-                                        '&:hover': {
-                                            bgcolor: 'action.hover',
-                                            borderColor: DEFAULT_BACKGROUND_COLOR,
-                                            boxShadow: 1,
-                                        }
-                                    }}
+                                    className="search-row-container"
                                 >
                                     <Grid2 container size={12} spacing={1} alignItems="center">
                                         <Grid2 size={9}>
@@ -105,14 +93,14 @@ const TenantResultList: React.FC<ResultListProps> = ({
                                                     label="Active"
                                                     size="small"
                                                     color="success"
-                                                    sx={{ borderRadius: 1, fontWeight: 600 }}
+                                                    className="chip-item-enabled"
                                                 />
                                             ) : (
                                                 <Chip
                                                     label="Disabled"
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ borderRadius: 1 }}
+                                                    className="chip-item-disabled"
                                                 />
                                             )}
                                         </Grid2>
@@ -129,7 +117,7 @@ const TenantResultList: React.FC<ResultListProps> = ({
                                         </Grid2>
                                     </Grid2>
                                     {mapViewExpanded.has(tenant.objectid) &&
-                                        <Stack sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }} spacing={2}>
+                                        <Stack className="search-row-mobile-expanded-container" spacing={2}>
                                             <div>
                                                 <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                                     Description
@@ -151,7 +139,7 @@ const TenantResultList: React.FC<ResultListProps> = ({
                                                     Object ID
                                                 </Typography>
                                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                                    <Typography variant="body2" className="monospace-font">
                                                         {tenant.objectid}
                                                     </Typography>
                                                     <IconButton
@@ -187,15 +175,7 @@ const TenantResultList: React.FC<ResultListProps> = ({
                     {searchResults.total < 1 &&
                         <Paper
                             elevation={0}
-                            sx={{
-                                p: 4,
-                                mt: 2,
-                                textAlign: 'center',
-                                bgcolor: 'grey.50',
-                                border: '1px dashed',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                            }}
+                            className="search-row-container"
                         >
                             <Typography variant="body1" color="text.secondary">
                                 No tenants to display
@@ -212,18 +192,7 @@ const TenantResultList: React.FC<ResultListProps> = ({
                                 <Paper
                                     key={tenant.objectid}
                                     elevation={0}
-                                    sx={{
-                                        p: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        transition: 'all 0.2s',
-                                        '&:hover': {
-                                            bgcolor: 'action.hover',
-                                            borderColor: DEFAULT_BACKGROUND_COLOR,
-                                            boxShadow: 1,
-                                        }
-                                    }}
+                                    className="search-row-container"
                                 >
                                     <Grid2 container size={12} spacing={1} alignItems="center">
                                         <Grid2 size={2}>
@@ -245,20 +214,20 @@ const TenantResultList: React.FC<ResultListProps> = ({
                                                     label="Active"
                                                     size="small"
                                                     color="success"
-                                                    sx={{ borderRadius: 1, fontWeight: 600 }}
+                                                    className="chip-item-enabled"
                                                 />
                                             ) : (
                                                 <Chip
                                                     label="Disabled"
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ borderRadius: 1 }}
+                                                    className="chip-item-disabled"
                                                 />
                                             )}
                                         </Grid2>
                                         <Grid2 size={3.4}>
                                             <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>
+                                                <Typography variant="body2" className="monospace-font" noWrap>
                                                     {tenant.objectid}
                                                 </Typography>
                                                 <IconButton

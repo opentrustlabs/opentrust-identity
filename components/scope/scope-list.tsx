@@ -3,7 +3,7 @@ import React, { useContext } from "react";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { Divider, Grid2 } from "@mui/material";
+import { Divider, Grid2, IconButton, Paper, Stack } from "@mui/material";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -51,11 +51,11 @@ const ScopeList: React.FC<ResultListProps> = ({
     */
     return (
         
-        <main>  
+        <main>
             {!c.isMedium &&
                 <>
-                    <Typography  component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container spacing={2} marginBottom={"16px"}>                            
+                    <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
+                        <Grid2 container spacing={2} marginBottom={"16px"}>
                             <Grid2 size={2.3}>Name</Grid2>
                             <Grid2 size={4}>Description</Grid2>
                             <Grid2 size={2}>Use</Grid2>
@@ -63,99 +63,170 @@ const ScopeList: React.FC<ResultListProps> = ({
                             <Grid2 size={1}></Grid2>
                         </Grid2>
                     </Typography>
-                    <Divider></Divider>
+                    <Divider />
                     {searchResults.total < 1 &&
-                        <Typography component={"div"} fontSize={"0.9em"}>
-                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 4,
+                                mt: 2,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                            }}
+                        >
+                            <Typography variant="body1" color="text.secondary">
                                 No scope values to display
-                            </Grid2>
-                        </Typography>
-                    }
-                    {searchResults.resultlist.map(
-                        (item: ObjectSearchResultItem) => (
-                            <Typography key={item.objectid} component={"div"} fontSize={"0.9em"} noWrap>
-                                <Divider></Divider>
-                                <Grid2 padding={"8px 0px 8px 0px"} container size={12} spacing={1}>                                    
-                                    <Grid2 sx={{textOverflow: "ellipsis", overflow: "hidden", fontWeight: "bold"}} size={2.3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>{item.name}</Link></Grid2>
-                                    <Grid2 size={4}>{item.description}</Grid2>
-                                    <Grid2 size={2}>{item.subtype}</Grid2>
-                                    <Grid2 sx={{textOverflow: "ellipsis", overflow: "hidden"}}  size={2.7}>{item.objectid}</Grid2>
-                                    <Grid2 size={1}>
-                                        <ContentCopyIcon 
-                                            sx={{cursor: "pointer"}}
-                                            onClick={() => {
-                                                copyContentToClipboard(item.objectid, "Scope ID copied to clipboard");
-                                            }}
-                                        />
-                                    </Grid2>
-                                </Grid2>
                             </Typography>
-                        )
-                    )}
-            
+                            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+                                Try adjusting your search filters
+                            </Typography>
+                        </Paper>
+                    }
+
+                    <Stack spacing={1.5} sx={{ mt: 2 }}>
+                        {searchResults.resultlist.map(
+                            (item: ObjectSearchResultItem) => (
+                                <Paper
+                                    key={item.objectid}
+                                    elevation={0}
+                                    className="search-row-container"                                    
+                                >
+                                    <Grid2 container size={12} spacing={1} alignItems="center">
+                                        <Grid2 size={2.3}>
+                                            <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>
+                                                <Typography fontWeight={600} noWrap>{item.name}</Typography>
+                                            </Link>
+                                        </Grid2>
+                                        <Grid2 size={4}>
+                                            <Typography variant="body2" color="text.secondary" noWrap>
+                                                {item.description || 'No description'}
+                                            </Typography>
+                                        </Grid2>
+                                        <Grid2 size={2}>
+                                            <Typography variant="body2">{item.subtype}</Typography>
+                                        </Grid2>
+                                        <Grid2 size={2.7}>
+                                            <Typography variant="body2" className="monospace-font" noWrap>
+                                                {item.objectid}
+                                            </Typography>
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => {
+                                                    copyContentToClipboard(item.objectid, "Scope ID copied to clipboard");
+                                                }}
+                                            >
+                                                <ContentCopyIcon fontSize="small" />
+                                            </IconButton>
+                                        </Grid2>
+                                    </Grid2>
+                                </Paper>
+                            )
+                        )}
+                    </Stack>
                 </>
             }
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={11}>Name</Grid2>                                    
+                            <Grid2 size={11}>Name</Grid2>
                             <Grid2 size={1}></Grid2>
                         </Grid2>
                     </Typography>
-                    <Divider></Divider>
+                    <Divider />
                     {searchResults.total < 1 &&
-                        <Typography component={"div"} fontSize={"0.9em"}>
-                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 4,
+                                mt: 2,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                            }}
+                        >
+                            <Typography variant="body1" color="text.secondary">
                                 No scope values to display
-                            </Grid2>
-                        </Typography>
+                            </Typography>
+                            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+                                Try adjusting your search filters
+                            </Typography>
+                        </Paper>
                     }
-                    {searchResults.resultlist.map(
-                        (item: ObjectSearchResultItem) => (
-                            <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    
-                                    <Grid2 size={11} sx={{fontWeight: "bold"}}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>{item.name}</Link></Grid2>                                            
-                                    <Grid2 size={1}>
-                                        {mapViewExpanded.has(item.objectid) &&
-                                            <UnfoldLessOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => removeExpanded(item.objectid)}
-                                            />
-                                        }
-                                        {!mapViewExpanded.has(item.objectid) &&
-                                            <UnfoldMoreOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => setExpanded(item.objectid)}
-                                            />
-                                        }
-                                    </Grid2>
-                                </Grid2>
-                                {mapViewExpanded.has(item.objectid) &&
-                                    <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
-                                        <Grid2 size={1}></Grid2>
-                                        <Grid2 size={11} container>
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Description</Grid2>
-                                            <Grid2 size={12}>{item.description}</Grid2>
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Use</Grid2>
-                                            <Grid2 size={12}>{item.subtype}</Grid2>
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div>
-                                                <ContentCopyIcon 
-                                                    sx={{cursor: "pointer"}}
-                                                    onClick={() => {
-                                                        copyContentToClipboard(item.objectid, "Scope ID copied to clipboard");
-                                                    }}
-                                                />
-                                            </Grid2>
+
+                    <Stack spacing={1.5} sx={{ mt: 2 }}>
+                        {searchResults.resultlist.map(
+                            (item: ObjectSearchResultItem) => (
+                                <Paper
+                                    key={item.objectid}
+                                    elevation={0}
+                                    className="search-row-container"
+                                >
+                                    <Grid2 container size={12} spacing={1} alignItems="center">
+                                        <Grid2 size={11}>
+                                            <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>
+                                                <Typography fontWeight={600}>{item.name}</Typography>
+                                            </Link>
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => mapViewExpanded.has(item.objectid) ? removeExpanded(item.objectid) : setExpanded(item.objectid)}
+                                            >
+                                                {mapViewExpanded.has(item.objectid) ?
+                                                    <UnfoldLessOutlinedIcon fontSize="small" /> :
+                                                    <UnfoldMoreOutlinedIcon fontSize="small" />
+                                                }
+                                            </IconButton>
                                         </Grid2>
                                     </Grid2>
-                                }
-                            </Typography>
-                        )
-                    )}
+                                    {mapViewExpanded.has(item.objectid) &&
+                                        <Stack className="search-row-mobile-expanded-container" spacing={2}>
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Description
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    {item.description || 'No description provided'}
+                                                </Typography>
+                                            </div>
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Use
+                                                </Typography>
+                                                <Typography variant="body2">{item.subtype}</Typography>
+                                            </div>
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Object ID
+                                                </Typography>
+                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                    <Typography variant="body2" className="monospace-font">
+                                                        {item.objectid}
+                                                    </Typography>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => {
+                                                            copyContentToClipboard(item.objectid, "Scope ID copied to clipboard");
+                                                        }}
+                                                    >
+                                                        <ContentCopyIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Stack>
+                                            </div>
+                                        </Stack>
+                                    }
+                                </Paper>
+                            )
+                        )}
+                    </Stack>
                 </>
             }
         </main>

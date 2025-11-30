@@ -10,7 +10,6 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { ResultListProps } from "../layout/search-result-list-layout";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
-import { DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
 
 
 const ClientResultList: React.FC<ResultListProps> = ({
@@ -78,18 +77,7 @@ const ClientResultList: React.FC<ResultListProps> = ({
                                 <Paper
                                     key={item.objectid}
                                     elevation={0}
-                                    sx={{
-                                        p: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        transition: 'all 0.2s',
-                                        '&:hover': {
-                                            bgcolor: 'action.hover',
-                                            borderColor: DEFAULT_BACKGROUND_COLOR,
-                                            boxShadow: 1,
-                                        }
-                                    }}
+                                    className="search-row-container"                                    
                                 >
                                     <Grid2 container size={12} spacing={1} alignItems="center">
                                         <Grid2 size={9}>
@@ -105,14 +93,14 @@ const ClientResultList: React.FC<ResultListProps> = ({
                                                     label="Active"
                                                     size="small"
                                                     color="success"
-                                                    sx={{ borderRadius: 1, fontWeight: 600 }}
+                                                    className="chip-item-enabled"
                                                 />
                                             ) : (
                                                 <Chip
                                                     label="Disabled"
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ borderRadius: 1 }}
+                                                    className="chip-item-disabled"
                                                 />
                                             )}
                                         </Grid2>
@@ -152,7 +140,7 @@ const ClientResultList: React.FC<ResultListProps> = ({
                                                         Object ID
                                                     </Typography>
                                                     <Stack direction="row" alignItems="center" spacing={1}>
-                                                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                                        <Typography variant="body2" className="monospace-font">
                                                             {item.objectid}
                                                         </Typography>
                                                         <IconButton
@@ -216,18 +204,7 @@ const ClientResultList: React.FC<ResultListProps> = ({
                                 <Paper
                                     key={item.objectid}
                                     elevation={0}
-                                    sx={{
-                                        p: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        transition: 'all 0.2s',
-                                        '&:hover': {
-                                            bgcolor: 'action.hover',
-                                            borderColor: DEFAULT_BACKGROUND_COLOR,
-                                            boxShadow: 1,
-                                        }
-                                    }}
+                                    className="search-row-container"
                                 >
                                     <Grid2 container size={12} spacing={1} alignItems="center">
                                         <Grid2 size={3}>
@@ -252,20 +229,20 @@ const ClientResultList: React.FC<ResultListProps> = ({
                                                     label="Active"
                                                     size="small"
                                                     color="success"
-                                                    sx={{ borderRadius: 1, fontWeight: 600 }}
+                                                    className="chip-item-enabled"                                                    
                                                 />
                                             ) : (
                                                 <Chip
                                                     label="Disabled"
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ borderRadius: 1 }}
+                                                    className="chip-item-disabled"
                                                 />
                                             )}
                                         </Grid2>
                                         <Grid2 size={3}>
                                             <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>
+                                                <Typography variant="body2" className="monospace-font" noWrap>
                                                     {item.objectid}
                                                 </Typography>
                                                 <IconButton

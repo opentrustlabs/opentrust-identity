@@ -367,11 +367,13 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         }}
                                                     />
                                                 }
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
                                                 label={
                                                     <Stack>
                                                         <Typography variant="body2" fontWeight={500}>Enabled</Typography>                                                        
                                                     </Stack>
                                                 }
+                                                labelPlacement="start"
                                             />
 
                                             <FormControlLabel
@@ -389,6 +391,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         }}
                                                     />
                                                 }
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
                                                 label={
                                                     <Stack>
                                                         <Typography variant="body2" fontWeight={500}>OIDC (SSO) Enabled</Typography>
@@ -397,6 +400,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         </Typography>
                                                     </Stack>
                                                 }
+                                                labelPlacement="start"
                                             />
 
                                             <FormControlLabel
@@ -419,6 +423,8 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         </Typography>
                                                     </Stack>
                                                 }
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
                                             />
 
                                             <Divider sx={{ my: 1 }} />

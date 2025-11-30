@@ -99,9 +99,10 @@ The rush to build AI applications has only exacerbated these problems. This IAM 
 provides features for managing access to your API, in addition to other common IdP functions. 
 
 One potentially overlooked problem of commercial SaaS IAM providers is the question of
-whose data is it? Do you own your data? Can you easily access the raw data? Can you 
-perform your own analytics on the data? Can you migrate the data to a different
-system if you had to? What happens to your data if the SaaS provider goes out of business?
+whose data is it? Do you own your data? Is the data located where it needs to be by law?
+Can you easily access the raw data? Can you perform your own analytics on the data? 
+Can you migrate the data to a different system if you had to? What happens to your data 
+if the SaaS provider goes out of business?
 
 With proprietary or commercial solutions your options may be severly limited. Open source
 tools at least provide you with the ability to manage your own data. It comes with a cost,
@@ -423,10 +424,14 @@ npm install
 yarn install
 ```
 
-##### 2. Create the database schemas
+##### 2. Create the database schemas and load the country and state/province/region data
 
 DDL scripts for each database are included in the `/scripts/db` or `/scripts/cassandra` directories of
 this project.
+
+The data load files for country and state/province/region are in the files `/scripts/db/country-state-region-province-inserts.sql`
+(for relational database) and `/scripts/cassandra/country-state-region-province-inserts.cql` for
+Cassandra.
 
 
 ##### 3. Create the 2 search indexes
@@ -745,8 +750,11 @@ language_code=ISO-language-code
 
 If the parameters are omitted, this defaults to the country and language configured for the tenant.
 
-Clients need to be assigned the scope 
+Clients should obtain an access token from the OIDC token endpoint using the `client_credentials` grant type 
+and send the access token as a Bearer Authorization header. Clients need to be assigned the scope 
+
 `anonymous.user.create`.
+
 
 ###### Rate limits
 
