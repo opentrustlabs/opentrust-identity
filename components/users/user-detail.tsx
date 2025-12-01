@@ -1,6 +1,6 @@
 "use client";
 import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTenantRelView, UserUpdateInput, PortalUserProfile } from "@/graphql/generated/graphql-types";
-import React, { useContext } from "react";
+import React, { useContext, useRef } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
 import { DEFAULT_BACKGROUND_COLOR, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
@@ -18,7 +18,7 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import PeopleIcon from '@mui/icons-material/People';
 import PolicyIcon from '@mui/icons-material/Policy';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import BusinessIcon from '@mui/icons-material/Business';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
@@ -27,8 +27,8 @@ import { useMutation, useQuery } from "@apollo/client";
 import { FIDO_KEY_DELETION_MUTATION, TOPT_DELETION_MUTATION, UNLOCK_USER_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import UserTenantConfiguration from "./user-tenant-configuration";
-import UserAuthorizationGroupConfiguration from "./user-authorization-group-configuration";
-import UserAuthenticationGroupConfiguration from "./user-authentication-group-configuration";
+import UserAuthorizationGroupConfiguration, { UserAuthorizationGroupConfigurationRef} from "./user-authorization-group-configuration";
+import UserAuthenticationGroupConfiguration, { UserAuthenticationGroupConfigurationRef } from "./user-authentication-group-configuration";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
@@ -36,7 +36,7 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
-import UserSessionDetails from "./user-session-details";
+import UserSessionDetails, { UserSessionDetailsRef } from "./user-session-details";
 import StateProvinceRegionSelector from "./state-province-region-selector";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
@@ -58,6 +58,10 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
     const intl = useIntl();
+
+    const authzGroupConfigRef = useRef<UserAuthorizationGroupConfigurationRef>(null);
+    const authnGroupConfigRef = useRef<UserAuthenticationGroupConfigurationRef>(null);
+    const userSessionDetailsRef = useRef<UserSessionDetailsRef>(null);
 
     const initInput: UserUpdateInput = {
         domain: user.domain,
@@ -728,7 +732,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                     >
                                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <VerifiedUserOutlinedIcon /><div style={{ marginLeft: "8px" }}>Authorization Groups</div>
+                                            <PeopleIcon /><div style={{ marginLeft: "8px" }}>Authorization Groups</div>
                                         </div>
                                     </AccordionSummary>
                                     <AccordionDetails>
@@ -744,6 +748,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         }
                                         {userTenantRels && userTenantRels.length > 0 &&
                                             <UserAuthorizationGroupConfiguration
+                                                ref={authzGroupConfigRef}
                                                 userId={user.userId}
                                                 onUpdateEnd={(success: boolean) => {
                                                     setShowMutationBackdrop(false);
@@ -770,7 +775,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                     >
                                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <PeopleIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
+                                            <VerifiedUserOutlinedIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
                                         </div>
                                     </AccordionSummary>
                                     <AccordionDetails>
@@ -786,6 +791,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         }
                                         {userTenantRels && userTenantRels.length > 0 &&
                                             <UserAuthenticationGroupConfiguration
+                                                ref={authnGroupConfigRef}
                                                 userId={user.userId}
                                                 onUpdateEnd={(success: boolean) => {
                                                     setShowMutationBackdrop(false);
@@ -813,7 +819,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                     >
                                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <SettingsApplicationsIcon /><div style={{ marginLeft: "8px" }}>Tenant Memberships</div>
+                                            <BusinessIcon /><div style={{ marginLeft: "8px" }}>Tenant Memberships</div>
                                         </div>
                                     </AccordionSummary>
                                     <AccordionDetails>
@@ -830,6 +836,17 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             }}
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);
+                                            }}
+                                            onTenantRemoved={() => {
+                                                if (authzGroupConfigRef.current) {
+                                                    authzGroupConfigRef.current.refetch();
+                                                }
+                                                if(authnGroupConfigRef.current){
+                                                    authnGroupConfigRef.current.refetch();
+                                                }
+                                                if(userSessionDetailsRef.current){
+                                                    userSessionDetailsRef.current.refetch();
+                                                }
                                             }}
                                         />
                                     </AccordionDetails>
@@ -918,6 +935,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                     </AccordionSummary>
                                     <AccordionDetails>
                                         <UserSessionDetails
+                                            ref={userSessionDetailsRef}
                                             userId={user.userId}
                                             onUpdateEnd={(success: boolean) => {
                                                 setShowMutationBackdrop(false);

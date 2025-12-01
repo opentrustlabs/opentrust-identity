@@ -1,7 +1,7 @@
 "use client";
 import { AUTHENTICATION_GROUPS_QUERY, SEARCH_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React, { useContext } from "react";
+import React, { useContext, useImperativeHandle, forwardRef  } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
@@ -31,11 +31,20 @@ export interface UserAuthenticationGroupConfigurationProps {
     onUpdateEnd: (success: boolean) => void;
 }
 
-const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConfigurationProps> = ({
+export interface UserAuthenticationGroupConfigurationRef {
+    refetch: () => void;
+}
+
+
+const UserAuthenticationGroupConfiguration = forwardRef<
+    UserAuthenticationGroupConfigurationRef,
+    UserAuthenticationGroupConfigurationProps
+    
+>(({
     userId,
     onUpdateEnd,
     onUpdateStart
-}) => {
+}, ref) => {
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
@@ -57,7 +66,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
 
 
     // GRAPHQL FUNCTIONS
-    const {data, loading, error} = useQuery(AUTHENTICATION_GROUPS_QUERY, {
+    const {data, loading, error, refetch} = useQuery(AUTHENTICATION_GROUPS_QUERY, {
         variables: {
             userId: userId
         },
@@ -70,14 +79,14 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             onUpdateEnd(true);
             setShowAddDialog(false);
             setGroupToAdd(null);
+            refetch();
         },
         onError(error) {            
             onUpdateEnd(false);
             setShowAddDialog(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToAdd(null);
-        },
-        refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
+        }
     });
 
     const [authenticationGroupUserRemoveMutation] = useMutation(AUTHENTICATION_GROUP_USER_REMOVE_MUTATION, {
@@ -85,19 +94,25 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             onUpdateEnd(true);
             setShowAddDialog(false);
             setGroupToRemove(null);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
             setShowAddDialog(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToRemove(null);
-        },
-        refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
+        }
     });
 
+    useImperativeHandle(ref, () => ({
+        refetch: () => {
+            refetch();
+        }
+    }));
 
-    if (loading) return <DataLoading dataLoadingSize="md" color={null} />
-    if (error) return <ErrorComponent message={error.message} componentSize='md' />
+
+    if (loading) return <DataLoading dataLoadingSize="sm" color={null} />
+    if (error) return <ErrorComponent message={error.message} componentSize='sm' />
     
     return (
         <>
@@ -267,6 +282,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
         </>
     )
 }
+)
 
 
 interface AuthenticationGroupAssignDialogProps {

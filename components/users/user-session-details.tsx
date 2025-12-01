@@ -2,7 +2,7 @@
 import { USER_SESSION_DELETE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { USER_SESSIONS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React, { useContext } from "react";
+import React, { useContext, useImperativeHandle, forwardRef } from "react";
 import ErrorComponent from "../error/error-component";
 import DataLoading from "../layout/data-loading";
 import Typography from "@mui/material/Typography";
@@ -23,11 +23,20 @@ export interface UserSessionDetailsProps {
     onUpdateEnd: (success: boolean) => void
 }
 
-const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
+export interface UserSessionDetailsRef {
+    refetch: () => void;
+}
+
+
+const UserSessionDetails = forwardRef<
+    UserSessionDetailsRef,
+    UserSessionDetailsProps
+    
+>(({
     userId,
     onUpdateEnd,
     onUpdateStart
-}) => {
+}, ref) => {    
 
     // CONTEXT VARIABLES    
     const authContextProps: AuthContextProps = useContext(AuthContext);
@@ -42,29 +51,33 @@ const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
     const [canRemoveSession] = React.useState<boolean>(containsScope(USER_SESSION_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
-    const {data, loading, error} = useQuery(USER_SESSIONS_QUERY, {
+    const {data, loading, error, refetch} = useQuery(USER_SESSIONS_QUERY, {
         variables: {
             userId: userId
         },
         fetchPolicy: "no-cache"
     });
 
-    const [deleteUserSessionMutation] = useMutation(USER_SESSION_DELETE_MUTATION, {
-        
+    const [deleteUserSessionMutation] = useMutation(USER_SESSION_DELETE_MUTATION, {        
         onCompleted() {
             setSessionToDelete(null);
             onUpdateEnd(true);
-
+            refetch();
         },
         onError(error) {
             setErrorMessage(intl.formatMessage({id: error.message}));
             onUpdateEnd(false);
-        },
-        refetchQueries: [USER_SESSIONS_QUERY]
+        }
     });
 
+    useImperativeHandle(ref, () => ({
+        refetch: () => {
+            refetch();
+        }
+    }));
+
     if (loading) return <DataLoading dataLoadingSize="xs" color={null} />
-    if (error) return <ErrorComponent message={error.message} componentSize='md' />
+    if (error) return <ErrorComponent message={error.message} componentSize='sm' />
     return (
         <Typography component={"div"} >
             {errorMessage &&
@@ -153,5 +166,6 @@ const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
     )
 
 }
+)
 
 export default UserSessionDetails;

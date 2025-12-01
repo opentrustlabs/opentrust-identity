@@ -26,14 +26,16 @@ export interface UserTenantConfigurationProps {
     userId: string,
     onLoadCompleted: (tenants: Array<UserTenantRelView>) => void,
     onUpdateStart: () => void,
-    onUpdateEnd: (success: boolean) => void
+    onUpdateEnd: (success: boolean) => void,
+    onTenantRemoved: () => void
 }
 
 const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     userId,
     onLoadCompleted,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    onTenantRemoved
 }) => {
 
 
@@ -79,7 +81,9 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     const [removeUserFromTenantMutation] = useMutation(USER_TENANT_REL_REMOVE_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
+            onTenantRemoved();
             refetch();
+
         },
         onError(error) {
             onUpdateEnd(false);

@@ -1,7 +1,7 @@
 "use client";
 import { SEARCH_QUERY, USER_AUTHORIZATION_GROUP_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React, { useContext } from "react";
+import React, { useContext, useImperativeHandle, forwardRef } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
@@ -31,11 +31,20 @@ export interface UserAuthorizationGroupConfigurationProps {
     onUpdateEnd: (success: boolean) => void
 }
 
-const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfigurationProps> = ({
+export interface UserAuthorizationGroupConfigurationRef {
+    refetch: () => void;
+}
+
+
+const UserAuthorizationGroupConfiguration = forwardRef<
+    UserAuthorizationGroupConfigurationRef,
+    UserAuthorizationGroupConfigurationProps
+>(({
     userId,
     onUpdateEnd,
     onUpdateStart
-}) => {
+}, ref) =>     
+    {
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
@@ -56,7 +65,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     const [canRemoveRel] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
-    const {data, loading, error} = useQuery(USER_AUTHORIZATION_GROUP_QUERY, {
+    const {data, loading, error, refetch} = useQuery(USER_AUTHORIZATION_GROUP_QUERY, {
         variables: {
             userId: userId
         },
@@ -69,14 +78,14 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
             onUpdateEnd(true);
             setShowAddDialog(false);
             setGroupToAdd(null);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
             setShowAddDialog(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToAdd(null);
-        },
-        refetchQueries: [USER_AUTHORIZATION_GROUP_QUERY]
+        }
     });
 
     const [authorizationGroupUserRemoveMutation] = useMutation(AUTHORIZATION_GROUP_USER_REMOVE_MUTATION, {
@@ -84,19 +93,25 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
             onUpdateEnd(true);
             setShowAddDialog(false);
             setGroupToRemove(null);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
             setShowAddDialog(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToRemove(null);
-        },
-        refetchQueries: [USER_AUTHORIZATION_GROUP_QUERY]
+        }
     });
 
+    useImperativeHandle(ref, () => ({
+        refetch: () => {
+            refetch();
+        }
+    }));
 
-    if (loading) return <DataLoading dataLoadingSize="md" color={null} />
-    if (error) return <ErrorComponent message={error.message} componentSize='md' />
+
+    if (loading) return <DataLoading dataLoadingSize="sm" color={null} />
+    if (error) return <ErrorComponent message={error.message} componentSize='sm' />
     
     return (
         <React.Fragment>
@@ -268,6 +283,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
         </React.Fragment>
     )
 }
+)
 
 
 interface AuthorizationGroupAssignDialogProps {
