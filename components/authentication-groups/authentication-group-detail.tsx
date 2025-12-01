@@ -1,6 +1,6 @@
 "use client";
 import { AuthenticationGroup, AuthenticationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
-import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, DEFAULT_BACKGROUND_COLOR, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, DEFAULT_BACKGROUND_COLOR, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Typography, Grid2, Paper, TextField, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, Stack, Box, Tooltip, FormControlLabel, Switch } from "@mui/material";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
@@ -12,7 +12,7 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import TenantHighlight from "../tenants/tenant-highlight";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMutation } from "@apollo/client";
-import { AUTHENTICATION_GROUP_UPDATE_MUTATION, AUTHENTICATION_GROUP_USER_ADD_MUTATION, AUTHENTICATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT_MUTATION, AUTHENTICATION_GROUP_UPDATE_MUTATION, AUTHENTICATION_GROUP_USER_ADD_MUTATION, AUTHENTICATION_GROUP_USER_REMOVE_MUTATION, REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AUTHENTICATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import RelationshipConfigurationComponent from "../relationship-config/relationship-configuration-component";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
@@ -52,12 +52,15 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
-    const [renderKey, setRenderKey] = React.useState<string>(Date.now().toString());
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(authenticationGroup.markForDelete);
     const [disableInputs] = React.useState<boolean>(authenticationGroup.markForDelete || !containsScope(AUTHENTICATION_GROUP_UPDATE_SCOPE, profile?.scope || []));
     const [canAddUserToAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
     const [canRemoveUserFromAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
     const [canDeleteAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_DELETE_SCOPE, profile?.scope || []));
+    const [canAddClientRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveClientRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, profile?.scope || []));
+    const [clientConfigChangeCallback, setClientConfigChangeCallback] = React.useState<null | (() => void)>(null);
+    const [userConfigChangeCallback, setUserConfigChangeCallback] = React.useState<null | (() => void)>(null);
 
     // GRAPHQL FUNCTIONS
     const [updateAuthnGroupMutation] = useMutation(AUTHENTICATION_GROUP_UPDATE_MUTATION, {
@@ -80,7 +83,9 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
-            setRenderKey(Date.now().toString() + Math.random().toString());
+            if(userConfigChangeCallback){
+                userConfigChangeCallback();
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -92,12 +97,42 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
-            setRenderKey( Date.now().toString() + Math.random().toString());
+            if(userConfigChangeCallback){
+                userConfigChangeCallback();
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
         },
+    });
+
+    const [addClientToAuthenticationGroupMutation] = useMutation(ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT_MUTATION, {        
+        onCompleted() {
+            setShowMutationBackdrop(false);            
+            setShowMutationSnackbar(true);
+            if(clientConfigChangeCallback){
+                clientConfigChangeCallback();                
+            }
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
+    });
+
+    const [removeClientFromAuthenticationGroupMutation] = useMutation(REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION, {
+        onCompleted() {
+            setShowMutationBackdrop(false);            
+            setShowMutationSnackbar(true);
+            if(clientConfigChangeCallback){
+                clientConfigChangeCallback();                
+            }
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
     });
 
     // HANDLER FUNCTIONS
@@ -294,7 +329,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                 <Accordion defaultExpanded={true}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
+                                        id={"user-authn-group-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                     >
@@ -302,7 +337,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
                                         </div>
                                     </AccordionSummary>
-                                    <AccordionDetails key={renderKey}>
+                                    <AccordionDetails>
                                         {authnGroupInput.defaultGroup &&
                                             <Grid2 size={12} container spacing={2} marginTop={"16px"}>
                                                 <Grid2 size={1}>
@@ -336,8 +371,9 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                                     term: ""
                                                 }}                                            
                                                 tenantId={authenticationGroup.tenantId}
-                                                onAdd={(id: string) => {
+                                                onAdd={(id: string, callback: () => void) => {                                                    
                                                     setShowMutationBackdrop(true);
+                                                    setUserConfigChangeCallback(() => callback);
                                                     authenticationGroupUserAddMutation({
                                                         variables: {
                                                             userId: id,
@@ -345,8 +381,9 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                                         }
                                                     });
                                                 }}
-                                                onRemove={(id: string) => {
+                                                onRemove={(id: string, callback: () => void) => {
                                                     setShowMutationBackdrop(true);
+                                                    setUserConfigChangeCallback(() => callback);
                                                     authenticationGroupUserRemoveMutation({
                                                         variables: {
                                                             userId: id,
@@ -360,13 +397,66 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                 </Accordion>
                             }
                         </Grid2>
+                        <Grid2 size={12} marginBottom={"16px"}>
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"client-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PersonIcon /><div style={{ marginLeft: "8px" }}>Clients</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails >                                        
+                                            <RelationshipConfigurationComponent
+                                                addObjectText="Add client to authentication group"
+                                                canAdd={canAddClientRel}
+                                                canDelete={canRemoveClientRel}
+                                                confirmRemovalText="Confirm removal of client"
+                                                filterObjectsText="Filter clients"
+                                                noObjectsFoundText="No clients found"
+                                                searchObjectsText="Search clients"
+                                                relSearchInput={{
+                                                    page: 1,
+                                                    perPage: 10,
+                                                    childtype: SearchResultType.Client,
+                                                    owningtenantid: authenticationGroup.tenantId,
+                                                    parenttype: SearchResultType.AuthenticationGroup,
+                                                    parentid: authenticationGroup.authenticationGroupId,
+                                                    term: ""
+                                                }}                                            
+                                                tenantId={authenticationGroup.tenantId}
+                                                onAdd={(id: string, callback: () => void) => {
+                                                    setShowMutationBackdrop(true);
+                                                    setClientConfigChangeCallback(() => callback);
+                                                    addClientToAuthenticationGroupMutation({
+                                                        variables: {
+                                                            clientId: id,
+                                                            authenticationGroupId: authenticationGroup.authenticationGroupId
+                                                        }
+                                                    });                                                    
+                                                }}
+                                                onRemove={(id: string, callback: () => void) => {
+                                                    setShowMutationBackdrop(true);
+                                                    setClientConfigChangeCallback(() => callback);
+                                                    removeClientFromAuthenticationGroupMutation({
+                                                        variables: {
+                                                            clientId: id,
+                                                            authenticationGroupId: authenticationGroup.authenticationGroupId
+                                                        }
+                                                    });
+                                                }}
+                                            />
+                                        
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
+                        </Grid2>
                     </Grid2>
                 </Grid2>
-
-                <Grid2 spacing={2} size={3}>
-
-                </Grid2>
-
             </Grid2>
             <Backdrop
                 sx={{ color: '#fff'}}

@@ -60,6 +60,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
     const [canAddUserToAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
     const [canRemoveUserFromAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
     const [canDeleteAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_DELETE_SCOPE, profile?.scope || []));
+    const [userConfigChangeCallback, setUserConfigChangeCallback] = React.useState<null | (() => void)>(null);
 
     // GRAPHQL FUNCTIONS
     const [updateAuthzGroupMutation] = useMutation(AUTHORIZATION_GROUP_UPDATE_MUTATION, {
@@ -82,6 +83,9 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
+            if(userConfigChangeCallback){
+                userConfigChangeCallback();
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -93,6 +97,9 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
+            if(userConfigChangeCallback){
+                userConfigChangeCallback();
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -350,8 +357,9 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                     term: ""
                                                 }}                                            
                                                 tenantId={authorizationGroup.tenantId}
-                                                onAdd={(id: string) => {
+                                                onAdd={(id: string, callback: () => void) => {
                                                     setShowMutationBackdrop(true);
+                                                    setUserConfigChangeCallback(() => callback);
                                                     authorizationGroupUserAddMutation({
                                                         variables: {
                                                             userId: id,
@@ -359,8 +367,9 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                         }
                                                     });
                                                 }}
-                                                onRemove={(id: string) => {
+                                                onRemove={(id: string, callback: () => void) => {
                                                     setShowMutationBackdrop(true);
+                                                    setUserConfigChangeCallback(() => callback);
                                                     authorizationGroupUserRemoveMutation({
                                                         variables: {
                                                             userId: id,

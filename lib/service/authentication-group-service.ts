@@ -248,6 +248,24 @@ class AuthenticationGroupService {
             changeTimestamp: Date.now(),
             data: JSON.stringify({authenticationGroupId, clientId})
         });
+
+        const document: RelSearchResultItem = {
+            childid: client.clientId,
+            childname: client.clientName,
+            childtype: SearchResultType.Client,
+            owningtenantid: authenticationGroup.tenantId,
+            parentid: authenticationGroup.authenticationGroupId,
+            parenttype: SearchResultType.AuthenticationGroup,
+            parentname: authenticationGroup.authenticationGroupName,
+            childdescription: client.clientDescription
+        }
+        await searchClient.index({
+            id: `${authenticationGroupId}::${clientId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: document,
+            refresh: "wait_for"
+        });
+
         return Promise.resolve(newRel);
     }
 
@@ -268,6 +286,11 @@ class AuthenticationGroupService {
                 changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
                 changeTimestamp: Date.now(),
                 data: JSON.stringify({authenticationGroupId, clientId})
+            });
+            await searchClient.delete({
+                id: `${authenticationGroupId}::${clientId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+                refresh: "wait_for"
             });
         }
 
