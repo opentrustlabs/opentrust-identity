@@ -53,7 +53,8 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
     const [filterTerm, setFilterTerm] = React.useState<string | null>(relSearchInput.term || "");
     const [page, setPage] = React.useState<number>(relSearchInput.page);    
     const [idToAdd, setIdToAdd] = React.useState<string | null>(null);
-    const [idToRemove, seIdToRemove] = React.useState<string | null>(null);
+    const [idToRemove, setIdToRemove] = React.useState<string | null>(null);
+    const [confirmationName, setConfirmationName] = React.useState<string | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [addErrorMessage, setAddErrorMessage] = React.useState<string | null>(null);
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
@@ -193,7 +194,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 >
                     <DialogContent>
                         <Typography component="div">
-                            <span>{confirmRemovalText}</span><span style={{ fontWeight: "bold" }}>{""}</span>
+                            <span>{confirmRemovalText} </span><span style={{ fontWeight: "bold" }}>{confirmationName || ""}</span>
                         </Typography>
                     </DialogContent>
                     <DialogActions>
@@ -281,8 +282,9 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 <RelList
                     relSearchResults={previousData.relSearch}
                     noObjectsFoundText={noObjectsFoundText}
-                    removeRelAction={(id: string) => {
-                        seIdToRemove(id);
+                    removeRelAction={(id: string, confirmationName: string) => {
+                        setIdToRemove(id);
+                        setConfirmationName(confirmationName);
                         setShowRemoveDialog(true);
                     }}
                     nameFormatter={relSearchInput.childtype === SearchResultType.User ? usernameFormatter : undefined}
@@ -293,8 +295,9 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 <RelList
                     relSearchResults={data.relSearch}
                     noObjectsFoundText={noObjectsFoundText}
-                    removeRelAction={(id: string) => {
-                        seIdToRemove(id);
+                    removeRelAction={(id: string, confirmationName: string) => {
+                        setIdToRemove(id);
+                        setConfirmationName(confirmationName);
                         setShowRemoveDialog(true);
                     }}
                     nameFormatter={relSearchInput.childtype === SearchResultType.User ? usernameFormatter : undefined}
@@ -545,7 +548,7 @@ const RelSearch: React.FC<RelSearchProps> = ({
 interface RelListProps {
     relSearchResults: RelSearchResults,
     noObjectsFoundText: string,
-    removeRelAction: (id: string) => void,
+    removeRelAction: (id: string, confirmName: string) => void,
     nameFormatter?: (name: string) => string,
     canDelete: boolean
 }
@@ -578,7 +581,7 @@ const RelList: React.FC<RelListProps> = ({
                                         {canDelete &&
                                             <RemoveCircleOutlineIcon
                                                 sx={{ cursor: "pointer" }}
-                                                onClick={() => removeRelAction(item.childid)}
+                                                onClick={() => removeRelAction(item.childid, item.childname)}
                                             />
                                         }
                                     </Grid2>
