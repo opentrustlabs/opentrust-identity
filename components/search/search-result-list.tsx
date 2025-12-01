@@ -3,7 +3,7 @@ import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
-import { Typography,  Divider, Grid2 } from "@mui/material";
+import { Typography, Divider, Grid2, IconButton, Paper, Stack } from "@mui/material";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
@@ -50,59 +50,93 @@ const SearchResultList: React.FC<ResultListProps> = ({
                             <Grid2 size={1}></Grid2>
                         </Grid2>
                     </Typography>
-                    <Divider></Divider>
+                    <Divider />
                     {searchResults.total < 1 &&
-                        <Typography component={"div"} fontSize={"0.9em"}>
-                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 4,
+                                mt: 2,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                            }}
+                        >
+                            <Typography variant="body1" color="text.secondary">
                                 No records to display
-                            </Grid2>
-                        </Typography>
+                            </Typography>
+                            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+                                Try adjusting your search filters
+                            </Typography>
+                        </Paper>
                     }
 
-                    {searchResults.resultlist.map(
-                        (item: ObjectSearchResultItem) => (
-                            <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={1}><SearchResultIconRenderer objectType={item.objecttype} /></Grid2>
-                                    <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>{item.name}</Link></Grid2>
-                                    <Grid2 size={2}>{item.subtype}</Grid2>
-                                    <Grid2 size={1}>
-                                        {mapViewExpanded.has(item.objectid) &&
-                                            <UnfoldLessOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => removeExpanded(item.objectid)}
-                                            />
-                                        }
-                                        {!mapViewExpanded.has(item.objectid) &&
-                                            <UnfoldMoreOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => setExpanded(item.objectid)}
-                                            />
-                                        }
-                                    </Grid2>
-                                </Grid2>
-                                {mapViewExpanded.has(item.objectid) &&
-                                    <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
-                                        <Grid2 size={1}></Grid2>
-                                        <Grid2 size={11} container>
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Description</Grid2>
-                                            <Grid2 size={12}>{item.description}</Grid2>
-                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div>
-                                                <ContentCopyIcon 
-                                                    sx={{cursor: "pointer"}}
-                                                    onClick={() => {
-                                                        copyContentToClipboard(item.objectid, "ID copied to clipboard");
-                                                    }}
-                                                />
-                                            </Grid2>
+                    <Stack spacing={1.5} sx={{ mt: 2 }}>
+                        {searchResults.resultlist.map(
+                            (item: ObjectSearchResultItem) => (
+                                <Paper
+                                    key={item.objectid}
+                                    elevation={0}
+                                    className="search-row-container"
+                                >
+                                    <Grid2 container size={12} spacing={1} alignItems="center">
+                                        <Grid2 size={1}><SearchResultIconRenderer objectType={item.objecttype} /></Grid2>
+                                        <Grid2 size={8}>
+                                            <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>
+                                                <Typography fontWeight={600}>{item.name}</Typography>
+                                            </Link>
+                                        </Grid2>
+                                        <Grid2 size={2}>
+                                            <Typography variant="body2">{item.subtype}</Typography>
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => mapViewExpanded.has(item.objectid) ? removeExpanded(item.objectid) : setExpanded(item.objectid)}
+                                            >
+                                                {mapViewExpanded.has(item.objectid) ?
+                                                    <UnfoldLessOutlinedIcon fontSize="small" /> :
+                                                    <UnfoldMoreOutlinedIcon fontSize="small" />
+                                                }
+                                            </IconButton>
                                         </Grid2>
                                     </Grid2>
-                                }
-                            </Typography>
-                        )
-                    )}
+                                    {mapViewExpanded.has(item.objectid) &&
+                                        <Stack className="search-row-mobile-expanded-container" spacing={2}>
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Description
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    {item.description || 'No description provided'}
+                                                </Typography>
+                                            </div>
+                                            <div>
+                                                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                    Object ID
+                                                </Typography>
+                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                    <Typography variant="body2" className="monospace-font">
+                                                        {item.objectid}
+                                                    </Typography>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => {
+                                                            copyContentToClipboard(item.objectid, "ID copied to clipboard");
+                                                        }}
+                                                    >
+                                                        <ContentCopyIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Stack>
+                                            </div>
+                                        </Stack>
+                                    }
+                                </Paper>
+                            )
+                        )}
+                    </Stack>
                 </>
             }
             {!c.isMedium &&
@@ -113,41 +147,76 @@ const SearchResultList: React.FC<ResultListProps> = ({
                             <Grid2 size={2.7}>Name</Grid2>
                             <Grid2 size={3}>Description</Grid2>
                             <Grid2 size={2}>Type</Grid2>
-                            <Grid2 size={2.6}>Object ID</Grid2>
-                            <Grid2 size={0.4}></Grid2>
+                            <Grid2 size={3.5}>Object ID</Grid2>
+                            <Grid2 size={0.5}></Grid2>
                         </Grid2>
                     </Typography>
-                    <Divider></Divider>
+                    <Divider />
                     {searchResults.total < 1 &&
-                        <Typography component={"div"} fontSize={"0.9em"}>
-                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 4,
+                                mt: 2,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50',
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                            }}
+                        >
+                            <Typography variant="body1" color="text.secondary">
                                 No records to display
-                            </Grid2>
-                        </Typography>
+                            </Typography>
+                            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+                                Try adjusting your search filters
+                            </Typography>
+                        </Paper>
                     }
 
-                    {searchResults.resultlist.map(
-                        (item: ObjectSearchResultItem) => (
-                            <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={0.3}><SearchResultIconRenderer objectType={item.objecttype} /></Grid2>
-                                    <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>{item.name}</Link></Grid2>
-                                    <Grid2 size={3}>{item.description}</Grid2>
-                                    <Grid2 size={2}>{item.subtype}</Grid2>
-                                    <Grid2 size={2.6}>{item.objectid}</Grid2>
-                                    <Grid2 size={0.4}>
-                                        <ContentCopyIcon 
-                                            sx={{cursor: "pointer"}}
-                                            onClick={() => {
-                                                copyContentToClipboard(item.objectid, "ID copied to clipboard");
-                                            }}
-                                        />
+                    <Stack spacing={1.5} sx={{ mt: 2 }}>
+                        {searchResults.resultlist.map(
+                            (item: ObjectSearchResultItem) => (
+                                <Paper
+                                    key={item.objectid}
+                                    elevation={0}
+                                    className="search-row-container"
+                                >
+                                    <Grid2 container size={12} spacing={1} alignItems="center">
+                                        <Grid2 size={0.3}><SearchResultIconRenderer objectType={item.objecttype} /></Grid2>
+                                        <Grid2 size={2.7}>
+                                            <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>
+                                                <Typography fontWeight={600} noWrap>{item.name}</Typography>
+                                            </Link>
+                                        </Grid2>
+                                        <Grid2 size={3}>
+                                            <Typography variant="body2" color="text.secondary" noWrap>
+                                                {item.description || 'No description'}
+                                            </Typography>
+                                        </Grid2>
+                                        <Grid2 size={2}>
+                                            <Typography variant="body2">{item.subtype}</Typography>
+                                        </Grid2>
+                                        <Grid2 size={3.5}>
+                                            <Typography variant="body2" className="monospace-font" noWrap>
+                                                {item.objectid}
+                                            </Typography>
+                                        </Grid2>
+                                        <Grid2 size={0.5}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => {
+                                                    copyContentToClipboard(item.objectid, "ID copied to clipboard");
+                                                }}
+                                            >
+                                                <ContentCopyIcon fontSize="small" />
+                                            </IconButton>
+                                        </Grid2>
                                     </Grid2>
-                                </Grid2>
-                            </Typography>
-                        )
-                    )}
+                                </Paper>
+                            )
+                        )}
+                    </Stack>
                 </>
             }
 
