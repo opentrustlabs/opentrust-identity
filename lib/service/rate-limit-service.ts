@@ -272,7 +272,25 @@ class RateLimitService {
             }
         );
 
-        const rels = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, RATE_LIMIT_READ_SCOPE], rateLimitServiceGroupId, tenantId);
+        let rels = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, RATE_LIMIT_READ_SCOPE], rateLimitServiceGroupId, tenantId);
+        if(rels && rels.length > 0){
+            if(rateLimitServiceGroupId){
+                // Sort by tenant name asc in this case
+                rels = rels.sort(
+                    (a: TenantRateLimitRelView, b: TenantRateLimitRelView) => {
+                        return a.tenantName.localeCompare(b.tenantName);
+                    }
+                )
+            }
+            else if(tenantId){
+                // Sort by service group name asc
+                rels = rels.sort(
+                    (a: TenantRateLimitRelView, b: TenantRateLimitRelView) => {
+                        return a.servicegroupname.localeCompare(b.servicegroupname);
+                    }
+                )
+            }
+        }
         return rels || [];
     }
 

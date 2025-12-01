@@ -675,11 +675,32 @@ const Login: React.FC<LoginProps>= ({
                     }                    
                     {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                         <React.Fragment>
+                            {/* <form method="POST"
+                                noValidate
+                                id="loginForm"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setErrorMessage(null);
+                                    authenticateUser({
+                                        variables: {
+                                            username: username,
+                                            password: password,
+                                            tenantId: userAuthenticationState.tenantId,
+                                            authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                            preAuthToken: userAuthenticationState.preAuthToken
+                                        }
+                                    });
+
+                                }}
+                                style={{ display: "flex", flexDirection: "column", width: "100%" }}
+                            > */}
                             <Grid2 container size={12}>
-                                <form>
+                                
                                     <div style={{display: "hidden"}}>
                                         <TextField
                                             name="username"
+                                            autoComplete="username"
                                             value={username}
                                             type="hidden"
                                             sx={{
@@ -692,7 +713,7 @@ const Login: React.FC<LoginProps>= ({
                                             }}
                                         />
                                     </div>
-                                    <Grid2 size={{ xs: 12 }}>
+                                    <Grid2  size={12}>
 
                                         <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({ id: "SIGN_IN" })}</div>
                                         <TextField
@@ -729,8 +750,9 @@ const Login: React.FC<LoginProps>= ({
                                         </TextField>
 
                                     </Grid2>
-                                </form>
+                                
                             </Grid2>
+                            {/* </form> */}
                             {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
                                 <Grid2 size={{ xs: 12 }}>
                                     <Stack
@@ -756,6 +778,13 @@ const Login: React.FC<LoginProps>= ({
                                         disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
                                         variant="contained"
                                         onClick={() => {
+                                            // const form = document.getElementById("loginForm") as HTMLFormElement;
+                                            // (form.elements.namedItem("username") as HTMLInputElement).value = username || "";
+                                            // (form.elements.namedItem("password") as HTMLInputElement).value = password || "";
+                                            // setTimeout(() => {
+                                            //     form.submit()
+                                            // }, 50);
+                                            
                                             setErrorMessage(null);
                                             authenticateUser({
                                                 variables: {
