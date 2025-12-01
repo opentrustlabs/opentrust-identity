@@ -27,8 +27,8 @@ export interface RelationshipConfigurationComponentProps {
     searchObjectsText: string,
     confirmRemovalText: string,
     noObjectsFoundText: string,
-    onRemove: (id: string) => void,
-    onAdd: (id: string) => void
+    onRemove: (id: string, successCallback: () => void) => void,
+    onAdd: (id: string, successCallback: () => void) => void
 }
 
 const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComponentProps> = ({
@@ -67,7 +67,10 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 childtype: relSearchInput.childtype,
                 page: page,
                 perPage: perPage,
-                term: filterTerm
+                term: filterTerm,                
+                childid: relSearchInput.childid,                
+                owningtenantid: relSearchInput.owningtenantid,
+                parenttype: relSearchInput.parenttype                
             }
         },
         fetchPolicy: "no-cache",
@@ -85,7 +88,10 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 childtype: relSearchInput.childtype,
                 page: (newPage + 1),
                 perPage: perPage,
-                term: filterTerm
+                term: filterTerm,
+                childid: relSearchInput.childid,                
+                owningtenantid: relSearchInput.owningtenantid,
+                parenttype: relSearchInput.parenttype
             }
         });
     }
@@ -102,7 +108,10 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                     childtype: relSearchInput.childtype,
                     page: 1,
                     perPage: perPage,
-                    term: term
+                    term: term,
+                    childid: relSearchInput.childid,                
+                    owningtenantid: relSearchInput.owningtenantid,
+                    parenttype: relSearchInput.parenttype  
                 }
             });
         }
@@ -114,7 +123,10 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                     childtype: relSearchInput.childtype,
                     page: 1,
                     perPage: perPage,
-                    term: ""
+                    term: "",
+                    childid: relSearchInput.childid,                
+                    owningtenantid: relSearchInput.owningtenantid,
+                    parenttype: relSearchInput.parenttype  
                 }
             });
         }
@@ -176,7 +188,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 <Dialog
                     open={showRemoveDialog}
                     onClose={() => setShowRemoveDialog(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth={true}
                 >
                     <DialogContent>
@@ -195,7 +207,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                         <Button
                             onClick={() => {
                                 if(idToRemove){
-                                    onRemove(idToRemove);
+                                    onRemove(idToRemove, refetch);
                                 }
                                 setShowRemoveDialog(false);
                             }}
@@ -252,7 +264,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                             onClick={() => {
                                 setShowAddDialog(false)
                                 if(idToAdd){
-                                    onAdd(idToAdd);
+                                    onAdd(idToAdd, refetch);
                                 }
                             }}
                             disabled={
