@@ -3,15 +3,12 @@ import React, { useContext } from "react";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { KEY_USE_DISPLAY } from "@/utils/consts";
-import Typography from "@mui/material/Typography";
+import { Typography, Divider, Grid2, IconButton, Paper, Stack } from "@mui/material";
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import UnfoldMoreOutlinedIcon from "@mui/icons-material/UnfoldMoreOutlined";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import Divider from "@mui/material/Divider";
-import Grid2 from "@mui/material/Grid2";
 import Link from "next/link";
 import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
-
 import { ResultListProps } from "../layout/search-result-list-layout";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 

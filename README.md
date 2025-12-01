@@ -185,7 +185,7 @@ The response for the encryption endpoint is:
  }
  ```
 
- The response for the decription endpoint is:
+ The response for the decryption endpoint is:
  
  ```JSON
  {

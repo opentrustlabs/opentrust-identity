@@ -1,10 +1,10 @@
 "use client";
-import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, MarkForDeleteObjectType, PortalUserProfile, SecretObjectType, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
-import { Alert, Backdrop, Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, InputAdornment, Paper, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
+import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, PortalUserProfile, SecretObjectType, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
+import { Alert, Backdrop, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, InputAdornment, Paper, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
-import { CAPTCHA_CONFIG_SCOPE, DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, DEFAULT_BACKGROUND_COLOR, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, DEFAULT_BACKGROUND_COLOR, SYSTEM_SETTINGS_UPDATE_SCOPE } from "@/utils/consts";
 import { containsScope } from "@/utils/authz-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useMutation, useQuery } from "@apollo/client";

@@ -9,7 +9,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-import { TENANT_TYPE_ROOT_TENANT, DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
+import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { ResultListProps } from "../layout/search-result-list-layout";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 

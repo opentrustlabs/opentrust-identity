@@ -59,6 +59,35 @@ jest.mock('react-colorful', () => ({
     )
 }));
 
+// Store original FileReader
+const OriginalFileReader = global.FileReader;
+
+// Mock FileReader for file upload tests
+class MockFileReader {
+    onloadend: ((ev: ProgressEvent<FileReader>) => void) | null = null;
+    result: string | ArrayBuffer | null = null;
+
+    readAsText(_file: File) {
+        // Simulate async file reading
+        setTimeout(() => {
+            this.result = '<svg></svg>';
+            if (this.onloadend) {
+                this.onloadend({ target: this } as unknown as ProgressEvent<FileReader>);
+            }
+        }, 0);
+    }
+}
+
+// Setup and teardown for FileReader mock
+beforeAll(() => {
+    // @ts-ignore
+    global.FileReader = MockFileReader as any;
+});
+
+afterAll(() => {
+    global.FileReader = OriginalFileReader;
+});
+
 // Mock messages for react-intl
 const messages = {
     'error.default': 'An error occurred',

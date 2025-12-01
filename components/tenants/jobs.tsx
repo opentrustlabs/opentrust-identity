@@ -1,5 +1,5 @@
 "use client";
-import { MarkForDelete, MarkForDeleteObjectType, PortalUserProfile, SchedulerLock } from "@/graphql/generated/graphql-types";
+import { MarkForDelete, PortalUserProfile, SchedulerLock } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { useQuery } from "@apollo/client";

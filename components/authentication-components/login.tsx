@@ -583,6 +583,7 @@ const Login: React.FC<LoginProps>= ({
                                         id="email"
                                         required={true}
                                         autoFocus={true}
+                                        autoComplete="email"
                                         label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
                                         name="email"
                                         fullWidth
@@ -674,40 +675,61 @@ const Login: React.FC<LoginProps>= ({
                     }                    
                     {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                         <React.Fragment>
-                            <Grid2 size={{ xs: 12 }}>
-                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>
-                                <TextField
-                                    type="password"
-                                    id="password"
-                                    required={true}
-                                    autoFocus={true}
-                                    label={intl.formatMessage({id: "PASSWORD"})}
-                                    name="password"
-                                    fullWidth
-                                    onChange={(evt) => setPassword(evt.target.value)}
-                                    
-                                    value={password}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            "&.Mui-focused fieldset": {
-                                                borderColor:
-                                                    (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||                                                        
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#FFFFFF" ||
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#ffffff") ?
-                                                        "lightgray" :
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
-                                            }
-                                        },
-                                        "& .MuiFormLabel-root": {
-                                            "&.MuiInputLabel-root": {
-                                                "&.Mui-focused": {
-                                                    color: "black"
+                            <Grid2 container size={12}>
+                                <form>
+                                    <div style={{display: "hidden"}}>
+                                        <TextField
+                                            name="username"
+                                            value={username}
+                                            type="hidden"
+                                            sx={{
+                                                width: 0, // Sets the width to 0
+                                                height: 0, // Sets the height to 0
+                                                overflow: 'hidden', // Hides any overflowing content
+                                                position: 'absolute', // Ensures it doesn't affect layout
+                                                opacity: 0, // Makes it completely transparent
+                                                pointerEvents: 'none', // Prevents interaction
+                                            }}
+                                        />
+                                    </div>
+                                    <Grid2 size={{ xs: 12 }}>
+
+                                        <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({ id: "SIGN_IN" })}</div>
+                                        <TextField
+                                            type="password"
+                                            id="password"
+                                            autoComplete="current-password"
+                                            required={true}
+                                            autoFocus={true}
+                                            label={intl.formatMessage({ id: "PASSWORD" })}
+                                            name="password"
+                                            fullWidth
+                                            onChange={(evt) => setPassword(evt.target.value)}
+                                            value={password}
+                                            sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                    "&.Mui-focused fieldset": {
+                                                        borderColor:
+                                                            (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
+                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#FFFFFF" ||
+                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#ffffff") ?
+                                                                "lightgray" :
+                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
+                                                    }
+                                                },
+                                                "& .MuiFormLabel-root": {
+                                                    "&.MuiInputLabel-root": {
+                                                        "&.Mui-focused": {
+                                                            color: "black"
+                                                        }
+                                                    }
                                                 }
-                                            }
-                                        }
-                                    }}
-                                >
-                                </TextField>
+                                            }}
+                                        >
+                                        </TextField>
+
+                                    </Grid2>
+                                </form>
                             </Grid2>
                             {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
                                 <Grid2 size={{ xs: 12 }}>
