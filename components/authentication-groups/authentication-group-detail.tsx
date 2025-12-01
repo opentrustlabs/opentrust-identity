@@ -8,7 +8,7 @@ import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonIcon from '@mui/icons-material/Person';
-import GroupIcon from '@mui/icons-material/Group';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import TenantHighlight from "../tenants/tenant-highlight";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMutation } from "@apollo/client";
@@ -156,7 +156,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             color: 'white',
                                         }}
                                     >
-                                        <GroupIcon sx={{ fontSize: 28 }} />
+                                        <VerifiedUserOutlinedIcon sx={{ fontSize: 28 }} />
                                     </Box>
                                     <Box>
                                         <Typography variant="h5" fontWeight={600}>

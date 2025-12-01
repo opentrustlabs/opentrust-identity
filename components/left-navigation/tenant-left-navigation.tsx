@@ -3,13 +3,12 @@ import React, { useContext, useEffect } from "react";
 import { Autocomplete, Dialog, DialogContent, Divider, Drawer, Grid2, Paper, Popper, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import MenuIcon from '@mui/icons-material/Menu';
-import GroupIcon from '@mui/icons-material/Group';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import PeopleIcon from '@mui/icons-material/People';
 import KeyIcon from '@mui/icons-material/Key';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import BusinessIcon from '@mui/icons-material/Business';
-import SettingsIcon from '@mui/icons-material/Settings';
 import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
@@ -281,7 +280,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         }
                         {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
                             <div className="left-navigation" >
-                                <GroupIcon sx={{marginRight: "8px"}} />
+                                <VerifiedUserOutlinedIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
                             </div>                        }
                         
@@ -507,7 +506,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             }
                             {containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
-                                    <SettingsIcon sx={{marginRight: "8px"}} />
+                                    <PolicyIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
                                 </div>
                             }
@@ -528,7 +527,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             }
                             {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
-                                    <GroupIcon sx={{marginRight: "8px"}} />
+                                    <VerifiedUserOutlinedIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
                                 </div>
                             }

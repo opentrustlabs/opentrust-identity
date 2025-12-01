@@ -14,7 +14,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Backdrop, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, MenuItem, Snackbar, Stack, Switch, Tooltip } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import GroupIcon from '@mui/icons-material/Group';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import PeopleIcon from '@mui/icons-material/People';
 import PolicyIcon from '@mui/icons-material/Policy';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
@@ -728,7 +728,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                     >
                                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <GroupIcon /><div style={{ marginLeft: "8px" }}>Authorization Groups</div>
+                                            <VerifiedUserOutlinedIcon /><div style={{ marginLeft: "8px" }}>Authorization Groups</div>
                                         </div>
                                     </AccordionSummary>
                                     <AccordionDetails>

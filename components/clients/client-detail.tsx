@@ -9,7 +9,7 @@ import { CLIENT_DELETE_SCOPE, CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_DEVICE, CLIE
 import { Client, ClientUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
-import GroupIcon from '@mui/icons-material/Group';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -581,7 +581,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
 
                                         >
                                             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                                <GroupIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
+                                                <VerifiedUserOutlinedIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
                                             </div>
                                         </AccordionSummary>
                                         <AccordionDetails>

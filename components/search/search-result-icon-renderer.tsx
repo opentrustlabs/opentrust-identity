@@ -1,7 +1,7 @@
 "use client";
 import { SearchResultType } from "@/graphql/generated/graphql-types";
 import React from "react";
-import GroupIcon from '@mui/icons-material/Group';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import PeopleIcon from '@mui/icons-material/People';
 import KeyIcon from '@mui/icons-material/Key';
 import PersonIcon from '@mui/icons-material/Person';
@@ -100,7 +100,7 @@ const SearchResultIconRenderer: React.FC<SearchResultIconRendererProps> = ({
     }
     else if(objectType === SearchResultType.AuthenticationGroup){
         return (
-            <GroupIcon />
+            <VerifiedUserOutlinedIcon />
         )
     }
     else if(objectType === SearchResultType.AuthorizationGroup){
