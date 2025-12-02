@@ -135,8 +135,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         <Alert sx={{fontWeight: "bold", fontSize: "1.0em"}} severity="warning">Warning: Deprecated Password Hashing Algotirhm</Alert>
                     </DialogTitle>
                     <DialogContent>
-                        <Typography>
-                            
+                        <Typography component="div">                            
                             <div style={{marginBottom: "8px"}}>
                                 SHA-256 is NOT suitable for password hashing, regardless of iteration count. Use Scrypt, Bcrypt, or PBKDF2 instead.
                                 This function is retained only for verifying existing passwords. New passwords should NOT use this algorithm.
