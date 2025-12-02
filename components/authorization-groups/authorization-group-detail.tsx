@@ -299,7 +299,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                 <Stack>
                                                     <Typography variant="body2" fontWeight={500}>Allow for Anonymous Users</Typography>
                                                     <Typography variant="caption" color="text.secondary">
-                                                        Available when "Default" is also selected
+                                                        Available when Default is also selected
                                                     </Typography>
                                                 </Stack>
                                             }

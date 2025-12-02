@@ -1006,7 +1006,7 @@ class AuthenticateUserService extends IdentityService {
         await identityDao.addUserCredential(userCredential);
         
         await searchDao.updateObjectSearchIndex(tenant, user);
-        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, user);
         
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);

@@ -436,7 +436,7 @@ class SystemInitializationService {
         await searchDao.indexAuthorizationGroup(rootAuthzGroup);
         await searchDao.indexSigningKey(key);
         
-        await searchDao.indexUser(user, tenant.tenantId, tenant.tenantId, rootAuthzGroup);
+        await searchDao.indexUser(user, tenant.tenantId, rootAuthzGroup);
         for(let i = 0; i < scopes.length; i++){
             await searchDao.indexScope(scopes[i], tenant.tenantId);
         }

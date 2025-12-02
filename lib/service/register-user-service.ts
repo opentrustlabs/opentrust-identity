@@ -1252,7 +1252,7 @@ class RegisterUserService extends IdentityService {
             this.sentEmailValidationToken(user, user.email);            
         }
         await searchDao.updateObjectSearchIndex(tenant, user);
-        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, user);
 
         return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
     }
