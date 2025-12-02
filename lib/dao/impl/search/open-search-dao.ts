@@ -375,19 +375,19 @@ class OpenSearchDao implements SearchDao {
         });
     }
 
-    public async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void> {
+    public async updateUserTenantRelSearchIndex(tenantId: string, user: User): Promise<void> {
         
         const relDocument: RelSearchResultItem = {
             childid: user.userId,
             childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             childtype: SearchResultType.User,
-            owningtenantid: owningTenantId,
-            parentid: parentTenantId,
+            owningtenantid: tenantId,
+            parentid: tenantId,
             parenttype: SearchResultType.Tenant,
             childdescription: user.email
         }
         await searchClient.index({
-            id: `${parentTenantId}::${user.userId}`,
+            id: `${tenantId}::${user.userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relDocument
         });
@@ -606,7 +606,7 @@ class OpenSearchDao implements SearchDao {
         });
     }
 
-    public async indexUser(user: User, owningTenantId: string, parentTenantId: string, authzGroup: AuthorizationGroup | null){        
+    public async indexUser(user: User, owningTenantId: string, authzGroup: AuthorizationGroup | null){        
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             description: "",
@@ -632,12 +632,12 @@ class OpenSearchDao implements SearchDao {
             childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             childtype: SearchResultType.User,
             owningtenantid: owningTenantId,
-            parentid: parentTenantId,
+            parentid: owningTenantId,
             parenttype: SearchResultType.Tenant,
             childdescription: user.email
         }
         await searchClient.index({
-            id: `${parentTenantId}::${user.userId}`,
+            id: `${owningTenantId}::${user.userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relDocument
         });
@@ -655,8 +655,7 @@ class OpenSearchDao implements SearchDao {
             await searchClient.index({
                 id: `${authzGroup.groupId}::${user.userId}`,
                 index: SEARCH_INDEX_REL_SEARCH,
-                body: authzGroupUserRel,
-                refresh: "wait_for"
+                body: authzGroupUserRel
             });
         }
     }
@@ -694,7 +693,46 @@ class OpenSearchDao implements SearchDao {
             index: SEARCH_INDEX_REL_SEARCH,
             body: relSearchDocument
         });
-    }    
+    } 
+    
+    
+    public async removerUserFromTenant(tenantId: string, userId: string): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query: any = {
+            bool: {
+                must: []
+            }
+        }
+        // This will also remove any other rel records for authn/z groups
+        // because those IDs will be parent IDs with the same owning
+        // tenant id.
+        query.bool.must.push({
+            term: { owningtenantid: tenantId }
+        });
+        query.bool.must.push({
+            term: { childid: userId }
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const searchBody: any = {
+            query: query
+        }
+        try {
+            searchClient.deleteByQuery({
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: searchBody,
+                requests_per_second: 100,
+                conflicts: "proceed",
+                wait_for_completion: false,
+                scroll: "240m"
+            });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch (err: any) {
+            logWithDetails("error", `Error removing user-tenant rel search index records. ${err.message}.`, {...err, tenantId, userId});
+        }
+        
+    }
 }
 
 export default OpenSearchDao;

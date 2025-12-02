@@ -260,7 +260,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         }
         await identityDao.createUser(newUser);
         await searchDao.updateObjectSearchIndex(tenant, newUser);
-        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, newUser);
+        await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, newUser);
         await updateUserTenantRel(tenant, newUser);
         await identityDao.addUserAuthenticationHistory(newUser.userId, Date.now());
         canonicalUser = newUser;
@@ -339,7 +339,7 @@ async function updateUserTenantRel(tenant: Tenant, user: User): Promise<void> {
     const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(user.userId);
     if(rels.length === 0){
         await identityDao.assignUserToTenant(tenant.tenantId, user.userId, USER_TENANT_REL_TYPE_PRIMARY);
-        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, user);
     }
     else{
         const existingRel = rels.find(
@@ -347,7 +347,7 @@ async function updateUserTenantRel(tenant: Tenant, user: User): Promise<void> {
         );
         if(!existingRel){
             await identityDao.assignUserToTenant(tenant.tenantId, user.userId, USER_TENANT_REL_TYPE_GUEST);
-            await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+            await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, user);
         }
     }
 }

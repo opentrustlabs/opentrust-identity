@@ -12,6 +12,7 @@ import IdentityDao from "../dao/identity-dao";
 import { authorizeByScopeAndTenant, filterResultsByTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
+import { logWithDetails } from "../logging/logger";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -94,6 +95,13 @@ class GroupService {
         if(tenant.enabled === false || tenant.markForDelete === true){
             throw new GraphQLError(ERROR_CODES.EC00009.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00009}});
         }
+
+        // Only allow for anonymous users if the default flag is also selected
+        // Otherwise, just unset the allow-for-anon flag if the default gorup flag
+        // is false
+        if(group.allowForAnonymousUsers === true && group.default === false){
+            group.allowForAnonymousUsers = false;
+        }
         
         group.groupId = randomUUID().toString();
 
@@ -127,8 +135,19 @@ class GroupService {
         const needToDeleteUserGroupRels: boolean = group.default === true && existingGroup.default === false;
         
         existingGroup.groupName = group.groupName;
-        existingGroup.default = group.default;
         existingGroup.groupDescription = group.groupDescription;
+        existingGroup.default = group.default;
+
+        // Only allow for anonymous users if the default flag is also selected
+        // Otherwise, just unset the allow-for-anon flag if the default gorup flag
+        // is false
+        if(group.allowForAnonymousUsers === true && group.default === false){
+            existingGroup.allowForAnonymousUsers = false;
+        }
+        else{
+            existingGroup.allowForAnonymousUsers = group.allowForAnonymousUsers;
+        }
+        
         await groupDao.updateAuthorizationGroup(existingGroup);
         await this.updateSearchIndex(existingGroup);
         changeEventDao.addChangeEvent({
@@ -144,9 +163,47 @@ class GroupService {
         if(needToDeleteUserGroupRels === true){
             // No need to wait on this since it may contain 1000s of relationships.
             groupDao.deleteUserAuthorizationGroupRels(group.groupId);
+            this.deleteUserGroupRelSearchRecords(group.groupId);
+            
         }
 
         return Promise.resolve(existingGroup);
+    }
+
+    protected async deleteUserGroupRelSearchRecords(groupId: string): Promise<void>{
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query: any = {
+            bool: {
+                must: []
+            }
+        }
+        query.bool.must.push({
+            term: { parentid: groupId }
+        });
+        query.bool.must.push({
+            term: { childtype: SearchResultType.User }
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const searchBody: any = {
+            query: query
+        }
+        try {
+            searchClient.deleteByQuery({
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: searchBody,
+                requests_per_second: 100,
+                conflicts: "proceed",
+                wait_for_completion: false,
+                scroll: "240m"
+            });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch (err: any) {
+            logWithDetails("error", `Error deleting rel search index. ${err.message}.`, {...err, groupId});
+        }
+            
     }
 
     protected async updateSearchIndex(group: AuthorizationGroup): Promise<void> {

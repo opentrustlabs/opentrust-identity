@@ -263,21 +263,28 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                     name="default" 
                                                     checked={authzGroupInput.default}
                                                     onChange={(_, checked) => {
+                                                        
                                                         authzGroupInput.default = checked;
+                                                        // Allow for anonymous users is only available if
+                                                        // default is also checked. If unchecked, then also
+                                                        // uncheck the allow for anonymous users selection
+                                                        if(checked === false){
+                                                            authzGroupInput.allowForAnonymousUsers = false;
+                                                        }
                                                         setAuthzGroupInput({...authzGroupInput});
                                                         setMarkDirty(true);
                                                     }}
                                                 />
                                             }
                                             label="Default"
-                                            sx={{ margin: "4px", fontSize: "revert", justifyContent: 'space-between', width: '100%' }}
+                                            sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
                                             labelPlacement="start"
                                         />
 
                                         <FormControlLabel
                                             control={
                                                 <Switch
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || authzGroupInput.default === false}
                                                     name="allowForAnonymous"
                                                     checked={authzGroupInput.allowForAnonymousUsers}
                                                     onChange={(_, checked) => {
@@ -287,10 +294,18 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                     }}
                                                 />
                                             }
-                                            label="Allow for Anonymous Users"
-                                            sx={{ margin: "4px", fontSize: "revert", justifyContent: 'space-between', width: '100%' }}
+                                            
+                                            label={
+                                                <Stack>
+                                                    <Typography variant="body2" fontWeight={500}>Allow for Anonymous Users</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Available when "Default" is also selected
+                                                    </Typography>
+                                                </Stack>
+                                            }
+                                            sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
                                             labelPlacement="start"
-                                        />
+                                        />                                        
                                     </Grid2>    
                                 </Grid2>
                             </Paper>

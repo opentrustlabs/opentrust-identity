@@ -19,7 +19,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
     if(isAuthenticateToPortal){
         backgroundColor = tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
         textColor = tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
-    }
+    } 
 
     return (
         <div 

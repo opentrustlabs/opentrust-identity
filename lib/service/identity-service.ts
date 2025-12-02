@@ -336,8 +336,8 @@ class IdentityService {
             else{
                 hasUpdateRel = true;
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
-                // Both the owning and parent tenant ids are the same in this case
-                await searchDao.updateRelSearchIndex(tenantId, tenantId, user);
+                // Add rel record to the search index
+                await searchDao.updateUserTenantRelSearchIndex(tenantId, user);
             }
         }
         // Otherwise, there already exists one or more relationships. 
@@ -362,9 +362,8 @@ class IdentityService {
                 else{
                     hasUpdateRel = true;
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
-                    // The primary rel remains as the owning tenant id, which the incoming tenant id 
-                    // is the parent id
-                    await searchDao.updateRelSearchIndex(primaryRel.tenantId, tenantId, user);
+                    // Add rel record to the search index
+                    await searchDao.updateUserTenantRelSearchIndex(tenantId, user);
                 }
             }
             
@@ -379,13 +378,11 @@ class IdentityService {
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
                     hasUpdateRel = true;
                     // Assign the incoming as primary
-                    userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);
-                    // The incoming tenant becomes the new owning tenant as well as the parent.
-                    await searchDao.updateRelSearchIndex(tenantId, tenantId, user);
+                    userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);                    
                     // Then update the existing primary as guest
-                    await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
-                    // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
-                    await searchDao.updateRelSearchIndex(tenantId, primaryRel.tenantId, user);
+                    await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);                    
+                    // Add rel record to the search index
+                    await searchDao.updateUserTenantRelSearchIndex(tenantId, user);
                 }
             }
         }
@@ -457,6 +454,10 @@ class IdentityService {
                         }
                     }                    
                 }
+
+                // Finally, remove the user from the tenant in the rel search index
+                // No need to wait on this, since it might be a long running operation.                
+                searchDao.removerUserFromTenant(tenantId, userId);                
             }
         }        
         return Promise.resolve();
@@ -615,66 +616,7 @@ class IdentityService {
         }
         return valid;
     }    
-
-    // /**
-    //  * 
-    //  * @param userId 
-    //  * @param password 
-    //  * @param hashAlgorithm 
-    //  * @returns 
-    //  */
-    // public generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
-    //     // For the Bcrypt hashing algorithm, the salt value is included in the final salted password
-    //     // so we can just leave it as the empty string.
-    //     let salt = "";
-    //     let hashedPassword = "";
-
-    //     if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS){
-    //         hashedPassword = bcryptHashPassword(password, 10);
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS){
-    //         hashedPassword = bcryptHashPassword(password, 11);
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS){
-    //         hashedPassword = bcryptHashPassword(password, 12);
-    //     }                   
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-    //         salt = generateSalt();
-    //         hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);            
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-    //         salt = generateSalt();
-    //         hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-    //         salt = generateSalt();
-    //         hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-    //         salt = generateSalt();
-    //         hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);            
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
-    //         salt = generateSalt();
-    //         hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_32K);            
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
-    //         salt = generateSalt();
-    //         hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);  
-    //     }
-    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
-    //         salt = generateSalt();
-    //         hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
-    //     }
-
-    //     return {
-    //         dateCreated: new Date().toISOString(),
-    //         hashedPassword: hashedPassword,
-    //         salt: salt,
-    //         hashingAlgorithm: hashAlgorithm,
-    //         userId: userId
-    //     }
-    // }    
+  
     
     protected async getSortedAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
         const arrUserAuthenticationState: Array<UserAuthenticationState> = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
@@ -1301,7 +1243,6 @@ class IdentityService {
         const s = phoneNumber.replace(/\D/g, "");
         return `+${s}`;
     }
-
     
 }
 
