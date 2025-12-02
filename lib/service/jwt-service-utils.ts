@@ -139,7 +139,7 @@ class JwtServiceUtils {
             }
         }
         else if(principal.principal_type === PRINCIPAL_TYPE_ANONYMOUS_USER){            
-            const arrScopes = includeScope ? await this.getScopes(principal.sub, principal.tenant_id) : [];
+            const arrScopes = includeScope ? await this.getScopes(principal.sub, principal.tenant_id, true) : [];
             const arrProfileScopes = arrScopes.map(
                 (s: Scope) => {
                     const profileScope: ProfileScope = {
@@ -201,7 +201,7 @@ class JwtServiceUtils {
                 );
             }
             else{
-                const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
+                const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id, false) : [];
                 arrScopes.forEach(
                     (s: Scope) => {
                         const profileScope: ProfileScope = {
@@ -320,7 +320,7 @@ class JwtServiceUtils {
             if(user === null || user.enabled === false || user.markForDelete === true){
                 return null;
             }
-            const arrScope: Array<Scope> = await this.getScopes(user.userId, principal.tenant_id);
+            const arrScope: Array<Scope> = await this.getScopes(user.userId, principal.tenant_id, false);
             profile = {
                 domain: getDomainFromEmail(principal.email),
                 email: principal.email,
@@ -920,10 +920,17 @@ class JwtServiceUtils {
         return arrScope;
     }
 
-    protected async getScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
+    protected async getScopes(userId: string, tenantId: string, isAnonymousUser: boolean): Promise<Array<Scope>> {
         const setScopeIds: Set<string> = new Set();
 
-        const defaultAuthzGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getDefaultAuthorizationGroups(tenantId);
+        // If the user is anonymous, then only allow those groups where BOTH default and allow-anonymous
+        // flags are set. Note that allow-anonymous can only be set when default is also set.
+        let defaultAuthzGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getDefaultAuthorizationGroups(tenantId);
+        if(isAnonymousUser){
+            defaultAuthzGroups = defaultAuthzGroups.filter(
+                (g: AuthorizationGroup) => g.allowForAnonymousUsers === true
+            );
+        }
         
         const arrAuthorizationGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getUserAuthorizationGroups(userId);
         arrAuthorizationGroups.push(...defaultAuthzGroups);
