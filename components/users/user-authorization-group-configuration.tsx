@@ -285,6 +285,7 @@ const UserAuthorizationGroupConfiguration = forwardRef<
 }
 )
 
+UserAuthorizationGroupConfiguration.displayName = 'UserAuthorizationGroupConfiguration';
 
 interface AuthorizationGroupAssignDialogProps {
     userId: string,
