@@ -795,3 +795,14 @@ with your development.
 The service clients that you use for programmatic access to the GraphQL API will need the same scope
 assigned to them as a normal user would for each of the functions you want to invoke. The same
 tenant-restriction rules (described above) apply to these clients as they do for normal users.
+
+
+### License
+
+This tool is released under the GNU Affero General Public License (AGPL). Which basically means that you can 
+use it in production as part of a commercial enterprise for managing your users, clients, and
+access control.  But if you want to use it as a base to create an IAM SaaS solution that you offer to your
+customers, then you either will have to share any changes you made to the software or obtain
+a separate license. 
+
+We welcome any feedback and suggestions from the community. 

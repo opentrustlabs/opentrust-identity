@@ -181,7 +181,8 @@ class AuthenticationGroupService {
     }
 
 
-    protected async removeUserAuthenticationGroupSearchRecords(authenticationGroupId: string): Promise<void> {        
+    protected async removeUserAuthenticationGroupSearchRecords(authenticationGroupId: string): Promise<void> {       
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any 
         const query: any = {
             bool: {
                 must: []
