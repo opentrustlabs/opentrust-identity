@@ -168,4 +168,6 @@ const UserSessionDetails = forwardRef<
 }
 )
 
+UserSessionDetails.displayName = 'UserSessionDetails';
+
 export default UserSessionDetails;
