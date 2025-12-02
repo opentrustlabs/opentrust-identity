@@ -11,7 +11,7 @@ abstract class SearchDao {
     
     abstract updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void>;
 
-    abstract updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void>;
+    abstract updateUserTenantRelSearchIndex(tenantId: string, user: User): Promise<void>;
 
     abstract updateSearchIndexUserDocuments(user: User): Promise<void>;
 
@@ -25,9 +25,11 @@ abstract class SearchDao {
 
     abstract indexSigningKey(key: SigningKey): Promise<void>;
 
-    abstract indexUser(user: User, owningTenantId: string, parentTenantId: string, authzGroup: AuthorizationGroup | null): Promise<void>;
+    abstract indexUser(user: User, owningTenantId: string, authzGroup: AuthorizationGroup | null): Promise<void>;
 
     abstract indexScope(scope: Scope, tenantId: string): Promise<void>;
+
+    abstract removerUserFromTenant(tenantId: string, userId: string): Promise<void>;
 
 }
 
