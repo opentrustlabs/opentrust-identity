@@ -48,8 +48,6 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     //      redirect to the landing page of the tenant, which is just /{tenant_id}/
     // 3.   If the profile is valid but the user does NOT have access to a management screen then
     //      show an error message
-    // 4.   If there is no a valid user profile but there IS a tenant id in local storeage, then
-    //      redirect to /authorization/login?_tid={tenant id found in local storage}&_pa=true
     //
     // Any redirects to the authorization screen will ALSO include any saved language and country
     // values that were saved in local storage, or defaulted to en-US
