@@ -8,6 +8,7 @@ import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonIcon from '@mui/icons-material/Person';
+import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import TenantHighlight from "../tenants/tenant-highlight";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -407,7 +408,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
 
                                     >
                                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <PersonIcon /><div style={{ marginLeft: "8px" }}>Clients</div>
+                                            <SettingsSystemDaydreamIcon /><div style={{ marginLeft: "8px" }}>Clients</div>
                                         </div>
                                     </AccordionSummary>
                                     <AccordionDetails >                                        
