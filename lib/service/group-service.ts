@@ -201,9 +201,8 @@ class GroupService {
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch (err: any) {
-            logWithDetails("error", `Error deleting rel search index. ${err.message}.`, {...err, groupId});
-        }
-            
+            logWithDetails("error", `Error bulk deleting user-authz-group rel search index records. ${err.message}.`, {...err, groupId});
+        }            
     }
 
     protected async updateSearchIndex(group: AuthorizationGroup): Promise<void> {

@@ -13,6 +13,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import { ServiceAuthorizationWrapper, authorizeByScopeAndTenant } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
+import { logWithDetails } from "../logging/logger";
 
 
 const searchClient: SearchClient = getOpenSearchClient();
@@ -156,6 +157,7 @@ class AuthenticationGroupService {
 
         existingAuthenticationGroup.authenticationGroupDescription = authenticationGroup.authenticationGroupDescription;
         existingAuthenticationGroup.authenticationGroupName = authenticationGroup.authenticationGroupName;
+        existingAuthenticationGroup.defaultGroup = authenticationGroup.defaultGroup;
 
         await authenticationGroupDao.updateAuthenticationGroup(existingAuthenticationGroup);
         await this.updateSearchIndex(existingAuthenticationGroup);
@@ -172,9 +174,44 @@ class AuthenticationGroupService {
         if(needToDeleteUserGroupRels === true){
             // No need to wait on the deletion since it may be 1000s of records
             authenticationGroupDao.deleteUserAuthenticationGroupRels(authenticationGroup.authenticationGroupId);
+            this.removeUserAuthenticationGroupSearchRecords(authenticationGroup.authenticationGroupId);
         }
         
         return Promise.resolve(existingAuthenticationGroup);
+    }
+
+
+    protected async removeUserAuthenticationGroupSearchRecords(authenticationGroupId: string): Promise<void> {        
+        const query: any = {
+            bool: {
+                must: []
+            }
+        }
+        query.bool.must.push({
+            term: { parentid: authenticationGroupId }
+        });
+        query.bool.must.push({
+            term: { childtype: SearchResultType.User }
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const searchBody: any = {
+            query: query
+        }
+        try {
+            searchClient.deleteByQuery({
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: searchBody,
+                requests_per_second: 100,
+                conflicts: "proceed",
+                wait_for_completion: false,
+                scroll: "240m"
+            });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch (err: any) {
+            logWithDetails("error", `Error bulk deleting user-authz-group rel search index records. ${err.message}.`, {...err, authenticationGroupId});
+        } 
     }
 
     protected async updateSearchIndex(authenticationGroup: AuthenticationGroup): Promise<void> {
