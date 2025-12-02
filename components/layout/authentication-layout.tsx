@@ -35,6 +35,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
         backgroundColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
     }
     
+    console.log("authenticateToPortal is: " + authenticateToPortal);
 
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
@@ -134,6 +135,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                         tenantMetaData={
                             tenantBean.getTenantMetaData().tenant.tenantId === "" || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
                         }
+                        isAuthenticateToPortal={authenticateToPortal === "true"}
                     ></AuthenticationFooter>
                 </ThemeProvider>                
             </div>

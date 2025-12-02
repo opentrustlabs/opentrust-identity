@@ -6,21 +6,29 @@ import React from "react";
 
 
 export interface AuthenticationFooterProps {
-    tenantMetaData: TenantMetaData
+    tenantMetaData: TenantMetaData,
+    isAuthenticateToPortal: boolean
 }
 
 const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
-    tenantMetaData
+    tenantMetaData,
+    isAuthenticateToPortal
 }) => {
 
+    let backgroundColor = DEFAULT_BACKGROUND_COLOR;
+    let textColor = DEFAULT_TEXT_COLOR;
+    if(!isAuthenticateToPortal){
+        backgroundColor = tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
+        textColor = tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
+    } 
 
     return (
         <div 
             style={{
-                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR, 
+                backgroundColor: backgroundColor,
                 width: "100%", 
                 minHeight: "5vh", 
-                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR
+                color: textColor
             }}
 
         >

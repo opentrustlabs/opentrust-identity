@@ -16,7 +16,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
 
     let backgroundColor = DEFAULT_BACKGROUND_COLOR;
     let textColor = DEFAULT_TEXT_COLOR;
-    if(isAuthenticateToPortal){
+    if(!isAuthenticateToPortal){
         backgroundColor = tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
         textColor = tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
     } 
@@ -64,7 +64,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                     {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
                     }
-                    {!tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
+                    {!tenantMetaData.tenantLookAndFeel?.authenticationheadertext && isAuthenticateToPortal &&
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>OpenTrust Identity</div>                        
                     }
                 </Stack>
