@@ -4,7 +4,7 @@ import AuthenticationHeader from "./authentication-header";
 import AuthenticationFooter from "./authentication-footer";
 import Container from "@mui/material/Container";
 import { Grid2 } from "@mui/material";
-import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TENANT_META_DATA, DEFAULT_TEXT_COLOR, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TENANT_META_DATA, DEFAULT_TEXT_COLOR, QUERY_PARAM_TENANT_ID, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { useSearchParams } from "next/navigation";
@@ -27,7 +27,14 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
     // REACT HOOKS
     const params = useSearchParams();
     const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
-
+    const authenticateToPortal = params?.get(QUERY_PARAM_AUTHENTICATE_TO_PORTAL);
+    let textColor = DEFAULT_TEXT_COLOR;
+    let backgroundColor = DEFAULT_BACKGROUND_COLOR;
+    if(authenticateToPortal !== "true"){
+        textColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
+        backgroundColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
+    }
+    
 
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
@@ -63,8 +70,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                                     
                                 }
                             ],
-                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
-                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                            color: textColor,
+                            backgroundColor: backgroundColor,
                             fontWeight: "bold",
                             fontSize: "0.9em",
                             height: "100%", 
@@ -106,6 +113,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                         tenantMetaData={
                             tenantBean.getTenantMetaData().tenant.tenantId === "" || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
                         }
+                        isAuthenticateToPortal={authenticateToPortal === "true"}
                     ></AuthenticationHeader>
                     <Container
                         maxWidth="xl"                        
