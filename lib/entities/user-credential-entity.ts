@@ -1,48 +1,47 @@
-import type { UserCredential } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "user_credential"
-})
-class UserCredentialEntity {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(userCredential?: UserCredential){
-        if(userCredential){
-            this.userId = userCredential.userId;
-            this.dateCreated = new Date(parseInt(userCredential.dateCreated));
-            this.hashedPassword = userCredential.hashedPassword;
-            this.salt = userCredential.salt;
-            this.hashingAlgorithm = userCredential.hashingAlgorithm;
+const UserCredentialEntity = new EntitySchema({
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        dateCreatedMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: true,
+            name: "datecreatedms"
+        },
+        hashedPassword: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "hashedpassword"
+        },
+        hashingAlgorithm: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "hashingalgorithm"
+        },
+        salt: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "salt"
         }
-    }
-    __typename?: "UserCredential" | undefined;
+    },
 
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
+    tableName: "user_credential",
+    name: "userCredential",
 
-    @Property({fieldName: "datecreated"})
-    dateCreated: Date;
-    
-    @Property({fieldName: "hashedpassword"})
-    hashedPassword: string;
-    
-    @Property({fieldName: "hashingalgorithm"})
-    hashingAlgorithm: string;
-   
-    @Property({fieldName: "salt"})
-    salt: string;
+});
 
-    public toModel(): UserCredential{
-        return {
-            __typename: "UserCredential",
-            dateCreated: this.dateCreated.getTime().toString(),
-            hashedPassword: this.hashedPassword,
-            hashingAlgorithm: this.hashingAlgorithm,
-            userId: this.userId,
-            salt: this.salt
-        }
-    }
 
-}
 
 export default UserCredentialEntity;

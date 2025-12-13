@@ -1,85 +1,60 @@
-import type { ChangeEvent, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBlobTypeForDriver, stringToBlobTransformer, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
+const {
+    RDB_DIALECT
+} = process.env;
 
-@Entity({
-    tableName: "change_event"
-})
-class ChangeEventEntity {
+const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
 
-    constructor(m?: ChangeEvent){
-        if(m){
-            this.changeEventId = m.changeEventId;
-            this.objectId = m.objectid;
-            this.objectType = m.objecttype;
-            this.changeEventClass = m.changeEventClass;
-            this.changeEventClassId = m.changeEventClassId;
-            this.changeEventType = m.changeEventType;
-            this.changeEventTypeId = m.changeEventTypeId;
-            this.changeTimestamp = m.changeTimestamp;
-            this.changedById = m.changedById;
-            this.data = Buffer.from(m.data);
-            this.keyId = m.keyId;
-            this.signature = Buffer.from(m.signature);
+const ChangeEventEntity = new EntitySchema({
+
+    tableName: "change_event",
+    name: "changeEvent",
+    columns: {
+        changeEventId: {
+            type: String,
+            primary: true,
+            name: "changeeventid"
+        },
+        objectId: {
+            type: String,
+            primary: true,
+            name: "objectid"
+        },
+        changeEventClass: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "changeeventclass"
+        },
+        changeEventType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "changeeventtype"
+        },
+        changeTimestamp: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "changetimestamp"
+        },
+        changedBy: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "changedby"
+        },
+        data: {
+            type: blobType,
+            primary: false,
+            nullable: false,
+            name: "data",
+            transformer: stringToBlobTransformer()
         }
     }
-    __typename?: "ChangeEvent" | undefined;
-    
-    @PrimaryKey({fieldName: "changeeventid"})
-    changeEventId: string;
+});
 
-    @PrimaryKey({fieldName: "objectid"})
-    objectId: string;
-
-    @Property({fieldName: "objecttype"})
-    objectType: string;
-        
-    @Property({fieldName: "changeeventclass"})
-    changeEventClass: string;
-
-    @Property({fieldName: "changeeventclassid"})
-    changeEventClassId?: Maybe<string> | undefined;    
-
-    @Property({fieldName: "changeeventtype"})
-    changeEventType: string;
-
-    @Property({fieldName: "changeeventtypeid"})
-    changeEventTypeId?: Maybe<string> | undefined;
-
-    @Property({fieldName: "changetimestamp"})
-    changeTimestamp: number;
-
-    @Property({fieldName: "changedbyid"})
-    changedById: string;
-
-    @Property({fieldName: "data"})
-    data: Buffer;
-
-    @Property({fieldName: "keyid"})
-    keyId: string;
-
-    @Property({fieldName: "signature"})
-    signature: Buffer;
-
-    public toModel(): ChangeEvent{
-        const m: ChangeEvent = {
-            __typename: "ChangeEvent",
-            changeEventClass: this.changeEventClass,
-            changeEventId: this.changeEventId,
-            objectid: this.objectId,
-            objecttype: this.objectType,
-            changeEventType: this.changeEventType,
-            changeTimestamp: this.changeTimestamp,
-            changedById: this.changedById,
-            data: this.data.toString("utf-8"),
-            keyId: this.keyId,
-            signature: this.signature.toString("utf-8"),
-            changeEventClassId: this.changeEventClassId,
-            changeEventTypeId: this.changeEventTypeId
-        };
-        return m;
-    }
-    
-}
 
 export default ChangeEventEntity;

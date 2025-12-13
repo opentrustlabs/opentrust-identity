@@ -1,33 +1,38 @@
-import type { SchedulerLock } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "scheduler_lock"
-})
-class SchedulerLockEntity implements SchedulerLock {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(schedulerLock?: SchedulerLock){
-        if(schedulerLock){
-            Object.assign(this, schedulerLock)
+export const SchedulerLockEntity = new EntitySchema({
+    columns: {
+        lockName: {
+            type: String,
+            primary: true,
+            name: "lockname"
+        },
+        lockInstanceId: {
+            type: String,
+            primary: true,
+            name: "lockinstanceid"
+        },
+        lockStartTimeMS: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "lockstarttimems"
+        },
+        lockExpiresAtMS: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "lockexpiresatms"
         }
-    }
+    },
+    tableName: "scheduler_lock",
+    name: "schedulerLock",
 
-    __typename?: "SchedulerLock";
-    
-    @PrimaryKey({fieldName: "localname"})
-    lockName: string;
-
-    @PrimaryKey({fieldName: "lockinstanceid"})
-    lockInstanceId: string;
-    
-    @Property({fieldName: "lockstarttimems"})
-    lockStartTimeMS: number;
-
-    @Property({fieldName: "lockexpiresatms"})
-    lockExpiresAtMS: number;
-    
-    
-
-}
+});
 
 export default SchedulerLockEntity;

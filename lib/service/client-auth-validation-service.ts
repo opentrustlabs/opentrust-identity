@@ -1,14 +1,14 @@
 import { Client } from "@/graphql/generated/graphql-types";
-//import TenantDao from "@/lib/dao/tenant-dao";
 import ClientDao from "@/lib/dao/client-dao";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
+import Kms from "../kms/kms";
+import { logWithDetails } from "../logging/logger";
+import { timingSafeEqual } from "node:crypto";
 
-const {
-    AUTH_DOMAIN
-} = process.env;
 
-//const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
+
+const kms: Kms = DaoFactory.getInstance().getKms();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 
 class ClientAuthValidationService {
 
@@ -23,14 +23,23 @@ class ClientAuthValidationService {
         if(!client){
             return Promise.resolve(false);
         }
-        if(client.clientSecret !== clientSecret){
+        try{
+            const decryptedClientSecret: string | null = await kms.decrypt(client.clientSecret);
+            if(!decryptedClientSecret){
+                return Promise.resolve(false);
+            }
+            const areEqual: boolean = timingSafeEqual(Buffer.from(clientSecret), Buffer.from(decryptedClientSecret));
+            if(!areEqual){
+                return Promise.resolve(false);
+            }
+            return Promise.resolve(true);
+        }
+        catch(err: unknown){
+            const e = err as Error;
+            logWithDetails("error", `Error validating client auth credentials. ${e.message}`, {e});
             return Promise.resolve(false);
         }
-        return Promise.resolve(true);
     }
-
-    
-
 
 }
 

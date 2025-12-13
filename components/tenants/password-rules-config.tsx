@@ -1,84 +1,88 @@
 "use client";
 import { TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { PasswordConfigInput, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED, LOGIN_FAILURE_POLICY_BACKOFF, LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK, LOGIN_FAILURE_POLICY_TYPE_DISPLAY, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_EMAIL, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
+import { PasswordConfigInput, PortalUserProfile, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import { Alert, Autocomplete, AutocompleteRenderInputParams, Checkbox, Divider, MenuItem, Select } from "@mui/material";
-import { PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { Alert, Autocomplete, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, MenuItem, Paper, Switch, Typography } from "@mui/material";
+import { PASSWORD_CONFIGURATION_DELETION_MUTATION, PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+
 
 export interface PasswordRulesConfigurationProps {
     tenantId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     tenantId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
-    let initInput: PasswordConfigInput = {
-        allowMfa: false,
-        passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS,
-        passwordMaxLength: 64,
-        passwordMinLength: 8,
-        requireLowerCase: true,
-        requireMfa: false,
-        requireNumbers: true,
-        requireSpecialCharacters: true,
-        requireUpperCase: true,
-        tenantId: tenantId,
-        maxRepeatingCharacterLength: 2,
-        mfaTypesAllowed: "",
-        mfaTypesRequired: "",
-        passwordHistoryPeriod: 0,
-        passwordRotationPeriodDays: 0,
-        specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED
-    }
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    
+    const initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+    initInput.tenantId = tenantId;
 
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    const [passwordConfigInput, setPasswordConfigInput] = React.useState<PasswordConfigInput | null>(null);
-    const [revertToInput, setRevertToInput] = React.useState<PasswordConfigInput | null>(null);
-
+    const [passwordConfigInput, setPasswordConfigInput] = React.useState<PasswordConfigInput>(initInput);
+    const [revertToInput, setRevertToInput] = React.useState<PasswordConfigInput>(initInput);
+    const [hasSystemDefaultPasswordRules, setHasSystemDefaultPasswordRules] = React.useState<boolean>(false);
+    const [showConfirmRestorePasswordDefaultDialog, setShowConfirmRestorePasswordDefaultDialog] = React.useState<boolean>(false);
+    const [showDeprecatedHashingWarning, setShowDeprecatedHashingWarning] = React.useState<boolean>(false);
+    
 
     // GRAPHQL FUNCTIONS
-    // data may be null, so present some sensible defaults
-    const { loading, error } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
+    // data.getTenantPasswordConfig may be null, so present some sensible defaults
+    const {loading, error, refetch } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
         variables: {
             tenantId: tenantId
         },
+        notifyOnNetworkStatusChange: true,
         onCompleted(data) {
             if (data && data.getTenantPasswordConfig) {
                 const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
-                initInput.allowMfa = config.allowMfa;
-                initInput.maxRepeatingCharacterLength = config.maxRepeatingCharacterLength;
-                initInput.mfaTypesAllowed = config.mfaTypesAllowed;
-                initInput.mfaTypesRequired = config.mfaTypesRequired;
-                initInput.passwordHashingAlgorithm = config.passwordHashingAlgorithm;
-                initInput.passwordMaxLength = config.passwordMaxLength;
-                initInput.passwordMinLength = config.passwordMinLength;
-                initInput.passwordRotationPeriodDays = config.passwordRotationPeriodDays;
-                initInput.requireLowerCase = config.requireLowerCase;
-                initInput.requireMfa = config.requireMfa;
-                initInput.requireNumbers = config.requireNumbers;
-                initInput.requireSpecialCharacters = config.requireSpecialCharacters;
-                initInput.requireUpperCase = config.requireUpperCase;
-                initInput.specialCharactersAllowed = config.specialCharactersAllowed;
-                initInput.tenantId = tenantId;
-                initInput.passwordHistoryPeriod = config.passwordHistoryPeriod;
+                const input: PasswordConfigInput = {
+                    maxRepeatingCharacterLength: config.maxRepeatingCharacterLength,
+                    mfaTypesRequired: config.mfaTypesRequired,
+                    passwordHashingAlgorithm: config.passwordHashingAlgorithm,
+                    passwordMaxLength: config.passwordMaxLength,
+                    passwordMinLength: config.passwordMinLength,
+                    requireLowerCase: config.requireLowerCase,
+                    requireMfa: config.requireMfa,
+                    requireNumbers: config.requireNumbers,
+                    requireSpecialCharacters: config.requireSpecialCharacters,
+                    requireUpperCase: config.requireUpperCase,
+                    specialCharactersAllowed: config.specialCharactersAllowed,
+                    passwordHistoryPeriod: config.passwordHistoryPeriod,
+                    passwordRotationPeriodDays: config.passwordRotationPeriodDays,
+                    tenantId: tenantId
+                }
+                setPasswordConfigInput(input);
+                setRevertToInput({...input});
+                setHasSystemDefaultPasswordRules(false);
             }
-            setPasswordConfigInput(initInput);
-            setRevertToInput(initInput)
+            else{
+                setHasSystemDefaultPasswordRules(true);
+                setPasswordConfigInput({...DEFAULT_TENANT_PASSWORD_CONFIGURATION});
+                setRevertToInput({...DEFAULT_TENANT_PASSWORD_CONFIGURATION});
+            }            
         },
     });
 
@@ -89,210 +93,356 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
         onCompleted() {
             onUpdateEnd(true);
             setMarkDirty(false);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
-            setPasswordConfigInput(revertToInput);
-            setErrorMessage(error.message)
-        },
-    }
+            setPasswordConfigInput({...revertToInput});
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
+    });
 
-    )
+    const [deletePasswordConfigurationMutation] = useMutation(PASSWORD_CONFIGURATION_DELETION_MUTATION, {
+        variables: {
+            tenantId: tenantId
+        },
+        onCompleted() {
+            onUpdateEnd(true);
+            setMarkDirty(false);
+            refetch();
+        },
+        onError(error) {
+            onUpdateEnd(false);
+            setPasswordConfigInput({...revertToInput});
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
+    });
+
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
 
-    if (passwordConfigInput) return (
-
-        <>
-            <Grid2 container size={12} spacing={2}>
+    return (
+        <React.Fragment>
+            {showDeprecatedHashingWarning &&
+                <Dialog
+                    maxWidth="sm"
+                    fullWidth={true}
+                    open={showDeprecatedHashingWarning}
+                    onClose={() => setShowDeprecatedHashingWarning(false)}
+                >
+                    <DialogTitle>
+                        <Alert sx={{fontWeight: "bold", fontSize: "1.0em"}} severity="warning">Warning: Deprecated Password Hashing Algotirhm</Alert>
+                    </DialogTitle>
+                    <DialogContent>
+                        <Typography component="div">                            
+                            <div style={{marginBottom: "8px"}}>
+                                SHA-256 is NOT suitable for password hashing, regardless of iteration count. Use Scrypt, Bcrypt, or PBKDF2 instead.
+                                This function is retained only for verifying existing passwords. New passwords should NOT use this algorithm.
+                            </div>
+                            <div style={{marginBottom: "8px"}}>
+                                SHA-256 is fast and optimized for GPUs/ASICs, making it vulnerable to brute-force attacks.
+                                A single GPU can test millions of passwords per second even with 128K iterations.
+                            </div>
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>                        
+                        <Button
+                            onClick={() => {
+                                setShowDeprecatedHashingWarning(false);
+                            }}
+                        >
+                            OK
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
+            {showConfirmRestorePasswordDefaultDialog &&
+                <Dialog
+                    open={showConfirmRestorePasswordDefaultDialog}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>
+                            Confirm that you want to restore the system default settings for password rules:
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => setShowConfirmRestorePasswordDefaultDialog(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowConfirmRestorePasswordDefaultDialog(false);
+                                onUpdateStart();
+                                deletePasswordConfigurationMutation();
+                            }}
+                        >
+                            Confirm
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
+            <Grid2 marginTop={"8px"} container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
                     </Grid2>
                 }
+                {hasSystemDefaultPasswordRules &&
+                    <Grid2  margin={"8px 0px"} size={12}>
+                        <Alert severity="info" sx={{width: "100%", fontSize: "0.90em"}}>These are the system default settings for passwords.</Alert>
+                    </Grid2>
+                }
                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <Grid2 marginBottom={"16px"}>
-                        <div>Password Minimum Length</div>
+                        
                         <TextField name="passwordMinLength" id="passwordMinLength"
+                            disabled={readOnly}
+                            type="number"
                             value={passwordConfigInput.passwordMinLength > 0 ? passwordConfigInput.passwordMinLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMinLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Password Minimum Length"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Password Maximum Length</div>
+                        
                         <TextField name="passwordMaxLength" id="passwordMaxLength"
+                            disabled={readOnly}
+                            type="number"
                             value={passwordConfigInput.passwordMaxLength > 0 ? passwordConfigInput.passwordMaxLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMaxLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Password Maximum Length"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Maximum Consecutive Length Of Identical Characters</div>
+                        
                         <TextField name="maxConsecutiveRepeatingChars" id="maxConsecutiveRepeatingChars"
+                            disabled={readOnly}
+                            type="number"
                             value={passwordConfigInput.maxRepeatingCharacterLength && passwordConfigInput.maxRepeatingCharacterLength > 0 ? passwordConfigInput.maxRepeatingCharacterLength : ""}
                             onChange={(evt) => { passwordConfigInput.maxRepeatingCharacterLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            fullWidth={true} 
+                            label="Maximum Consecutive Length Of Identical Characters"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Password History Period</div>
+                        
                         <TextField name="passwordHistoryPeriod" id="passwordHistoryPeriod"
+                            disabled={readOnly}
+                            type="number"
                             value={passwordConfigInput.passwordHistoryPeriod && passwordConfigInput.passwordHistoryPeriod > 0 ? passwordConfigInput.passwordHistoryPeriod : ""}
-                            onChange={(evt) => { passwordConfigInput.passwordHistoryPeriod = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            onChange={(evt) => { 
+                                const period = parseInt(evt.target.value || "0");
+                                passwordConfigInput.passwordHistoryPeriod = period <= 0 ? null : period;
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true); 
+                            }}
+                            fullWidth={true} 
+                            label="Password History Period"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Change Password Period (days)</div>
+                        
                         <TextField name="passwordRotationPeriodDays" id="passwordRotationPeriodDays"
+                            disabled={readOnly}
+                            type="number"
                             value={passwordConfigInput.passwordRotationPeriodDays && passwordConfigInput.passwordRotationPeriodDays > 0 ? passwordConfigInput.passwordRotationPeriodDays : ""}
-                            onChange={(evt) => { passwordConfigInput.passwordRotationPeriodDays = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            fullWidth={true} size="small"
+                            onChange={(evt) => { 
+                                const rotationPeriod = parseInt(evt.target.value || "0"); 
+                                passwordConfigInput.passwordRotationPeriodDays = rotationPeriod <= 0 ? null : rotationPeriod;
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true); 
+                            }}
+                            fullWidth={true} 
+                            label="Change Password Period (days)"
                         />
                     </Grid2>
                     <Grid2 marginBottom={"16px"} >
-                        <div>Password Hashing Algorithm</div>
-                        <Select
+                        <TextField
+                            select
+                            disabled={readOnly}
                             required={true}
-                            size="small"
+                            label="Password Hashing Algorithm"
                             fullWidth={true}
                             value={passwordConfigInput.passwordHashingAlgorithm}
-                            onChange={(evt) => { passwordConfigInput.passwordHashingAlgorithm = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                            onChange={(evt) => { 
+                                passwordConfigInput.passwordHashingAlgorithm = evt.target.value; 
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true);
+                                if(evt.target.value === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS || evt.target.value === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
+                                    setShowDeprecatedHashingWarning(true);
+                                }
+                            }}
                         >
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS)}</MenuItem>
-                        </Select>
+                            {PASSWORD_HASHING_ALGORITHMS.map(
+                                (algorithm: string) => (                                    
+                                    <MenuItem value={algorithm} key={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>                                    
+                                )
+                            )}
+                        </TextField>
                     </Grid2>
                 </Grid2>
 
                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Uppercase
-                        </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                checked={passwordConfigInput.requireUpperCase === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireUpperCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                    <Paper elevation={0} 
+                        variant="outlined"
+                        sx={{
+                            p: 2.5,
+                            borderRadius: 2,
+                            bgcolor: 'grey.50',
+                            height: '100%',
+                        }}                    
+                    >                        
+                    <Grid2 container size={12}>                        
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireUpperCase === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireUpperCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Uppercase"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
                             />
                         </Grid2>
+                        
 
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Lowercase
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireLowerCase === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireLowerCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Lowercase"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                            
                         </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                checked={passwordConfigInput.requireLowerCase === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireLowerCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            />
+                        
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireNumbers === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireNumbers = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Numbers"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                             
                         </Grid2>
-
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Numbers
+                        
+                        <Grid2 size={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireSpecialCharacters === true}
+                                        onChange={(_, checked: boolean) => { 
+                                            passwordConfigInput.requireSpecialCharacters = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); 
+                                        }}
+                                    />
+                                }
+                                label="Require Special Characters"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                             
                         </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                checked={passwordConfigInput.requireNumbers === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireNumbers = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            />
-                        </Grid2>
-                        <Grid2 alignContent={"center"} size={10}>
-                            Require Special Characters
-                        </Grid2>
-                        <Grid2 size={2}>
-                            <Checkbox
-                                checked={passwordConfigInput.requireSpecialCharacters === true}
-                                onChange={(_, checked: boolean) => { passwordConfigInput.requireSpecialCharacters = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                            />
-                        </Grid2>
+                        
                         <Grid2 marginTop={"8px"} alignContent={"center"} size={10}>
-                            <div>Special Characters Allowed</div>
+                            
                             <TextField name="specialCharactersAllowed" id="specialCharactersAllowed"
+                                disabled={readOnly}
                                 value={passwordConfigInput.specialCharactersAllowed}
                                 onChange={(evt) => { passwordConfigInput.specialCharactersAllowed = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
-                                fullWidth={true} size="small"
+                                fullWidth={true} 
+                                label="Special Characters Allowed"
                             />
                         </Grid2>
+                        
                     </Grid2>
+                    </Paper>
                 </Grid2>
             </Grid2>
             <Divider sx={{ marginTop: "16px" }} />
             <Grid2 marginTop={"24px"} container size={12} spacing={2}>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <Grid2 container size={12}>
-                        <Grid2 alignContent={"center"} size={12}>Multi-factor Authentication</Grid2>
-                        <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
-                            <Select
-                                name="mfa"
-                                id="mfa"
-                                required={true}
-                                size="small"
-                                fullWidth={true}
-                                value={
-                                    passwordConfigInput.allowMfa ?
-                                        "allowed" :
-                                        passwordConfigInput.requireMfa ? "required" :
-                                            "none"
+                    <Grid2 size={12}>
+                        <Grid2 container size={12} marginBottom={"16px"}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        disabled={readOnly}
+                                        checked={passwordConfigInput.requireMfa === true}                                
+                                        onChange={(_, checked: boolean) => {
+                                            if(checked === false){
+                                                passwordConfigInput.mfaTypesRequired = "";
+                                            }
+                                            passwordConfigInput.requireMfa = checked;
+                                            setPasswordConfigInput({ ...passwordConfigInput });
+                                            setMarkDirty(true);
+                                        }}
+                                    />
                                 }
-                                onChange={(evt) => {
-                                    const v: string = evt.target.value;
-                                    passwordConfigInput.allowMfa = (v === "none" || v === "required") ? false : true;
-                                    passwordConfigInput.requireMfa = (v === "none" || v === "allowed") ? false : true;
-                                    if (v === "none") {
-                                        passwordConfigInput.mfaTypesRequired = "";
-                                        passwordConfigInput.mfaTypesAllowed = "";
-                                    }
-                                    setPasswordConfigInput({ ...passwordConfigInput });
-                                    setMarkDirty(true);
-                                }}
-                            >
-                                <MenuItem value={"none"}>None</MenuItem>
-                                <MenuItem value={"allowed"}>Allowed</MenuItem>
-                                <MenuItem value={"required"}>Required</MenuItem>
-                            </Select>
+                                label="Require Multi-factor Authentication"
+                                sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                labelPlacement="start"
+                            />                                                  
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
-                            MFA Types Allowed/Required
-                        </Grid2>
-                        <Grid2 alignContent={"center"} size={12}>
-                            <Autocomplete
+                            <Autocomplete                                
                                 id="mfaTypes"
                                 multiple={true}
-                                size="small"
-                                sx={{ paddingTop: "8px" }}
-                                renderInput={(params) => <TextField {...params} label="" />}
-                                options={[
-                                    { id: MFA_AUTH_TYPE_TIME_BASED_OTP, label: "OTP - Requires an authenticator app" },
-                                    { id: MFA_AUTH_TYPE_FIDO2, label: "Security Key" },
-                                    { id: MFA_AUTH_TYPE_SMS, label: "SMS - Not recommended" }
-                                ]}
+                                sx={{ paddingTop: "8px" }}                                
+                                renderInput={(params) => <TextField {...params} label="MFA Types Required" />}
+                                options={
+                                    MFA_AUTH_TYPES
+                                    .filter(
+                                        (type: string) => type !== MFA_AUTH_TYPE_NONE
+                                    )
+                                    .map(
+                                        (type: string) => {
+                                            return {id: type, label: MFA_AUTH_TYPE_DISPLAY.get(type)}
+                                        }
+                                    )
+                                }
                                 isOptionEqualToValue={(option, value) => option.id === value.id}
                                 value={
-                                    passwordConfigInput.mfaTypesAllowed && passwordConfigInput.mfaTypesAllowed !== "" ?
-                                        passwordConfigInput.mfaTypesAllowed.split(",").map(s => { return { id: s, label: MFA_AUTH_TYPE_DISPLAY.get(s) } }) :
                                         passwordConfigInput.mfaTypesRequired && passwordConfigInput.mfaTypesRequired !== "" ?
                                             passwordConfigInput.mfaTypesRequired.split(",").map(s => { return { id: s, label: MFA_AUTH_TYPE_DISPLAY.get(s) } }) :
                                             []
-                                }
+                                }                                
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={(_, value: any) => {
-                                    const val: any = value.map((s: any) => s.id).join(",");
-                                    if (passwordConfigInput.allowMfa) {
-                                        passwordConfigInput.mfaTypesAllowed = val;
-                                    }
-                                    else if (passwordConfigInput.requireMfa) {
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    const val: any = value.map((s: any) => s.id).join(",");                                    
+                                    if (passwordConfigInput.requireMfa) {
                                         passwordConfigInput.mfaTypesRequired = val;
                                     }
                                     setPasswordConfigInput({ ...passwordConfigInput });
                                     setMarkDirty(true);
                                 }}
-                                disabled={!(passwordConfigInput.allowMfa === true || passwordConfigInput.requireMfa === true)}
+                                disabled={readOnly || !passwordConfigInput.requireMfa === true}
                             />
                         </Grid2>
 
@@ -300,13 +450,23 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 </Grid2>
 
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                <Button
-                    disabled={!markDirty}
-                    onClick={() => { onUpdateStart(); mutatePasswordConfiguration() }}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update</Button>
-            </Stack>
-        </>
+            <DetailSectionActionHandler
+                onDiscardClickedHandler={() => {
+                    setPasswordConfigInput({...revertToInput});
+                    setMarkDirty(false);
+                }}
+                onUpdateClickedHandler={() => {
+                    onUpdateStart(); 
+                    mutatePasswordConfiguration(); 
+                }}
+                markDirty={markDirty}
+                disableSubmit={!containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
+                enableRestoreDefault={hasSystemDefaultPasswordRules === false}
+                restoreDefaultHandler={() => {
+                    setShowConfirmRestorePasswordDefaultDialog(true);                    
+                }}
+            />
+        </React.Fragment>
 
     )
 

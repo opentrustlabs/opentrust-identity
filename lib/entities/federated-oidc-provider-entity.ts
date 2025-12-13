@@ -1,85 +1,137 @@
-import type { FederatedOidcProvider } from '@/graphql/generated/graphql-types';
-import { BlobType, Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "federated_oidc_provider"
-})
-export class FederatedOIDCProviderEntity {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(federatedOidcProvider?: FederatedOidcProvider){
-        if(federatedOidcProvider){
-            this.clientauthtype = federatedOidcProvider.clientAuthType;
-            this.federatedoidcproviderclientid = federatedOidcProvider.federatedOIDCProviderClientId;
-            this.federatedoidcproviderid = federatedOidcProvider.federatedOIDCProviderId;
-            this.federatedoidcprovidername = federatedOidcProvider.federatedOIDCProviderName;
-            this.federatedoidcprovidertype = federatedOidcProvider.federatedOIDCProviderType;
-            this.federatedoidcproviderwellknownuri = federatedOidcProvider.federatedOIDCProviderWellKnownUri;
-            this.refreshtokenallowed = federatedOidcProvider.refreshTokenAllowed;
-            this.scopes = federatedOidcProvider.scopes ? federatedOidcProvider.scopes.join(",") : "";
-            this.usepkce = federatedOidcProvider.usePkce
-            this.federatedoidcproviderclientsecret = federatedOidcProvider.federatedOIDCProviderClientSecret ? federatedOidcProvider.federatedOIDCProviderClientSecret : "";
-            this.federatedoidcproviderdescription = federatedOidcProvider.federatedOIDCProviderDescription || "";
-            this.federatedoidcprovidertenantid = federatedOidcProvider.federatedOIDCProviderTenantId || "";
-            this.socialloginprovider = federatedOidcProvider.socialLoginProvider || "";            
+const FederatedOIDCProviderEntity = new EntitySchema({
+
+    tableName: "federated_oidc_provider",
+    name: "federatedOidcProvider",
+    columns: {
+        federatedOIDCProviderId: {
+            type: String,
+            primary: true,
+            name: "federatedoidcproviderid"
+        },
+        federatedOIDCProviderName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcprovidername"
+        },
+        federatedOIDCProviderDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcproviderdescription"
+        },
+        federatedOIDCProviderTenantId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcprovidertenantid"
+        },
+        federatedOIDCProviderClientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcproviderclientid"
+        },
+        federatedOIDCProviderClientSecret: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcproviderclientsecret"
+        },
+        federatedOIDCProviderWellKnownUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcproviderwellknownuri"
+        },
+        refreshTokenAllowed: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "refreshtokenallowed",
+            transformer: BooleanTransformer
+        },
+        scopes: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "scopes",
+            transformer: {
+                to(value) {
+                    if (value) {
+                        if (Array.isArray(value)) {
+                            return value.join(",");
+                        }
+                        else {
+                            return value;
+                        }
+                    }
+                    else {
+                        return ""
+                    }
+                },
+                from(value) {
+                    if (value && value.length > 0) {
+                        return value.split(",");
+                    }
+                    else {
+                        return value;
+                    }
+                },
+            }
+        },
+        usePkce: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "usepkce",
+            transformer: BooleanTransformer
+        },
+        clientAuthType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientauthtype"
+        },
+        federatedOIDCProviderType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcprovidertype"
+        },
+        socialLoginProvider: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "socialloginprovider"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        federatedOIDCProviderResponseType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcproviderresponsetype"
+        },
+        federatedOIDCProviderSubjectType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcprovidersubjecttype"
         }
     }
+});
 
-    @PrimaryKey()
-    federatedoidcproviderid: string;
-
-    @Property()
-    federatedoidcprovidername: string;
-
-    @Property()
-    federatedoidcproviderdescription: string | null;
-    
-    @Property()
-    federatedoidcprovidertenantid: string | null;
-    
-    @Property()
-    federatedoidcproviderclientid: string;
-    
-    @Property()
-    federatedoidcproviderclientsecret: string | null;
-
-    @Property()
-    federatedoidcproviderwellknownuri: string
-
-    @Property()
-    refreshtokenallowed: boolean;
-
-    @Property()
-    scopes: string | null;
-
-    @Property()
-    usepkce: boolean;
-
-    @Property()
-    clientauthtype: string;
-
-    @Property()
-    federatedoidcprovidertype: string;
-
-    @Property()
-    socialloginprovider: string | null;
-
-    public toModel(): FederatedOidcProvider {
-        const f: FederatedOidcProvider = {
-            clientAuthType: this.clientauthtype,
-            federatedOIDCProviderClientId: this.federatedoidcproviderclientid,
-            federatedOIDCProviderId: this.federatedoidcproviderid,
-            federatedOIDCProviderName: this.federatedoidcprovidername,
-            federatedOIDCProviderType: this.federatedoidcprovidertype,
-            federatedOIDCProviderWellKnownUri: this.federatedoidcproviderwellknownuri,
-            refreshTokenAllowed: this.refreshtokenallowed,
-            scopes: this.scopes ? this.scopes.split(",") : [],
-            usePkce: this.usepkce,
-            federatedOIDCProviderClientSecret: this.federatedoidcproviderclientsecret,
-            federatedOIDCProviderDescription: this.federatedoidcproviderdescription,
-            federatedOIDCProviderTenantId: this.federatedoidcprovidertenantid, 
-            socialLoginProvider: this.socialloginprovider            
-        }
-        return f;
-
-    }
-}
+export default FederatedOIDCProviderEntity;

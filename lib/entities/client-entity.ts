@@ -1,58 +1,105 @@
-import type { Client, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
+const {
+    RDB_DIALECT
+} = process.env;
 
-@Entity({
-    tableName: "client"
-})
-class ClientEntity implements Client {
-    
-    constructor(client: Client){
-        Object.assign(this, client);
-    }
-    
-    __typename?: "Client" | undefined;
+const ClientEntity = new EntitySchema({
 
+    tableName: "client",
+    name: "client",
+    columns: {
+        clientId: {
+            type: String,
+            primary: true,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        clientName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientname"
+        },
+        clientDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "clientdescription"
+        },
+        clientSecret: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientsecret"
+        },
+        clientTokenTTLSeconds: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "clienttokenttlseconds"
+        },
+        clientType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clienttype"
+        },
+        maxRefreshTokenCount: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "maxrefreshtokencount"
+        },
+        enabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "enabled",
+            transformer: BooleanTransformer
+        },
+        oidcEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "oidcenabled",
+            transformer: BooleanTransformer
+        },
+        pkceEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "pkceenabled",
+            transformer: BooleanTransformer
+        },
+        userTokenTTLSeconds: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "usertokenttlseconds"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        audience: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "audience"
+        }
+    },
 
-    @Property({fieldName: "clientdescription", nullable: true})
-    clientDescription?: Maybe<string> | undefined | null;
-    
-    @PrimaryKey({fieldName: "clientid"})
-    clientId: string;
+});
 
-    @Property({fieldName: "clientname"})
-    clientName: string;
-
-    @Property({fieldName: "clientsecret"})
-    clientSecret: string;
-
-    @Property({fieldName: "clienttokenttlseconds", nullable: true})
-    clientTokenTTLSeconds?: Maybe<number> | undefined | null;
-
-    @Property({fieldName: "clienttype"})
-    clientType: string;
-
-    //@Property("clienttypeid")
-    clienttypeid?: Maybe<string> | undefined | null;
-
-    @Property({fieldName: "maxrefreshtokencount", nullable: true})
-    maxRefreshTokenCount?: Maybe<number> | undefined | null;
-
-    @Property({fieldName: "enabled"})
-    enabled: boolean;
-
-    @Property({fieldName: "oidcenabled"})
-    oidcEnabled: boolean;
-
-    @Property({fieldName: "pkceenabled"})
-    pkceEnabled: boolean;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "usertokenttlseconds", nullable: true})
-    userTokenTTLSeconds?: Maybe<number> | undefined | null;
-
-}
 
 export default ClientEntity;

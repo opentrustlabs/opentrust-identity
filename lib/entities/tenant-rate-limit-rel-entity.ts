@@ -1,33 +1,47 @@
-import type { Maybe, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "tenant_rate_limit_rel"
-})
-class TenantRateLimitRelEntity implements TenantRateLimitRel {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(tenantRateLimitRel?: TenantRateLimitRel){
-        if(tenantRateLimitRel){
-            Object.assign(this, tenantRateLimitRel);
+const TenantRateLimitRelEntity = new EntitySchema({
+    columns: {
+        servicegroupid: {
+            type: String,
+            primary: true,
+            name: "servicegroupid"
+        },
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        allowUnlimitedRate: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "allowunlimitedrate",
+            transformer: BooleanTransformer
+        },
+        rateLimit: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "ratelimit"
+        },
+        rateLimitPeriodMinutes: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "ratelimitperiodminutes"
         }
-    }
-    __typename?: "TenantRateLimitRel" | undefined;
-    
-    @PrimaryKey({fieldName: "servicegroupid"})
-    servicegroupid: string;
+    },
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
+    tableName: "tenant_rate_limit_rel",
+    name: "tenantRateLimitRel",
 
-    @Property({fieldName: "allowunlimitedrate"})
-    allowUnlimitedRate?: Maybe<boolean> | undefined;
+});
 
-    @Property({fieldName: "ratelimit"})
-    rateLimit?: Maybe<number> | undefined;
-    
-    @Property({fieldName: "ratelimitperiodminutes"})
-    rateLimitPeriodMinutes?: Maybe<number> | undefined;
-    
-}
 
-export default TenantRateLimitRelEntity
+export default TenantRateLimitRelEntity;

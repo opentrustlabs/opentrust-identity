@@ -9,13 +9,18 @@ import Grid2 from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
 import { ASSIGN_FEDERATED_OIDC_PROVIDER_TO_TENANT_MUTATION, REMOVE_FEDERATED_OIDC_PROVIDER_FROM_TENANT_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Dialog from "@mui/material/Dialog";
-import { Button, DialogActions, DialogContent, Divider, TextField } from "@mui/material";
+import { Button, DialogActions, DialogContent, Divider, TablePagination } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Tenant } from "@/graphql/generated/graphql-types";
+import { Tenant, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import TenantSelector from "../dialogs/tenant-selector";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE } from "@/utils/consts";
+import { useIntl } from 'react-intl';
+
 
 export interface FederatedOIDCProviderTenantConfigurationProps {
     federatedOIDCProviderId: string,
@@ -31,6 +36,10 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const [tenantToAdd, setTenantToAdd] = React.useState<string | null>(null);
@@ -38,6 +47,9 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
     const [showRemoveDialog, setShowRemoveDialog] = React.useState<boolean>(false);
+    const [page, setPage] = React.useState<number>(1);
+    const [canAddRel] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -60,7 +72,7 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
         onError(error){
             onUpdateEnd(false);
             setShowAddDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANTS_QUERY]
     });
@@ -78,10 +90,15 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
         onError(error){
             onUpdateEnd(false);
             setShowRemoveDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANTS_QUERY]
     });
+
+    // HANDLER FUNCTIONS
+    const handlePageChange = (_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
+        setPage(page + 1);
+    }
 
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
@@ -98,6 +115,8 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                 <Dialog
                     open={showRemoveDialog}
                     onClose={() => setShowRemoveDialog(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
                 >
                     <DialogContent>
                         <Typography component={"div"}>
@@ -146,32 +165,31 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                                 }
                             });
                         }}
-                        filterTenants={
-                            (tenants: Array<Tenant>) => {
-                                if(data.getTenants.length === 0){
-                                    return tenants;
-                                }
-                                const existingIds: Array<string> = data.getTenants.map((t: Tenant) => t.tenantId);
-                                return tenants.filter(
-                                    (t: Tenant) => {
-                                        return !existingIds.includes(t.tenantId);
-                                    }
-                                )                                
-                            }
+                        existingTenantIds={
+                            data.getTenants.length === 0 ?
+                                [] :
+                                data.getTenants.map(
+                                    (t: Tenant) => t.tenantId
+                                )
                         }
                         submitButtonText="Submit"
                     />
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setShowAddDialog(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Tenant</div>
+            {canAddRel &&
+                <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <AddBoxIcon
+                            sx={{cursor: "pointer"}}
+                            onClick={() => setShowAddDialog(true)}
+                        />
+                        <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Tenant</div>
+                    </Grid2>                
                 </Grid2>
-                
+            }
+            <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
+                <Grid2 size={11} >Tenant Name</Grid2>                        
+                <Grid2 size={1}></Grid2>
             </Grid2>
             <Divider />
             {data.getTenants.length === 0 &&
@@ -183,24 +201,34 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
             }
             {data.getTenants.length > 0 &&
                 <Grid2 spacing={1} container size={12}>
-                    {data.getTenants.map(
+                    {data.getTenants.slice((page - 1) * 10, page * 10).map(                    
                         (tenant: Tenant) => (
                             <React.Fragment key={tenant.tenantId}>
                                 <Grid2 size={12}><Divider /></Grid2>
                                 <Grid2 size={11}>
                                     <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link>
                                 </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setTenantToRemove(tenant); setShowRemoveDialog(true);}}
-                                    />
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {canRemoveRel &&
+                                        <RemoveCircleOutlineIcon
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {setTenantToRemove(tenant); setShowRemoveDialog(true);}}
+                                        />
+                                    }
                                 </Grid2>                                
                             </React.Fragment>
                         )
                     )}
                 </Grid2>
-            }   
+            }
+            <TablePagination
+                component={"div"}
+                page={page - 1}
+                rowsPerPage={10}
+                count={data.getTenants.length}
+                onPageChange={handlePageChange}
+                rowsPerPageOptions={[]}
+            />
 
         </Typography>
     )

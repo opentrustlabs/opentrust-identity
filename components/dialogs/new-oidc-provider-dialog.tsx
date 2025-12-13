@@ -1,12 +1,13 @@
 "use client";
 import { FederatedOidcProviderCreateInput } from "@/graphql/generated/graphql-types";
 import { FEDERATED_OIDC_PROVIDER_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_RESPONSE_TYPE_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
-import { Alert, Autocomplete, Button, Checkbox, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Button, FormControlLabel, Switch, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
+import { useIntl } from 'react-intl';
 
 
 export interface NewOIDCProviderDialogProps {
@@ -23,6 +24,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
     onCreateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
     const initInput: FederatedOidcProviderCreateInput = {
         federatedOIDCProviderName: "",
         federatedOIDCProviderDescription: "",
@@ -30,14 +34,16 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
         federatedOIDCProviderClientId: "",
         federatedOIDCProviderClientSecret: "",
         federatedOIDCProviderWellKnownUri: "",
-        refreshTokenAllowed: false,
+        refreshTokenAllowed: true,
         usePkce: false,
         federatedOIDCProviderType: FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE,
         federatedoidcprovidertypeid: "",
         clientAuthType: OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST,
         clientauthtypeid: "",
-        scopes: [OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE],
-        socialLoginProvider: ""
+        scopes: [OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE],
+        socialLoginProvider: "",
+        federatedOIDCProviderResponseType: FEDERATED_OIDC_RESPONSE_TYPE_CODE,
+        federatedOIDCProviderSubjectType: FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC
     }
 
     // HOOKS
@@ -65,7 +71,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message);
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );
@@ -80,9 +86,6 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
             return false
         }
         if (!oidcProviderInput.federatedOIDCProviderClientId || oidcProviderInput.federatedOIDCProviderClientId === "") {
-            return false;
-        }
-        if (oidcProviderInput.usePkce === false && (!oidcProviderInput.federatedOIDCProviderClientSecret || oidcProviderInput.federatedOIDCProviderClientSecret === "")) {
             return false;
         }
         if (oidcProviderInput.usePkce === false && (!oidcProviderInput.clientAuthType || oidcProviderInput.federatedOIDCProviderClientSecret === OIDC_CLIENT_AUTH_TYPE_NONE)) {
@@ -117,10 +120,24 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     </Stack>
                                 </Grid2>
                             }
+                            <Grid2 size={12} marginBottom={"8px"}>
+                                <Alert severity="info" sx={{width: "100%"}}>
+                                    <div style={{marginBottom: "8px"}}>Make sure that the federated OIDC provider supports the following (which can be found from their discovery URI) </div>
+                                    <pre>
+                                        <ol>
+                                            <li>userinfo_endpoint</li>
+                                            <li>response_type=code</li>
+                                            <li>response_mode=query</li>
+                                            <li>scopes_supported of openid, profile, email</li>
+                                            <li>claims_supported of email, family_name, given_name</li>
+                                        </ol>
+                                    </pre>                                    
+                                </Alert>
+                            </Grid2>
                             <Grid2 marginBottom={"8px"}>
                                 <div>Provider Name</div>
                                 <TextField
-                                    required name="providerName" id="providerName"
+                                    required name="oidcProviderName" id="oidcProviderName"
                                     onChange={(evt) => { oidcProviderInput.federatedOIDCProviderName = evt?.target.value; setOIDCProviderInput({ ...oidcProviderInput }); }}
                                     value={oidcProviderInput.federatedOIDCProviderName}
                                     fullWidth={true}
@@ -129,7 +146,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                             <Grid2 marginBottom={"8px"}>
                                 <div>Provider Descripton</div>
                                 <TextField
-                                    name="providerDescription" id="providerDescription"
+                                    name="oidcProviderDescription" id="oidcProviderDescription"
                                     value={oidcProviderInput.federatedOIDCProviderDescription}
                                     fullWidth={true}
                                     size="small"
@@ -144,7 +161,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     size="small"
                                     fullWidth={true}
                                     value={oidcProviderInput.federatedOIDCProviderType}
-                                    name="providerType"
+                                    name="oidcProviderType"
                                     onChange={(evt) => {
                                         oidcProviderInput.federatedOIDCProviderType = evt.target.value;
                                         if (evt.target.value === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE) {
@@ -190,36 +207,41 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     fullWidth={true} size="small" />
                             </Grid2>
                             <Grid2 container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={11}>
-                                    Allow Refresh Tokens
-                                </Grid2>
-                                <Grid2 size={1}>
-                                    <Checkbox
-                                        id="refreshTokensAllowed"
-                                        checked={oidcProviderInput.refreshTokenAllowed}
-                                        onChange={(_, checked: boolean) => {
-                                            oidcProviderInput.refreshTokenAllowed = checked;
-                                            setOIDCProviderInput({ ...oidcProviderInput });
-                                        }}
-                                    />
-                                </Grid2>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            id="refreshTokensAllowed"
+                                            checked={oidcProviderInput.refreshTokenAllowed}
+                                            onChange={(_, checked: boolean) => {
+                                                oidcProviderInput.refreshTokenAllowed = checked;
+                                                setOIDCProviderInput({ ...oidcProviderInput });
+                                            }}
+                                        />
+                                    }
+                                    label="Allow Refresh Tokens"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />
                             </Grid2>
                             <Grid2 container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={11}>
-                                    Use PKCE
-                                </Grid2>
-                                <Grid2 size={1}>
-                                    <Checkbox
-                                        checked={oidcProviderInput.usePkce}
-                                        onChange={(_, checked: boolean) => {
-                                            oidcProviderInput.usePkce = checked;
-                                            if (!checked && oidcProviderInput.clientAuthType === OIDC_CLIENT_AUTH_TYPE_NONE) {
-                                                oidcProviderInput.clientAuthType = OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST;
-                                            }
-                                            setOIDCProviderInput({ ...oidcProviderInput });
-                                        }}
-                                    />
-                                </Grid2>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="usePKCE"
+                                            checked={oidcProviderInput.usePkce}
+                                            onChange={(_, checked: boolean) => {
+                                                oidcProviderInput.usePkce = checked;
+                                                if (!checked && oidcProviderInput.clientAuthType === OIDC_CLIENT_AUTH_TYPE_NONE) {
+                                                    oidcProviderInput.clientAuthType = OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST;
+                                                }
+                                                setOIDCProviderInput({ ...oidcProviderInput });
+                                            }}
+                                        />
+                                    }
+                                    label="Use PKCE"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />                                
                             </Grid2>
                             <Grid2 marginBottom={"8px"}>
                                 <div>Authentication Type</div>
@@ -235,9 +257,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     <MenuItem value={OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC)}</MenuItem>
                                     <MenuItem disabled={oidcProviderInput.usePkce === false} value={OIDC_CLIENT_AUTH_TYPE_NONE} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_NONE)}</MenuItem>
                                 </Select>
-                            </Grid2>
+                            </Grid2>                            
                             <Grid2 marginBottom={"8px"}>
-                                <div>Provider Client Secret (Not required if using PCKE)</div>
+                                <div>Provider Client Secret (Not required if using PCKE or you want the IdP owner to enter the secret)</div>
                                 <TextField type="password" name="clientSecret" id="clientSecret"
                                     value={oidcProviderInput.federatedOIDCProviderClientSecret}
                                     onChange={(evt) => { oidcProviderInput.federatedOIDCProviderClientSecret = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); }}
@@ -266,7 +288,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                             }
                                         }
                                     )}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onChange={(_, value: any) => {
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         oidcProviderInput.scopes = value.map((v: any) => v.id);
                                         setOIDCProviderInput({ ...oidcProviderInput });
                                     }}

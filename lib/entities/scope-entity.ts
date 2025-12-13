@@ -1,30 +1,50 @@
-import type { Maybe, Scope } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "scope"
-})
-class ScopeEntity implements Scope {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(scope?: Scope){
-        if(scope){
-            Object.assign(this, scope);
+const ScopeEntity = new EntitySchema({
+
+    columns: {
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        },
+        scopeName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopename"
+        },
+        scopeDescription: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopedescription"
+        },
+        scopeUse: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopeuse"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
-    }
-    __typename?: "Scope" | undefined;
+    },
 
-    @PrimaryKey({fieldName: "scopeid"})
-    scopeId: string;
+    tableName: "scope",
+    name: "scope",
 
-    @Property({fieldName: "scopename"})
-    scopeName: string;
+});
 
-    @Property({fieldName: "scopedescription"})
-    scopeDescription: string;
-
-    @Property({fieldName: "scopeuse"})
-    scopeUse: string;
-
-}
 
 export default ScopeEntity;
+

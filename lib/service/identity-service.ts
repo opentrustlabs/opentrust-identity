@@ -1,23 +1,61 @@
 import { OIDCContext } from "@/graphql/graphql-context";
-
+import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, User, UserCreateInput, UserCredential, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail, TenantRestrictedAuthenticationDomainRel, TenantLookAndFeel, PortalUserProfile, AuthorizationGroup, AuthenticationGroup, UserScopeRel } from "@/graphql/generated/graphql-types";
+import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
+import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, DEFAULT_TENANT_LOOK_AND_FEEL, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PRINCIPAL_TYPE_END_USER, PRINCIPAL_TYPE_IAM_PORTAL_USER, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { sha256HashPassword, pbkdf2HashPassword, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
+import Kms from "../kms/kms";
+import AuthDao from "../dao/auth-dao";
+import ClientDao from "../dao/client-dao";
+import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthenticationResponse, VerifiedAuthenticationResponse } from '@simplewebauthn/server';
+import { validatePasswordFormat } from "@/utils/password-utils";
+import OIDCServiceUtils from "./oidc-service-utils";
+import { WellknownConfig } from "../models/wellknown-config";
+import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { ERROR_CODES } from "../models/error";
+import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
+import ChangeEventDao from "../dao/change-event-dao";
 import { randomUUID } from "crypto";
-import { NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
-import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt } from "@/utils/dao-utils";
-import { Client } from "@opensearch-project/opensearch";
-import { getOpenSearchClient } from "../data-sources/search";
-import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
+import JwtServiceUtils from "./jwt-service-utils";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
+import AuthorizationGroupDao from "../dao/authorization-group-dao";
+import AuthenticationGroupDao from "../dao/authentication-group-dao";
+import ScopeDao from "../dao/scope-dao";
 
 
-const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const searchClient: Client = getOpenSearchClient();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
+const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+const kms: Kms = DaoFactory.getInstance().getKms();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
+const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const searchDao: SearchDao = new OpenSearchDao();
 
-class IdentitySerivce {
+const {
+    MFA_ISSUER,
+    MFA_ORIGIN,
+    MFA_ID,
+    AUTH_DOMAIN,
+    PORTAL_AUTH_TOKEN_TTL_HOURS
+} = process.env;
+
+
+const PORTAL_AUTH_TOKEN_TTL_SECONDS = PORTAL_AUTH_TOKEN_TTL_HOURS ? 
+        parseInt(PORTAL_AUTH_TOKEN_TTL_HOURS) * 60 /* min/hr */ * 60 /* sec/min */ :
+        DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS * 60 * 60;
+
+class IdentityService {
+
     
     oidcContext: OIDCContext;
 
@@ -25,226 +63,237 @@ class IdentitySerivce {
         this.oidcContext = oidcContext;
     }
 
-    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, password: string){
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
-        }
-        if(tenant.enabled === false){
-            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
-        }
-        if(tenant.allowUserSelfRegistration === false){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
-        }
-        const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantId);
-        if(!passwordConfig){
-            throw new GraphQLError("ERROR_NO_PASSWORD_CONFIGURATION_FOR_TENANT");
-        }
-        const isValidPassword: boolean = await this.validatePassword(password, passwordConfig);
-        if(!isValidPassword){
-            throw new GraphQLError("ERROR_INVALID_PASSWORD");
-        }
+    
 
-        const enabled: boolean = !tenant.verifyEmailOnSelfRegistration;
-        const user: User = await this._createUser(userCreateInput, tenant, enabled);
-        
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, password, passwordConfig.passwordHashingAlgorithm);
-
-        await identityDao.addUserCredential(userCredential);
-
-        return Promise.resolve(user);
-        
-    }
+    // ##########################################################################
+    // 
+    //                IDENTITY MANAGEMENT METHODS
+    //
+    // ##########################################################################     
 
     public async getUserById(userId: string): Promise<User | null> {
-        return identityDao.getUserBy("id", userId);
-    }
+        // 3 allowed conditions
+        // 1. user.read for root tenant member
+        // 2. user.read for non-root tenant member but this user belongs to the tenant
+        // 3. the user themselves
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function() {
+                    return identityDao.getUserBy("id", userId);
+                },
+                additionalConstraintCheck: async function(oidcContext: OIDCContext) {
 
-    public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
-        }
-        if(tenant.enabled === false){
-            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
-        }
-        const user: User = await this._createUser(userCreateInput, tenant, true);
+                    if(oidcContext.rootTenant.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+                        const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
+                        const rel = userTenantRels.find(
+                            (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
+                        );
+                        if(!rel){
+                            return {isAuthorized: false, errorDetail: ERROR_CODES.EC00114}
+                        }
+                    }
+                    return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
+                }
+            }
+        );
+        const user = await getData(this.oidcContext, [USER_READ_SCOPE, TENANT_READ_ALL_SCOPE]);
         return user;
     }
 
-    protected async validatePassword(password: string, passwordConfig: TenantPasswordConfig): Promise<boolean> {
-        // TODO
-        // Validate length, complexity, etc.
-
-        // Finally, need to check to see if the password is diallowed because is has been
-        // previously found to be easily cracked, as in the top 100K or top 1M cracked passwords.
-        const passwordProhibited: boolean = await identityDao.passwordProhibited(password);
-        if(passwordProhibited){
-            return Promise.resolve(false);
-        }
-
-        return Promise.resolve(true);
-    }
-
+    
     public async updateUser(user: User): Promise<User> {
 
+        // Always lower-case the email and format the phone number if it exists
+        user.email = this.formatEmail(user.email);
+        if(user.phoneNumber){
+            user.phoneNumber = this.formatPhoneNumber(user.phoneNumber)
+        }
+
+        // If the user is making the update request on their own behalf, they still need user.update scope
+        if(user.userId === this.oidcContext.portalUserProfile?.userId){
+            const isAuthorized: boolean = containsScope(USER_UPDATE_SCOPE, this.oidcContext.portalUserProfile.scope);
+            if(!isAuthorized){
+                throw new GraphQLError(ERROR_CODES.EC00154.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00154}});
+            }
+        }
+        // Otherwise somebody is making the request on the user's behalf.
+        else{
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, USER_UPDATE_SCOPE, null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+            }
+        }
+
         const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
-        if (existingUser !== null) {
-            if (existingUser.locked === true && user.locked !== true) {
-                user.locked = true;
-            }
-            user.federatedOIDCProviderSubjectId = existingUser.federatedOIDCProviderSubjectId;
-            user.emailVerified = existingUser.emailVerified;
-            user.domain = existingUser.domain;
+        if(existingUser === null){
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
+        }
+        
+        if(existingUser.markForDelete === true){
+            throw new GraphQLError(ERROR_CODES.EC00155.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00155}});
+        }
 
-            // Did the email change and if so, what parts of the email have changed?
-            // 1    domains 
-            // 2    just the name
-            // 3    both
-            // In case of change.
-            // 1    verify the email does not already exist
-            // 2    unset the verified email flag
-            if (user.email !== existingUser.email) {
-                const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
-                if (userByEmail) {
-                    throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
-                }
-                else {
-                    const domain: string = user.email.substring(
-                        user.email.indexOf("@") + 1
-                    )
-                    user.domain = domain;
-                    user.emailVerified = false;
-                }
-            }
-
-            await identityDao.updateUser(user);
-
-            // Only update the search index if anything has changed
-            if (
+        // If this user has a domain that is managed via a federated OIDC provider,
+        // then none of the user's properties can be updated because they come from
+        // the federaed OIDC provider. The only changes allowed are to enable/disable
+        // the user.
+        const userHasFederatedOIDCProvider = existingUser.federatedOIDCProviderSubjectId !== null && existingUser.federatedOIDCProviderSubjectId !== "" ? true : false;
+        if(userHasFederatedOIDCProvider && (
                 user.email !== existingUser.email ||
                 user.firstName !== existingUser.firstName ||
                 user.lastName !== existingUser.lastName ||
-                user.enabled !== existingUser.enabled
-            ) {
-                const getResponse: Get_Response = await searchClient.get({
-                    id: user.userId,
-                    index: SEARCH_INDEX_OBJECT_SEARCH
-                });
-                console.log(getResponse);
-                if (getResponse.body) {
-                    console.log("####################################");
-                    console.log(getResponse.body);
-                    const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-                    console.log("####################################")
-                    console.log(document);
-                    document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-                        document.email = user.email;
-                    document.enabled = user.enabled;
-                    await searchClient.index({
-                        id: user.userId,
-                        index: SEARCH_INDEX_OBJECT_SEARCH,
-                        body: document
-                    })
-                }
+                user.middleName !== existingUser.middleName ||
+                user.phoneNumber !== existingUser.phoneNumber
+            )
+        ){
+            throw new GraphQLError(ERROR_CODES.EC00147.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00147}});
+        }
+        
+        // Unlocking the user is done via a separate process.
+        //
+        // Did the email change and if so, what parts of the email have changed?
+        // 1    domains 
+        // 2    just the name
+        // 3    both
+        // In case of change.
+        // 1    verify the email does not already exist
+        // 2    unset the verified email flag
+        // 3    verify that the new domain is not tied to a 3rd party provider.
+        if (user.email !== existingUser.email) {
+            const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
+            if (userByEmail) {
+                throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
             }
-            return user;
+            
+            const domain: string = user.email.substring(
+                user.email.indexOf("@") + 1
+            );
+            if(domain.length < 4 || domain.indexOf(".") < 0){
+                throw new GraphQLError(ERROR_CODES.EC00143.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00143}});
+            }
+
+            const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
+            if(provider !== null){
+                throw new GraphQLError(ERROR_CODES.EC00144.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00144}});
+            }
+            
+            user.domain = domain;
+            user.emailVerified = false;            
         }
-        else {
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        // Did the phone number change, and if so, is it unique?
+        if(user.phoneNumber && user.phoneNumber !== existingUser.phoneNumber){
+            const userByPhone: User | null = await identityDao.getUserBy("phone", user.phoneNumber);
+            if(userByPhone){
+                throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
+            }
         }
+
+        // Only the user themselves can reset this value by actually enter a new password during 
+        // authentication.
+        user.forcePasswordResetAfterAuthentication = existingUser.forcePasswordResetAfterAuthentication;
+        
+        await identityDao.updateUser(user);
+
+        changeEventDao.addChangeEvent({
+            objectId: user.userId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_USER,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(user)
+        });
+
+
+        // Only update the search index if anything has changed
+        if (
+            user.email !== existingUser.email ||
+            user.firstName !== existingUser.firstName ||
+            user.lastName !== existingUser.lastName ||
+            user.enabled !== existingUser.enabled
+        ) {
+            await searchDao.updateSearchIndexUserDocuments(user);                
+        }
+        return user;
+        
+        
     }
 
-    protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
+    public async getUserSessions(userId: string): Promise<Array<UserSession>> {
 
-        const domain: string = userCreateInput.email.substring(
-            userCreateInput.email.indexOf("@") + 1
-        )
-        const user: User = {
-            domain: domain,
-            email: userCreateInput.email,
-            emailVerified: userCreateInput.emailVerified,
-            enabled: enabled,
-            firstName: userCreateInput.firstName,
-            lastName: userCreateInput.lastName,
-            locked: false,
-            nameOrder: userCreateInput.nameOrder,
-            userId: randomUUID().toString(),
-            address: userCreateInput.address,
-            countryCode: userCreateInput.countryCode,
-            middleName: userCreateInput.middleName,
-            phoneNumber: userCreateInput.phoneNumber,
-            preferredLanguageCode: userCreateInput.preferredLanguageCode,
-            twoFactorAuthType: userCreateInput.twoFactorAuthType,
-            federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_SESSION_READ_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        await identityDao.createUser(user);
-        await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
-        await this.updateSearchIndex(tenant, user, "PRIMARY");
-
-        return Promise.resolve(user);
+        const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+        const retArr: Array<UserSession> = [];
+        for(let i = 0; i < arr.length; i++){
+            const r: RefreshData = arr[i];
+            const tenant: Tenant | null = await tenantDao.getTenantById(r.tenantId);
+            const client: Client | null = await clientDao.getClientById(r.clientId);
+            const userSession: UserSession = {
+                clientId: r.clientId,
+                clientName: client ? client.clientName : "Unknown",
+                tenantId: r.tenantId,
+                tenantName: tenant ? tenant.tenantName : "Unknown",
+                userId: userId
+            }
+            retArr.push(userSession);
+        }
+        return retArr;
     }
 
-    protected generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
-        // For the Bcrypt hashing algorithm, the salt value is included in the final salted password
-        // so we can just leave it as the empty string.
-        let salt = "";
-        let hashedPassword = "";
-
-        if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 10);
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 11);
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 12);
-        }                   
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, 64000);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, 128000);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, 128000);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, 256000);            
+    public async deleteUserSession(userId: string, clientId: string, tenantId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_SESSION_DELETE_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        return {
-            dateCreated: Date.now().valueOf().toString(),
-            hashedPassword: hashedPassword,
-            salt: salt,
-            hashingAlgorithm: hashAlgorithm,
-            userId: userId
-        }
+        await authDao.deleteRefreshData(userId, tenantId, clientId);
+        return Promise.resolve();
     }
-
 
     public async getUserTenantRels(userId: string): Promise<Array<UserTenantRelView>> {
-        const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
-        const retVal: Array<UserTenantRelView> = [];
-        for(let i = 0; i < rels.length; i++){
-            const tenant: Tenant | null = await tenantDao.getTenantById(rels[i].tenantId);
-            const tenantName = tenant ? tenant.tenantName : "";
-            retVal.push({
-                userId: userId,
-                tenantId: rels[i].tenantId,
-                relType: rels[i].relType,
-                tenantName: tenantName
-            });
-        }
-        return retVal;
+
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function(): Promise<Array<UserTenantRelView> | null> {
+                    const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
+                    const retVal: Array<UserTenantRelView> = [];
+                    for(let i = 0; i < rels.length; i++){
+                        const tenant: Tenant | null = await tenantDao.getTenantById(rels[i].tenantId);
+                        const tenantName = tenant ? tenant.tenantName : "";
+                        retVal.push({
+                            userId: userId,
+                            tenantId: rels[i].tenantId,
+                            relType: rels[i].relType,
+                            tenantName: tenantName
+                        });
+                    }
+                    return retVal;
+                },
+                postProcess: async function(oidcContext: OIDCContext, result: Array<UserTenantRelView> | null) {
+                    if(result && oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+                        return result.filter(
+                            (r: UserTenantRelView) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
+                        );
+                    }
+                    return result;                    
+                }
+            }
+        );
+
+        const retVal = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE]);
+        return retVal || [];
     }
 
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_USER_ASSIGN_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+
         let userTenantRel: UserTenantRel = {
             enabled: false,
             relType: relType,
@@ -252,26 +301,43 @@ class IdentitySerivce {
             userId: userId
         };
         if(! ( relType === USER_TENANT_REL_TYPE_PRIMARY || relType === USER_TENANT_REL_TYPE_GUEST) ){
-            throw new GraphQLError("ERROR_INVALID_USER_TENANT_RELATIONSHIP_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00161.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00161}});
         }
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_TENANT");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_USERS");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
+
+        // Does the tenant restrict which domains can be used for authentication?
+        const restrictedDomains: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+        if(restrictedDomains.length > 0){
+            const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = restrictedDomains.find(
+                (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === user.domain
+            );
+            // If we found that the user's domain did not match any restricted domain, then error.
+            if(restrictedDomainRel === undefined){
+                throw new GraphQLError(ERROR_CODES.EC00227.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00227}});
+            }
+        }
+
 
         const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
         // If there is not an existing relationship, then it MUST be a PRIMARY relationship.
         // If not, throw an error.
+        let hasUpdateRel: boolean = false;
         if(rels.length === 0){
             if(relType !== USER_TENANT_REL_TYPE_PRIMARY){
-                throw new GraphQLError("ERROR_MUST_BE_PRIMARY_TENANT");
+                throw new GraphQLError(ERROR_CODES.EC00162.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00162}});
             }
             else{
+                hasUpdateRel = true;
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                // Add rel record to the search index
+                await searchDao.updateUserTenantRelSearchIndex(tenantId, user);
             }
         }
         // Otherwise, there already exists one or more relationships. 
@@ -279,9 +345,9 @@ class IdentitySerivce {
             const primaryRel: UserTenantRel | undefined  = rels.find(
                 (rel: UserTenantRel) => rel.relType === USER_TENANT_REL_TYPE_PRIMARY
             );
-            // There should always be a primary rel
+            // There should always be a primary rel            
             if(!primaryRel){
-                throw new GraphQLError("ERROR_NO_PRIMARY_RELATIONSHIP_EXISTS_FOR_THE_USER_AND_TENANT");
+                throw new GraphQLError(ERROR_CODES.EC00163.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00163}});
             }
 
             // If there are no existing rels that match the incoming data, then create a 
@@ -291,10 +357,13 @@ class IdentitySerivce {
             )            
             if(!existingTenantRel){
                 if(relType === USER_TENANT_REL_TYPE_PRIMARY){
-                    throw new GraphQLError("ERROR_MUST_BE_GUEST_TENANT");
+                    throw new GraphQLError(ERROR_CODES.EC00164.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00164}});
                 }
                 else{
+                    hasUpdateRel = true;
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    // Add rel record to the search index
+                    await searchDao.updateUserTenantRelSearchIndex(tenantId, user);
                 }
             }
             
@@ -304,76 +373,877 @@ class IdentitySerivce {
             // have to update the incoming as PRIMARY
             else{
                 if(existingTenantRel.relType === USER_TENANT_REL_TYPE_PRIMARY && relType === USER_TENANT_REL_TYPE_GUEST){
-                    throw new GraphQLError("ERROR_CANNOT_ASSIGN_TO_A_GUEST_RELATIONSHIP");
+                    throw new GraphQLError(ERROR_CODES.EC00165.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00165}});
                 }
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
+                    hasUpdateRel = true;
                     // Assign the incoming as primary
-                    userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);                    
                     // Then update the existing primary as guest
-                    await identityDao.assignUserToTenant(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
+                    await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);                    
+                    // Add rel record to the search index
+                    await searchDao.updateUserTenantRelSearchIndex(tenantId, user);
                 }
             }
         }
-
-        return userTenantRel;
-        
+        if(hasUpdateRel){
+            changeEventDao.addChangeEvent({
+                objectId: user.userId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_USER_REL,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify({tenantId, userId, relType})
+            });
+        }
+        return userTenantRel;        
     }
 
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_USER_REMOVE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+
         // Cannot remove a primary relationship
         const rel: UserTenantRel | null = await identityDao.getUserTenantRel(tenantId, userId);
         if(rel){
             if(rel.relType === USER_TENANT_REL_TYPE_PRIMARY){
-                throw new GraphQLError("ERROR_CANNOT_CANNOT_REMOVE_A_PRIMARY_RELATIONSHIP");
+                throw new GraphQLError(ERROR_CODES.EC00166.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00166}});
             }
             else {
+                changeEventDao.addChangeEvent({
+                    objectId: userId,
+                    changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                    changeEventClass: CHANGE_EVENT_CLASS_TENANT_USER_REL,
+                    changeEventId: randomUUID().toString(),
+                    changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+                    changeTimestamp: Date.now(),
+                    data: JSON.stringify({userId, tenantId})
+                });
                 await identityDao.removeUserFromTenant(tenantId, userId);
+
+                let authzGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getUserAuthorizationGroups(userId);
+                authzGroups = authzGroups.filter(
+                    (g: AuthorizationGroup) => g.tenantId === tenantId
+                );
+                for(let i = 0; i < authzGroups.length; i++){
+                    await authorizationGroupDao.removeUserFromAuthorizationGroup(userId, authzGroups[i].groupId);
+                }
+
+                let authnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, undefined, userId);
+                authnGroups = authnGroups.filter(
+                    (g: AuthenticationGroup) => g.tenantId === tenantId
+                );
+                for(let i = 0; i < authnGroups.length; i++){
+                    await authenticationGroupDao.removeUserFromAuthenticationGroup(userId, authnGroups[i].authenticationGroupId);
+                }
+
+                const userScopes: Array<UserScopeRel> = await scopeDao.getUserScopeRels(userId, tenantId);
+                for(let i = 0; i < userScopes.length; i++){
+                    await scopeDao.removeScopeFromUser(tenantId, userId, userScopes[i].scopeId);
+                }
+
+                // Delete all refresh tokens tied to this tenant id
+                const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+                if(arr && arr.length > 0){
+                    for(let i = 0; i < arr.length; i++){
+                        if(arr[i].tenantId === tenantId){
+                            await authDao.deleteRefreshDataByRefreshToken(arr[i].refreshToken);
+                        }
+                    }                    
+                }
+
+                // Finally, remove the user from the tenant in the rel search index
+                // No need to wait on this, since it might be a long running operation.                
+                searchDao.removerUserFromTenant(tenantId, userId);                
             }
         }        
         return Promise.resolve();
+    }  
+    
+    public async unlockUser(userId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UNLOCK_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user){
+            user.locked = false;
+            await identityDao.updateUser(user);
+            
+            const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+            oidcServiceUtils.fireSecurityEvent("account_unlocked", this.oidcContext, user, null, authToken);
+
+            changeEventDao.addChangeEvent({
+                objectId: userId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_USER_UNLOCKED,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(user)
+            });
+        }
+        else{
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
+        }
+        return Promise.resolve();
+    }
+
+    public async getRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null> {
+        if(userId !== this.oidcContext.portalUserProfile?.userId){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], this.oidcContext.portalUserProfile?.tenantId || null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+            }
+        }
+        return identityDao.getUserRecoveryEmail(userId);
+    }
+
+    public async swapPrimaryAndRecoveryEmail(): Promise<boolean> {
+        if(!this.oidcContext.portalUserProfile?.userId){            
+            throw new GraphQLError(ERROR_CODES.EC00167.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00167}});
+        }
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
+        }
+        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(this.oidcContext.portalUserProfile.userId);
+        if(userRecoveryEmail === null){
+            throw new GraphQLError(ERROR_CODES.EC00168.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00168}});
+        }
+
+        // Swap both the emails and the verification status.
+        const userEmail = user.email;
+        const emailVerified = user.emailVerified;
+
+        user.email = userRecoveryEmail.email;
+        user.emailVerified = userRecoveryEmail.emailVerified;
+        userRecoveryEmail.email = userEmail;
+        userRecoveryEmail.emailVerified = emailVerified;
+        
+        await identityDao.updateUser(user);
+        await identityDao.updateRecoveryEmail(userRecoveryEmail);
+        searchDao.updateSearchIndexUserDocuments(user);
+        return true;
+
+    }
+
+    public async deleteRecoveryEmail(userId: string): Promise<void> {
+
+        // If the user is making the update request on their own behalf, they still need user.update scope
+        if(userId === this.oidcContext.portalUserProfile?.userId){
+            const isAuthorized: boolean = containsScope(USER_UPDATE_SCOPE, this.oidcContext.portalUserProfile.scope);
+            if(!isAuthorized){
+                throw new GraphQLError(ERROR_CODES.EC00154.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00154}});
+            }
+        }
+        // Otherwise somebody is making the request on the user's behalf.
+        else{
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, USER_UPDATE_SCOPE, null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+            }
+        }
+        await identityDao.deleteRecoveryEmail(userId);
+        return Promise.resolve();
+
     }
 
 
-    protected async updateSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
-        let owningTenantId: string = tenant.tenantId;
-        const document: ObjectSearchResultItem = {
-            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-            description: "",
-            objectid: user.userId,
-            objecttype: SearchResultType.User,
-            owningtenantid: owningTenantId,
-            email: user.email,
-            enabled: user.enabled,
-            owningclientid: "",
-            subtype: "",
-            subtypekey: ""
+    // ##########################################################################
+    // 
+    //                IDENTITY UTILITY METHODS
+    //
+    // ##########################################################################   
+    
+    public async checkPassword(password: string, passwordConfig: TenantPasswordConfig): Promise<boolean> {        
+
+        // Need to check to see if the password is diallowed because is has been
+        // previously found to be easily cracked, as in the top 100K or top 1M cracked passwords.
+        const passwordProhibited: boolean = await identityDao.passwordProhibited(password);
+        if(passwordProhibited){
+            return Promise.resolve(false);
+        }
+        const passwordFormatIsValid: boolean = validatePasswordFormat(password, passwordConfig).result;
+        return Promise.resolve(passwordFormatIsValid);
+    }
+
+    
+    public validateUserCredentials(userCredential: UserCredential, password: string): boolean {
+        // Note that the bcrypt hashing algorithm CAN automatically generate a random salt
+        // and save both the salt value and the iteration value as part of the hashed password,
+        // so we do NOT need to pass both those pieces of information to the validation
+        // function.
+
+        let valid: boolean = false;
+        if(
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS
+        ){
+            valid = bcryptValidatePassword(password, userCredential.hashedPassword)
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_256K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_32K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        return valid;
+    }    
+  
+    
+    protected async getSortedAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
+        const arrUserAuthenticationState: Array<UserAuthenticationState> = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
+        arrUserAuthenticationState.sort(
+            (a: UserAuthenticationState, b: UserAuthenticationState) => a.authenticationStateOrder - b.authenticationStateOrder
+        );
+        return arrUserAuthenticationState;
+    }
+
+    public async createTOTP(userId: string): Promise<TotpResponse> {
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
+        }
+        let userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
+
+        let totp: OTPAuth.TOTP | null = null;        
+        if(userMfaRel){
+            throw new GraphQLError(ERROR_CODES.EC00169.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00169}});
+        }
+        else{
+            const newSecret = new OTPAuth.Secret({size: 20});            
+            const encryptedSecret = await kms.encrypt(newSecret.base32);
+            if(!encryptedSecret){
+                throw new GraphQLError(ERROR_CODES.EC00170.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00170}});
+            }
+
+            // Save the data using the encrypted value, but
+            // return the plain text value to the user to scan
+            // or enter into their device.
+            userMfaRel = {
+                mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP,
+                userId: userId,
+                primaryMfa: true,
+                fido2PublicKeyAlgorithm: null,
+                fido2CredentialId: null,
+                fido2KeySupportsCounters: null,
+                fido2PublicKey: null,
+                fido2Transports: null,
+                totpHashAlgorithm: TOTP_HASH_ALGORITHM_SHA1,
+                totpSecret: encryptedSecret
+            }
+
+            await identityDao.saveTOTP(userMfaRel);
+            userMfaRel.totpSecret = newSecret.base32;
+
+            // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+            totp = new OTPAuth.TOTP({
+                issuer: MFA_ISSUER || "Open Trust",
+                label: user.email,
+                algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+                digits: 6,
+                period: 30,
+                secret: newSecret
+            });
+            
         }
         
-        await searchClient.index({
-            id: user.userId,
-            index: SEARCH_INDEX_OBJECT_SEARCH,
-            body: document
+        const uri = totp.toString();
+        const response: TotpResponse = {
+            uri: uri,
+            userMFARel: userMfaRel
+        }
+        return response;
+    }
+
+    
+    public async validateTOTP(userId: string, totpValue: string): Promise<boolean> {
+        const userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
+        if(!userMfaRel || !userMfaRel.totpSecret){
+            throw new GraphQLError(ERROR_CODES.EC00171.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00171}});
+        }
+
+        const secret = await kms.decrypt(userMfaRel.totpSecret);
+        if(!secret){
+            throw new GraphQLError(ERROR_CODES.EC00172.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00172}});
+        }
+
+        // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+        const totp = new OTPAuth.TOTP({
+            issuer: MFA_ISSUER || "Open Trust",
+            label: userId,
+            algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+            digits: 6,
+            period: 30,
+            secret: secret
         });
-        
-        const relDocument: RelSearchResultItem = {
-            childid: user.userId,
-            childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-            childtype: SearchResultType.User,
-            owningtenantid: owningTenantId,
-            parentid: owningTenantId,
-            parenttype: SearchResultType.Tenant,
-            childdescription: user.email
+
+        const delta = totp.validate({
+            token: totpValue,
+            window: 1
+        });
+        if(delta === null){            
+            return false;
         }
-        await searchClient.index({
-            id: `${tenant.tenantId}::${user.userId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: relDocument
-        })
+        
+        return true;
     }
 
+    public async getUserMFARels(userId: string): Promise<Array<UserMfaRel>> {
 
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function(): Promise<Array<UserMfaRel> | null> {
+                    const arr: Array<UserMfaRel> = await identityDao.getUserMFARels(userId);
+                    return arr;
+                },
+                additionalConstraintCheck: async function(oidcContext) {
+                    if(userId !== oidcContext.portalUserProfile?.userId){
+                        const userTenantRels = await identityDao.getUserTenantRelsByUserId(userId);
+                        const rel = userTenantRels.find(
+                            (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
+                        );
+                        if(!rel){
+                            return {isAuthorized: false, errorDetail: ERROR_CODES.EC00114}
+                        }
+                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
+                    }
+                    else{
+                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
+                    }
+                },
+                postProcess: async function(_, result) {
+                     // clear out any sensitive information before returning to the client.
+                    if(result){
+                        result.forEach(
+                            (rel: UserMfaRel) => {
+                                rel.totpSecret = "";
+                                rel.fido2PublicKeyAlgorithm = 0;
+                                rel.fido2CredentialId = "";
+                                rel.fido2PublicKey = "";
+                                rel.fido2Transports = "";
+                                rel.fido2KeySupportsCounters = false;
+                            }
+                        );
+                    }
+                    return result; 
+                }
+            }
+        );
 
+        const mfas = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE]);
+        return mfas || [];             
+    }
 
+    public async deleteTOTP(userId: string): Promise<void> {
+        if(userId !== this.oidcContext.portalUserProfile?.userId){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+            }
+        }
+
+        return identityDao.deleteTOTP(userId);
+    }
+
+    public async deleteFIDOKey(userId: string): Promise<void> {
+        if(userId !== this.oidcContext.portalUserProfile?.userId){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
+            }
+        }
+        await identityDao.deleteFido2Count(userId);
+        return identityDao.deleteFIDOKey(userId);
+    }
+
+    public async registerFIDO2Key(userId: string, fido2KeyRegistrationInput: Fido2KeyRegistrationInput): Promise<UserMfaRel> {
+        
+        // Validate the input
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
+        }
+        
+        const existingChallenge: Fido2Challenge | null = await identityDao.getFIDO2Challenge(userId);
+        if(!existingChallenge){
+            throw new GraphQLError(ERROR_CODES.EC00173.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00173}});
+        }
+        if(existingChallenge.expiresAtMs < Date.now()){
+            // Delete it and throw an error
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError(ERROR_CODES.EC00174.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00174}});
+        }
+
+        let verification: VerifiedRegistrationResponse;
+        try{
+            verification = await verifyRegistrationResponse({
+                response: {
+                    id: fido2KeyRegistrationInput.id,
+                    rawId: fido2KeyRegistrationInput.rawId,
+                    response: {
+                        attestationObject: fido2KeyRegistrationInput.response.attestationObject,
+                        clientDataJSON: fido2KeyRegistrationInput.response.clientDataJSON,
+                        authenticatorData: fido2KeyRegistrationInput.response.authenticatorData,
+                        publicKey: fido2KeyRegistrationInput.response.publicKey,
+                        publicKeyAlgorithm: fido2KeyRegistrationInput.response.publicKeyAlgorithm,
+                        transports: fido2KeyRegistrationInput.response.transports as Array<AuthenticatorTransport>
+                    },
+                    clientExtensionResults: {},
+                    type: "public-key"
+                },
+                expectedChallenge: existingChallenge.challenge,
+                expectedOrigin: MFA_ORIGIN || "",
+                expectedRPID: MFA_ID
+            });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(error: any){
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError(error.message);
+        }
+        const { verified, registrationInfo } = verification;
+        if(!verified){
+            throw new GraphQLError(ERROR_CODES.EC00121.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00121}});
+        }
+        if(!registrationInfo){
+            throw new GraphQLError(ERROR_CODES.EC00175.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00175}});
+        }
+
+        const count: number = registrationInfo.credential.counter;
+        // why this code here? because the key from the response is not correctly encoded.
+        const publicKeyUint8Array: Uint8Array = registrationInfo.credential.publicKey;
+        const buffer = Buffer.from(publicKeyUint8Array);        
+        const publicKeyAsString = buffer.toString("base64url");
+
+        
+
+        await identityDao.deleteFIDO2Challenge(userId);
+        const userMfaRel: UserMfaRel = {
+            mfaType: MFA_AUTH_TYPE_FIDO2,
+            primaryMfa: false,
+            userId: user.userId,
+            fido2CredentialId: fido2KeyRegistrationInput.id,
+            fido2KeySupportsCounters: true,
+            fido2PublicKey: publicKeyAsString,
+            fido2PublicKeyAlgorithm: fido2KeyRegistrationInput.response.publicKeyAlgorithm,
+            fido2Transports: fido2KeyRegistrationInput.response.transports.join(",")
+        }
+
+        await identityDao.saveFIDOKey(userMfaRel); 
+        await identityDao.initFidoCount(userId, count);
+        return Promise.resolve(userMfaRel);
+
+    }
+
+    /**
+     * 
+     * @param registrationSessionToken 
+     * @returns 
+     */
+    protected async getSortedRegistartionStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>{
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await identityDao.getUserRegistrationStates(registrationSessionToken);
+        arrUserRegistrationState.sort(
+            (a: UserRegistrationState, b: UserRegistrationState) => a.registrationStateOrder - b.registrationStateOrder
+        );
+        return Promise.resolve(arrUserRegistrationState);
+    }    
+    
+    public async createFido2RegistrationChallenge(userId: string, sessionToken: string | null, sessionTokenType: string | null): Promise<Fido2RegistrationChallengeResponse> {
+
+        // does the user exist and are they not locked, not enabled, or marked for delete?
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
+        }
+        if(user.locked === true || user.markForDelete === true){
+            throw new GraphQLError(ERROR_CODES.EC00146.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00146}});
+        }
+        if(sessionToken === null && user.enabled === false){
+            throw new GraphQLError(ERROR_CODES.EC00176.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00176}});
+        }
+        if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_REGISTRATION){
+            const arrUserRegistrationStates: Array<UserRegistrationState> = await this.getSortedRegistartionStates(sessionToken);
+            const index = arrUserRegistrationStates.findIndex(
+                (value: UserRegistrationState) => (value.registrationState === RegistrationState.ConfigureSecurityKeyRequired || value.registrationState === RegistrationState.ConfigureSecurityKeyOptional)
+            );
+            if(index < 0){
+                throw new GraphQLError(ERROR_CODES.EC00150.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00150}});
+            }
+        }
+        if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_AUTHENTICATION){
+            
+            const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(sessionToken);
+            const index = arrUserAuthenticationStates.findIndex(
+                (value: UserAuthenticationState) => (value.authenticationState === AuthenticationState.ConfigureSecurityKey)
+            );
+            if(index < 0){
+                throw new GraphQLError(ERROR_CODES.EC00095.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00095}});
+            }
+        }
+
+        // If there is an existing challenge, then delete it and create a new one
+        const existingChallenge = await identityDao.getFIDO2Challenge(userId);
+        if(existingChallenge){
+            await identityDao.deleteFIDO2Challenge(userId);
+        }
+
+        const challenge: string = generateRandomToken(20, "base64url");
+
+        // Allow up to 15 minutes for the process to complete
+        const fido2Challenge: Fido2Challenge = {
+            challenge: challenge,
+            expiresAtMs: Date.now() + (15 * 60 * 1000),
+            issuedAtMs: Date.now(),
+            userId: user.userId
+        }
+        await identityDao.saveFIDO2Challenge(fido2Challenge);
+
+        const fido2ChallengeResponse: Fido2RegistrationChallengeResponse = {
+            email: user.email,
+            fido2Challenge: fido2Challenge,
+            rpId: MFA_ID || "opentrust",
+            rpName: MFA_ISSUER || "Open Trust",
+            userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
+        }
+
+        return Promise.resolve(fido2ChallengeResponse);
+    }
+
+    public async createFido2AuthenticationChallenge(userId: string, sessionToken: string | null, sessionTokenType: string | null): Promise<Fido2AuthenticationChallengeResponse> {
+        // does the user exist and are they not locked, not enabled, or marked for delete?
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
+        }
+        if(user.locked === true || user.markForDelete === true){
+            throw new GraphQLError(ERROR_CODES.EC00146.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00146}});
+        }
+        if(sessionToken === null && user.enabled === false){
+            throw new GraphQLError(ERROR_CODES.EC00176.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00176}});
+        }
+        if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_REGISTRATION){
+            const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(sessionToken);
+            const index = arrUserRegistrationState.findIndex(
+                (value: UserRegistrationState) => (value.registrationState === RegistrationState.ValidateSecurityKey)
+            );
+            if(index < 0){
+                throw new GraphQLError(ERROR_CODES.EC00150.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00150}});
+            }
+        }
+        if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_AUTHENTICATION){
+            const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(sessionToken);
+            const index = arrUserAuthenticationStates.findIndex(
+                (value: UserAuthenticationState) => (value.authenticationState === AuthenticationState.ValidateSecurityKey)
+            );
+            if(index < 0){
+                throw new GraphQLError(ERROR_CODES.EC00095.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00095}});
+            }
+        }
+
+        // Does the user have a security key configured?
+        const userMfaRel: UserMfaRel | null = await identityDao.getFIDOKey(userId);
+        if(!userMfaRel){
+            throw new GraphQLError(ERROR_CODES.EC00177.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00177}});
+        }
+
+        // If there is an existing challenge, then delete it and create a new one
+        const existingChallenge = await identityDao.getFIDO2Challenge(userId);
+        if(existingChallenge){
+            await identityDao.deleteFIDO2Challenge(userId);
+        }
+
+        const challenge: string = generateRandomToken(20, "base64url");
+        // Allow up to 15 minutes for the process to complete
+        const fido2Challenge: Fido2Challenge = {
+            challenge: challenge,
+            expiresAtMs: Date.now() + (15 * 60 * 1000),
+            issuedAtMs: Date.now(),
+            userId: user.userId
+        };
+        await identityDao.saveFIDO2Challenge(fido2Challenge);
+
+        const authnResponse: Fido2AuthenticationChallengeResponse = {
+            fido2AuthenticationChallengePasskeys: [{
+                id: userMfaRel.fido2CredentialId || "",
+                transports: userMfaRel.fido2Transports ? userMfaRel.fido2Transports.split(",") : []
+            }],
+            rpId: MFA_ID || "",
+            fido2Challenge: fido2Challenge
+        };
+
+        return Promise.resolve(authnResponse);
+    }
+
+    public async authenticateFIDO2Key(userId: string, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput): Promise<boolean> {
+
+        const existingChallenge: Fido2Challenge | null = await identityDao.getFIDO2Challenge(userId);
+        if(!existingChallenge){
+            throw new GraphQLError(ERROR_CODES.EC00178.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00178}});
+        }
+        if(existingChallenge.expiresAtMs < Date.now()){
+            // Delete it and throw an error
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError(ERROR_CODES.EC00174.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00174}});
+        }
+
+        const userMfaRel: UserMfaRel | null = await identityDao.getFIDOKey(userId);
+        if(!userMfaRel){
+            throw new GraphQLError(ERROR_CODES.EC00177.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00177}});
+        }
+        if(!userMfaRel.fido2CredentialId){
+            throw new GraphQLError(ERROR_CODES.EC00179.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00179}});
+        }
+        if(userMfaRel.fido2CredentialId !== fido2KeyAuthenticationInput.id){
+            throw new GraphQLError(ERROR_CODES.EC00180.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00180}});
+        }
+
+        const count: number | null = await identityDao.getFido2Count(userId);
+        if(count === null){
+            throw new GraphQLError(ERROR_CODES.EC00181.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00181}});
+        }
+       
+        const publicKeyBuffer: Buffer = Buffer.from(userMfaRel.fido2PublicKey || "", "base64url");
+        const publicKeyUint8Array = Uint8Array.from(publicKeyBuffer);
+        
+        let verification: VerifiedAuthenticationResponse;
+        try{
+            verification = await verifyAuthenticationResponse({
+                response: {
+                    clientExtensionResults: {},
+                    id: fido2KeyAuthenticationInput.id,
+                    rawId: fido2KeyAuthenticationInput.rawId,
+                    type: "public-key",
+                    authenticatorAttachment: fido2KeyAuthenticationInput.authenticationAttachment as AuthenticatorAttachment,
+                    response: {
+                        authenticatorData: fido2KeyAuthenticationInput.response.authenticatorData,
+                        clientDataJSON: fido2KeyAuthenticationInput.response.clientDataJSON,
+                        signature: fido2KeyAuthenticationInput.response.signature
+                    },                
+
+                },
+                expectedChallenge: existingChallenge.challenge,
+                expectedOrigin: MFA_ORIGIN || "",
+                expectedRPID: MFA_ID || "",
+                credential: {
+                    counter: count,
+                    id: userMfaRel.fido2CredentialId || "",
+                    publicKey: publicKeyUint8Array,
+                    transports: userMfaRel.fido2Transports?.split(",") as Array<AuthenticatorTransport>
+                }
+            });
+
+            const { verified, authenticationInfo } = verification;
+            if(!verified || !authenticationInfo){
+                await identityDao.deleteFIDO2Challenge(userId);                
+                throw new GraphQLError(ERROR_CODES.EC00121.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00121}});
+            }
+            const newCount = authenticationInfo.newCounter;            
+            await identityDao.deleteFIDO2Challenge(userId);
+            await identityDao.updateFido2Count(userId, newCount);
+            return true;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(error: any){
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError(error.message);
+        }        
+    }
+
+    /**
+     * 
+     * 
+     */
+    public async me(isMyProfileView: boolean | null): Promise<PortalUserProfile | null> {
+        
+        if(!this.oidcContext.portalUserProfile){
+            return null;
+        }
+        else if(isMyProfileView === null || isMyProfileView === false){
+            if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_IAM_PORTAL_USER || this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
+                return this.oidcContext.portalUserProfile;
+            }
+            else{
+                return null;                            
+            }
+        }
+        else{            
+            if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_END_USER){
+                return this.oidcContext.portalUserProfile;
+            }
+            else{
+                return null;
+            }
+        }
+    }
+
+    protected async createFederatedOIDCRequestProperties(email: string | null, userId: string | null, provider: FederatedOidcProvider, tenantId: string, preAuthenticationState: PreAuthenticationState | null): Promise<{hasError: boolean, errorDetail: ErrorDetail, authorizationEndpoint: string}> {
+
+        const state: string = generateRandomToken(32, "hex");
+        const federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel = {
+            federatedOIDCAuthorizationRelType: preAuthenticationState ? FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth : FederatedOidcAuthorizationRelType.AuthorizationRelTypePortalAuth,
+            email: email,
+            userId: userId,
+            expiresAtMs: Date.now() + 30 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
+            federatedOIDCProviderId: provider.federatedOIDCProviderId,
+            initRedirectUri: preAuthenticationState ? preAuthenticationState.redirectUri : "",
+            initResponseMode: preAuthenticationState? preAuthenticationState.responseMode : "" ,
+            initClientId: preAuthenticationState ? preAuthenticationState.clientId : null,
+            initResponseType: preAuthenticationState ? preAuthenticationState.responseMode : "",
+            initScope: preAuthenticationState ? preAuthenticationState.scope : provider.scopes.join(" "),            
+            initTenantId: tenantId,
+            initCodeChallenge: preAuthenticationState ? preAuthenticationState.codeChallenge : null,
+            initCodeChallengeMethod: preAuthenticationState ? preAuthenticationState.codeChallengeMethod : null,
+            state: state,
+            initState: preAuthenticationState && preAuthenticationState.state ? preAuthenticationState.state : state,
+            returnUri: ""
+        }
+        const retVal = {errorDetail: ERROR_CODES.NULL_ERROR, hasError: false, authorizationEndpoint: ""};
+        
+        const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(
+            provider.federatedOIDCProviderWellKnownUri
+        );
+        
+
+        if(wellKnownConfig === null){
+            retVal.errorDetail = ERROR_CODES.EC00113;
+            retVal.hasError = true;
+            return retVal;
+        }
+
+        // If we are supposed to use PKCE, then we need to generate the code challenge and save it too.
+        const {verifier, challenge} = provider.usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
+        federatedOIDCAuthorizationRel.codeVerifier = verifier;
+        federatedOIDCAuthorizationRel.returnUri = "";        
+        await authDao.saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel);
+
+        const scopeParameter = provider.scopes.join("%20");
+
+        const codeChallengeQueryParams = provider.usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
+        const authnUri = `${wellKnownConfig.authorization_endpoint}?client_id=${provider.federatedOIDCProviderClientId}&state=${federatedOIDCAuthorizationRel.state}&response_type=${provider.federatedOIDCProviderResponseType}&response_mode=query&redirect_uri=${AUTH_DOMAIN}${FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH}&scope=${scopeParameter}${codeChallengeQueryParams}`;
+        retVal.authorizationEndpoint = authnUri;
+
+        return retVal;
+    }
+ 
+
+    protected async generateAuthorizationCode(userId: string, preAuthToken: string): Promise<AuthorizationReturnUri> {
+                
+        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        if(preAuthenticationState === null){
+            throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
+        }
+        await authDao.deletePreAuthenticationState(preAuthToken);
+        if(preAuthenticationState.expiresAtMs < Date.now()){
+            await authDao.deletePreAuthenticationState(preAuthToken);
+            throw new GraphQLError(ERROR_CODES.EC00183.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00183}});
+        }
+
+        const authorizationCodeData: AuthorizationCodeData = {
+            clientId: preAuthenticationState.clientId,
+            code: generateRandomToken(32, "hex"),
+            expiresAtMs: Date.now() + (30 * 60 * 1000),
+            redirectUri: preAuthenticationState.redirectUri,
+            scope: preAuthenticationState.scope,
+            tenantId: preAuthenticationState.tenantId,
+            userId: userId,
+            codeChallenge: preAuthenticationState.codeChallenge,
+            codeChallengeMethod: preAuthenticationState.codeChallengeMethod            
+        }
+        await authDao.saveAuthorizationCodeData(authorizationCodeData);
+
+        const uri = preAuthenticationState.state ?
+            `${preAuthenticationState.redirectUri}?code=${authorizationCodeData.code}&state=${preAuthenticationState.state}` :
+            `${preAuthenticationState.redirectUri}?code=${authorizationCodeData.code}`;
+
+        const response: AuthorizationReturnUri = {
+            uri: uri,
+            code: authorizationCodeData.code,
+            state: preAuthenticationState.state
+        }
+        return response;
+    }
+
+    protected async validateEmailToken(userId: string, token: string): Promise<ErrorDetail | null> {
+        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        if(user === null){
+            await identityDao.deleteEmailConfirmationToken(token);            
+            return ERROR_CODES.EC00134;            
+        }
+                
+        if(user.userId !== userId){            
+            return ERROR_CODES.EC00135;
+        }
+
+        // For the one-time token, need to delete it in success case and
+        // update the user profile and this registration state to a status
+        // of complete and set the next state as the return value.
+        await identityDao.deleteEmailConfirmationToken(token);
+        user.emailVerified = true;
+        await identityDao.updateUser(user);
+        // No need to wait on the search index updates
+        searchDao.updateSearchIndexUserDocuments(user);
+        return null;
+    }
+
+    protected async sentEmailValidationToken(user: User, to: string): Promise<void> {
+        const token: string = generateRandomToken(8, "hex").toUpperCase();
+        await identityDao.saveEmailConfirmationToken(user.userId, token);
+        
+        // Send an email to the user with the token value.        
+        let fromEmailAddr: string = "";
+        const systemSettings = await tenantDao.getSystemSettings();
+        if(systemSettings && systemSettings.noReplyEmail){
+            fromEmailAddr = systemSettings.noReplyEmail;
+        }
+        else{
+            fromEmailAddr = "no-reply@" + this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
+        }
+        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
+        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
+        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, to, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+    }
+
+    protected getPortalAuthenTokenTTLSeconds(): number {
+        return PORTAL_AUTH_TOKEN_TTL_SECONDS;
+    }
+
+    protected formatEmail(email: string): string {
+        return email.toLowerCase();
+    }
+    protected formatPhoneNumber(phoneNumber: string): string {
+        const s = phoneNumber.replace(/\D/g, "");
+        return `+${s}`;
+    }
+    
 }
 
-export default IdentitySerivce;
+export default IdentityService;

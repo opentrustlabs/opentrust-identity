@@ -1,31 +1,40 @@
-import type { Maybe, TenantAnonymousUserConfiguration } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "tenant_anonymous_user_configuration"
-})
-class TenantAnonymousUserConfigurationEntity implements TenantAnonymousUserConfiguration {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(m?: TenantAnonymousUserConfiguration){
-        if(m){
-            Object.assign(this, m);
+const TenantAnonymousUserConfigurationEntity = new EntitySchema({
+
+    tableName: "tenant_anonymous_user_configuration",
+    name: "tenantAnonymousUserConfiguration",
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        defaultcountrycode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "defaultcountrycode"
+        },
+        defaultlanguagecode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "defaultlanguagecode"
+        },
+        tokenttlseconds: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "tokenttlseconds"
         }
     }
-    __typename?: "TenantAnonymousUserConfiguration";
+});
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "defaultcountrycode"})
-    defaultcountrycode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "defaultlangugecode"})
-    defaultlangugecode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "tokenttlseconds"})
-    tokenttlseconds: number;
-
-
-}
 
 export default TenantAnonymousUserConfigurationEntity;

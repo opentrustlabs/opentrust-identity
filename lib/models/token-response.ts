@@ -6,3 +6,12 @@ export interface OIDCTokenResponse {
     expires_in: number,
     id_token: string
 }
+
+export interface OIDCDeviceAuthorizationResponse {
+    device_code: string,
+    user_code: string,
+    verification_uri: string,
+    expires_in: number,
+    interval: number,
+    message: string
+}

@@ -1,21 +1,32 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Paper, Stack, TextField, Alert, Backdrop, CircularProgress, Snackbar } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Paper, TextField, Alert, Backdrop, CircularProgress, Snackbar, Stack, Box, Tooltip, FormControlLabel, Switch } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
-import { AuthorizationGroup, AuthorizationGroupUpdateInput, SearchResultType } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { AUTHORIZATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, DEFAULT_BACKGROUND_COLOR, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonIcon from '@mui/icons-material/Person';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PolicyIcon from '@mui/icons-material/Policy';
+import PeopleIcon from '@mui/icons-material/People';
 import TenantHighlight from "../tenants/tenant-highlight";
 import RelationshipConfigurationComponent from "../relationship-config/relationship-configuration-component";
 import { useMutation } from "@apollo/client";
 import { AUTHORIZATION_GROUP_UPDATE_MUTATION, AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AUTHORIZATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
 
 export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
@@ -25,6 +36,10 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     const initInput: AuthorizationGroupUpdateInput = {
         allowForAnonymousUsers: authorizationGroup.allowForAnonymousUsers,
@@ -40,7 +55,12 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
-    const [renderKey, setRenderKey] = React.useState<string>(Date.now().toString());
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(authorizationGroup.markForDelete);
+    const [disableInputs] = React.useState<boolean>(authorizationGroup.markForDelete || !containsScope(AUTHORIZATION_GROUP_UPDATE_SCOPE, profile?.scope || []));
+    const [canAddUserToAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveUserFromAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
+    const [canDeleteAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_DELETE_SCOPE, profile?.scope || []));
+    const [userConfigChangeCallback, setUserConfigChangeCallback] = React.useState<null | (() => void)>(null);
 
     // GRAPHQL FUNCTIONS
     const [updateAuthzGroupMutation] = useMutation(AUTHORIZATION_GROUP_UPDATE_MUTATION, {
@@ -54,7 +74,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [AUTHORIZATION_GROUP_DETAIL_QUERY]
     });
@@ -63,11 +83,13 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
-            setRenderKey(Date.now().toString() + Math.random().toString());
+            if(userConfigChangeCallback){
+                userConfigChangeCallback();
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -75,11 +97,13 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
-            setRenderKey( Date.now().toString() + Math.random().toString());
+            if(userConfigChangeCallback){
+                userConfigChangeCallback();
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     });
 
@@ -110,51 +134,157 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} size={12}>Overview</Grid2>
+                        <Paper
+                            elevation={0}
+
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
+                        >
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <PeopleIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {authorizationGroup.groupName}
+                                        </Typography>                                        
+                                    </Box>
+                                </Stack>
+                                {isMarkedForDelete !== true && canDeleteAuthzGroup &&
+                                    <SubmitMarkForDelete 
+                                        objectId={authorizationGroup.groupId}
+                                        objectType={MarkForDeleteObjectType.AuthorizationGroup}
+                                        confirmationMessage={`Confirm deletion of authorization group: ${authorizationGroup.groupName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));                                                    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                }                                                
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Stack>
+                        </Paper>
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
-                                <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                                <Grid2 size={12} marginBottom={"8px"}>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                </Grid2>   
                             }
-                            <Paper elevation={0} sx={{ padding: "8px" }}>
+                            {isMarkedForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This authorization group has been marked for deletion. No changes to the group are permitted."}
+                                />
+                            }
+                            <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Group Name</div>
+                                        <Stack spacing={3}>
                                             <TextField name="authzGroupName" id="authzGroupName" 
+                                                disabled={disableInputs}
                                                 value={authzGroupInput.groupName} 
                                                 onChange={(evt) => {authzGroupInput.groupName = evt.target.value; setAuthzGroupInput({...authzGroupInput}); setMarkDirty(true)}}
-                                                fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Group Description</div>
+                                                fullWidth={true}
+                                                label="Group Name" 
+                                            />
+
                                             <TextField name="authzGroupDescription" id="authzGroupDescription" 
+                                                disabled={disableInputs}
                                                 multiline={true}
                                                 rows={2}
                                                 value={authzGroupInput.groupDescription} 
                                                 onChange={(evt) => {authzGroupInput.groupDescription = evt.target.value; setAuthzGroupInput({...authzGroupInput}); setMarkDirty(true)}}
-                                                fullWidth={true} size="small" />
-                                        </Grid2>                                       
-                                        
+                                                fullWidth={true} 
+                                                label="Group Description"
+                                            />
+
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                    Object ID
+                                                </Typography>
+                                                <Paper
+                                                    variant="outlined"
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: 'grey.50',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                        {authorizationGroup.groupId}
+                                                    </Typography>
+                                                    <Tooltip title="Copy to clipboard">
+                                                        <ContentCopyIcon
+                                                            sx={{ cursor: "pointer", ml: 1, color: 'action.active' }}
+                                                            onClick={() => {
+                                                                copyContentToClipboard(authorizationGroup.groupId, "AuthZ ID copied to clipboard");
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </Paper>
+                                            </Box>
+                                        </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 container size={12} marginBottom={"16px"}>
-                                            <Grid2 alignContent={"center"} size={10}>Default</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    disabled={disableInputs}
                                                     name="default" 
                                                     checked={authzGroupInput.default}
                                                     onChange={(_, checked) => {
+                                                        
                                                         authzGroupInput.default = checked;
+                                                        // Allow for anonymous users is only available if
+                                                        // default is also checked. If unchecked, then also
+                                                        // uncheck the allow for anonymous users selection
+                                                        if(checked === false){
+                                                            authzGroupInput.allowForAnonymousUsers = false;
+                                                        }
                                                         setAuthzGroupInput({...authzGroupInput});
                                                         setMarkDirty(true);
                                                     }}
                                                 />
-                                            </Grid2>
-                                        </Grid2>
-                                        <Grid2 container size={12} marginBottom={"16px"}>
-                                            <Grid2 alignContent={"center"} size={10}>Allow for anonymous users</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
+                                            }
+                                            label="Default"
+                                            sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
+                                        />
+
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    disabled={disableInputs || authzGroupInput.default === false}
                                                     name="allowForAnonymous"
                                                     checked={authzGroupInput.allowForAnonymousUsers}
                                                     onChange={(_, checked) => {
@@ -163,108 +293,142 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                         setMarkDirty(true);
                                                     }}
                                                 />
-                                            </Grid2>
-                                        </Grid2>
-                                        <Grid2 >Object ID</Grid2>
-                                        <Grid2 container size={12} marginBottom={"16px"}>
-                                            <Grid2 alignContent={"center"} size={10}>{authorizationGroup.groupId}</Grid2>
-                                            <Grid2 size={2}><ContentCopyIcon /></Grid2>
-                                        </Grid2>
-                                    </Grid2>
-                                    
+                                            }
+                                            
+                                            label={
+                                                <Stack>
+                                                    <Typography variant="body2" fontWeight={500}>Allow for Anonymous Users</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Available when Default is also selected
+                                                    </Typography>
+                                                </Stack>
+                                            }
+                                            sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
+                                        />                                        
+                                    </Grid2>    
                                 </Grid2>
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            updateAuthzGroupMutation();
-                                        }}                                        
-                                    >
-                                        Update
-                                    </Button>
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", marginRight: "8px" }}
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setAuthzGroupInput(initInput);
-                                            setMarkDirty(false);
-                                        }}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </Stack>
+                            </Paper>
+                            <Paper elevation={1} sx={{ padding: "8px" }}>
+                                
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setAuthzGroupInput(initInput);
+                                        setMarkDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        updateAuthzGroupMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                />                                
                             </Paper>
                         </Grid2>
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"authorization-group-user-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails key={renderKey}>
-                                    {authzGroupInput.default &&
-                                        <Grid2 size={12} container spacing={2} marginTop={"16px"}>
-                                            <Grid2 size={1}>
-                                                <InfoOutlinedIcon
-                                                    sx={{color: "red"}}
-                                                />
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        {authzGroupInput.default &&
+                                            <Grid2 size={12} container spacing={2} marginTop={"16px"}>
+                                                <Grid2 size={1}>
+                                                    <InfoOutlinedIcon
+                                                        sx={{color: "red"}}
+                                                    />
+                                                </Grid2>
+                                                <Grid2 size={11}>
+                                                    <Typography>
+                                                        For default authorization groups, ALL users who belong to the tenant will also automatically belong to this group. To
+                                                        select users individually, uncheck the Default checkbox above and save your changes.
+                                                    </Typography>
+                                                </Grid2>
                                             </Grid2>
-                                            <Grid2 size={11}>
-                                                <Typography>
-                                                    For default authorization groups, ALL users who belong to the tenant will also automatically belong to this group. To
-                                                    select users individually, uncheck the "Default" checkbox above and save your changes.
-                                                </Typography>
-                                            </Grid2>
-                                        </Grid2>
-                                    }
-                                    {!authzGroupInput.default && 
-                                        <RelationshipConfigurationComponent                                            
-                                            addObjectText="Add user to authorization group"
-                                            canAdd={true}
-                                            canDelete={true}
-                                            confirmRemovalText="Confirm removal of user"
-                                            filterObjectsText="Filter users"
-                                            noObjectsFoundText="No users found"
-                                            searchObjectsText="Search users"
-                                            relSearchInput={{
-                                                page: 1,
-                                                perPage: 10,
-                                                childtype: SearchResultType.User,
-                                                owningtenantid: authorizationGroup.tenantId,
-                                                parentid: authorizationGroup.groupId,
-                                                term: ""
-                                            }}                                            
+                                        }
+                                        {!authzGroupInput.default && 
+                                            <RelationshipConfigurationComponent                                            
+                                                addObjectText="Add user to authorization group"
+                                                canAdd={canAddUserToAuthzGroup}
+                                                canDelete={canRemoveUserFromAuthzGroup}
+                                                confirmRemovalText="Confirm removal of user"
+                                                filterObjectsText="Filter users"
+                                                noObjectsFoundText="No users found"
+                                                searchObjectsText="Search users"
+                                                relSearchInput={{
+                                                    page: 1,
+                                                    perPage: 10,
+                                                    childtype: SearchResultType.User,
+                                                    owningtenantid: authorizationGroup.tenantId,
+                                                    parentid: authorizationGroup.groupId,
+                                                    term: ""
+                                                }}                                            
+                                                tenantId={authorizationGroup.tenantId}
+                                                onAdd={(id: string, callback: () => void) => {
+                                                    setShowMutationBackdrop(true);
+                                                    setUserConfigChangeCallback(() => callback);
+                                                    authorizationGroupUserAddMutation({
+                                                        variables: {
+                                                            userId: id,
+                                                            groupId: authorizationGroup.groupId
+                                                        }
+                                                    });
+                                                }}
+                                                onRemove={(id: string, callback: () => void) => {
+                                                    setShowMutationBackdrop(true);
+                                                    setUserConfigChangeCallback(() => callback);
+                                                    authorizationGroupUserRemoveMutation({
+                                                        variables: {
+                                                            userId: id,
+                                                            groupId: authorizationGroup.groupId
+                                                        } 
+                                                    });
+                                                }}
+                                            />
+                                        }
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
+                        </Grid2>
+                        <Grid2 size={12} >
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ScopeRelConfiguration
                                             tenantId={authorizationGroup.tenantId}
-                                            onAdd={(id: string) => {
-                                                setShowMutationBackdrop(true);
-                                                authorizationGroupUserAddMutation({
-                                                    variables: {
-                                                        userId: id,
-                                                        groupId: authorizationGroup.groupId
-                                                    }
-                                                });
+                                            id={authorizationGroup.groupId}
+                                            scopeRelType={ScopeRelType.AUTHORIZATION_GROUP}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if (success) {
+                                                    setShowMutationSnackbar(true);
+                                                }
                                             }}
-                                            onRemove={(id: string) => {
+                                            onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);
-                                                authorizationGroupUserRemoveMutation({
-                                                    variables: {
-                                                        userId: id,
-                                                        groupId: authorizationGroup.groupId
-                                                    } 
-                                                });
                                             }}
                                         />
-                                    }
-                                </AccordionDetails>
-                            </Accordion>
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                     </Grid2>
                 </Grid2>
@@ -284,10 +448,15 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Authorization Group Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Authorization Group Updated
+                </Alert>
+            </Snackbar>	            
         </Typography >
     )
 }

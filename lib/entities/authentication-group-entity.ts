@@ -1,34 +1,55 @@
-import type { AuthenticationGroup, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "authentication_group"
-})
-class AuthenticationGroupEntity implements AuthenticationGroup {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(authenticationGroup?: AuthenticationGroup){
-        if(authenticationGroup){
-            Object.assign(this, authenticationGroup);
+const AuthenticationGroupEntity = new EntitySchema({
+
+    tableName: "authentication_group",
+    name: "authenticationGroup",
+    columns: {
+        authenticationGroupId: {
+            type: String,
+            primary: true,
+            name: "authenticationgroupid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        authenticationGroupName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "authenticationgroupname"
+        },
+        authenticationGroupDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationgroupdescription"
+        },
+        defaultGroup: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "defaultgroup",
+            transformer: BooleanTransformer
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
     }
+});
 
-    __typename?: "AuthenticationGroup" | undefined;
-    
-    @PrimaryKey({fieldName: "authenticationgroupid"})
-    authenticationGroupId: string;
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "authenticationgroupname"})
-    authenticationGroupName: string;
-
-    @Property({fieldName: "authenticationgroupdescription"})
-    authenticationGroupDescription?: Maybe<string> | undefined;
-
-    @Property({fieldName: "defaultgroup"})
-    defaultGroup: boolean;
-    
-}
 
 export default AuthenticationGroupEntity;

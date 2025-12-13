@@ -2,6 +2,7 @@
 import React from "react";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import Container from "@mui/material/Container";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from "@/utils/consts";
 
 
 export interface ManagementFooterProps {
@@ -16,11 +17,13 @@ const ManagementFooter: React.FC<ManagementFooterProps> = ({
     return (
         <div 
             style={{
-                backgroundColor: tenantMetaData.tenantLookAndFeel?.adminheaderbackgroundcolor || "#1976d2", 
+                backgroundImage: `linear-gradient(${DEFAULT_BACKGROUND_COLOR}, #34111194)`,
+                backgroundColor: DEFAULT_BACKGROUND_COLOR, 
                 width: "100%", 
-                minHeight: "6vh", 
-                color: tenantMetaData.tenantLookAndFeel?.adminheadertextcolor || "white",
-                borderTop: "solid 1px lightgray"
+                minHeight: "4vh", 
+                color: tenantMetaData.tenantLookAndFeel?.adminheadertextcolor || DEFAULT_TEXT_COLOR,
+                borderTop: "solid 1px lightgray",
+                boxShadow: "0px 0px 1vh 0px grey",
             }}
 
         >        

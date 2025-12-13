@@ -1,79 +1,146 @@
-import type { Maybe, User } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "user"
-})
-class UserEntity implements User {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(user?: User){
-        if(user){
-            Object.assign(this, user);
+const UserEntity = new EntitySchema({
+    name: "users",
+    tableName: "users",
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+
+        },
+        address: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "address"
+        },
+        addressLine1: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "addressline1"
+        },
+        city: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "city"
+        },
+        postalCode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "postalcode"
+        },
+        stateRegionProvince: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "stateregionprovince"
+        },
+        countryCode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "countrycode"
+        },
+        domain: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "domain"
+        },
+        email: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "email"
+        },
+        emailVerified: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "emailverified",
+            transformer: BooleanTransformer
+        },
+        enabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "enabled",
+            transformer: BooleanTransformer
+        },
+        federatedOIDCProviderSubjectId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcprovidersubjectid"
+        },
+        firstName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "firstname"
+        },
+        lastName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "lastname"
+        },
+        locked: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "locked",
+            transformer: BooleanTransformer
+        },
+        middleName: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "middlename"
+        },
+        nameOrder: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "nameorder"
+        },
+        phoneNumber: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "phonenumber"
+        },
+        preferredLanguageCode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "preferredlanguagecode"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        forcePasswordResetAfterAuthentication: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "forcepasswordresetafterauthentication",
+            transformer: BooleanTransformer
         }
     }
-
-    __typename?: "User" | undefined;
-    
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "address"})
-    address?: Maybe<string> | undefined;
-
-    @Property({fieldName: "addressline1"})
-    addressLine1?: Maybe<string> | undefined;
-
-    @Property({fieldName: "city"})
-    city?: Maybe<string> | undefined;
-
-    @Property({fieldName: "postalcode"})
-    postalCode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "stateregionprovince"})    
-    stateRegionProvince?: Maybe<string> | undefined;
-
-    @Property({fieldName: "countrycode"})
-    countryCode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "domain"})
-    domain: string;
-
-    @Property({fieldName: "email"})
-    email: string;
-
-    @Property({fieldName: "emailverified"})
-    emailVerified: boolean;
-
-    @Property({fieldName: "enabled"})
-    enabled: boolean;
-
-    @Property({fieldName: "federatedoidcprovidersubjectid"})
-    federatedOIDCProviderSubjectId?: Maybe<string> | undefined;
-
-    @Property({fieldName: "firstname"})
-    firstName: string;
-
-    @Property({fieldName: "lastname"})
-    lastName: string;
-
-    @Property({fieldName: "locked"})
-    locked: boolean;
-
-    @Property({fieldName: "middlename"})
-    middleName?: Maybe<string> | undefined;
-
-    @Property({fieldName: "nameorder"})
-    nameOrder: string;
-
-    @Property({fieldName: "phonenumber"})
-    phoneNumber?: Maybe<string> | undefined;
-
-    @Property({fieldName: "preferredlanguagecode"})
-    preferredLanguageCode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "twofactorauthtype"})
-    twoFactorAuthType?: Maybe<string> | undefined;
-
-}
+});
 
 export default UserEntity;

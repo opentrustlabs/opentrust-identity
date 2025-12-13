@@ -20,7 +20,8 @@ import Divider from "@mui/material/Divider";
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
-import { Box } from "@mui/material";
+import { useIntl } from 'react-intl';
+
 
 
 export type ContactForType = "tenant" | "client" | "signing-key";
@@ -29,17 +30,20 @@ export interface ContactConfigurationProps {
     contactForType: ContactForType,
     contactForId: string,
     onUpdateStart: () => void,
-    onUpdateEnd: (success: boolean) => void
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
     contactForType,
     contactForId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
-    
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     const type = contactForType === "tenant" ?
                     CONTACT_TYPE_FOR_TENANT :
@@ -87,7 +91,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -102,7 +106,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
     
@@ -119,6 +123,8 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                 <Dialog 
                     open={removeDialogOpen}
                     onClose={() => {setRemoveDialogOpen(false); setContactToRemove(null);}}
+                    maxWidth="sm"
+                    fullWidth={true}
                 >
                     <DialogContent>                        
                         <Typography ><span>Confirm removal of contact: </span> <span style={{fontWeight: "bold"}}>{contactToRemove?.email}</span></Typography>
@@ -186,12 +192,16 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                     <Grid2 size={12} textAlign={"center"}>No contacts found</Grid2>
                 }
                 {data.getContacts.map(
-                    (contact: Contact, idx: number) => (
+                    (contact: Contact) => (
                         <Grid2 container key={contact.contactid} size={12}>
                             <Grid2 sx={{whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}} size={10.8}>
                                 {contact.email}
                             </Grid2>
-                            <Grid2 size={1.2}><RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setContactToRemove(contact); setRemoveDialogOpen(true); }} /></Grid2>                            
+                            <Grid2 size={1.2}>
+                                {readOnly !== true &&
+                                    <RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setContactToRemove(contact); setRemoveDialogOpen(true); }} />
+                                }
+                            </Grid2>                            
                         </Grid2>
                     )
                 )}
@@ -199,7 +209,9 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
             <Divider />
             <Grid2 padding={"8px"} container size={12} spacing={0}>                
                 <Grid2 size={1}>
-                    <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
+                    {readOnly !== true &&
+                        <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
+                    }
                 </Grid2>
                 <Grid2 size={11}></Grid2>
             </Grid2>

@@ -1,41 +1,57 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
+import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
 
-export type UserLookupType = "id" | "email" | "phone";
+export type UserLookupType = "id" | "email" | "phone" | "federatedoidcproviderid";
 abstract class IdentityDao {
 
-    abstract getUsers(tenant: string | null): Promise<Array<User>>;
+    abstract getFailedLogins(userId: string): Promise<Array<UserFailedLogin>>;
 
-    abstract getUserGroups(userId: string): Promise<Array<AuthorizationGroup>>;
+    abstract addFailedLogin(userFailedLogins: UserFailedLogin): Promise<void>;
 
-    abstract getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>>;
+    abstract removeFailedLogin(userId: string, failureAtMs: number): Promise<void>;
 
-    abstract loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error>;
+    abstract resetFailedLoginAttempts(userId: string): Promise<void>;
 
-    abstract getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>>;
+    abstract saveTOTP(userMfaRel: UserMfaRel): Promise<void>;
 
-    abstract incrementLoginAttempts(userId: string): Promise<void>;
+    abstract deleteTOTP(userId: string): Promise<void>;
 
-    abstract resetLoginAttempts(userId: string): Promise<void>;
+    abstract getTOTP(userId: string): Promise<UserMfaRel | null>;
+    
+    abstract saveFIDOKey(userMfaRel: UserMfaRel): Promise<void>;
 
-    // challengeType could be email (as for registration of new users), sms, time-based-otp, or security key
-    abstract validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean>;
+    abstract getFIDOKey(userId: string): Promise<UserMfaRel | null>;
+
+    abstract deleteFIDOKey(userId: string): Promise<void>;
+
+    abstract getFIDO2Challenge(userId: string): Promise<Fido2Challenge | null>;
+
+    abstract saveFIDO2Challenge(fido2Challenge: Fido2Challenge): Promise<void>;
+
+    abstract deleteFIDO2Challenge(userId: string): Promise<void>;
+
+    abstract getUserMFARels(userId: string): Promise<Array<UserMfaRel>>;
+
+    abstract getFido2Count(userId: string): Promise<number | null>;
+
+    abstract updateFido2Count(userId: string, count: number): Promise<void>;
+
+    abstract initFidoCount(userId: string, count: number): Promise<void>;
+
+    abstract deleteFido2Count(userId: string): Promise<void>;
 
     abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 
     abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
 
-    abstract getUserByPasswordResetToken(userId: string): Promise<User | null>;
+    abstract getUserByPasswordResetToken(token: string): Promise<User | null>;
 
     abstract deletePasswordResetToken(token: string): Promise<void>;
 
     abstract saveEmailConfirmationToken(userId: string, token: string): Promise<void>;
 
-    abstract getUserByEmailConfirmationToken(userId: string): Promise<User | null>;
+    abstract getUserByEmailConfirmationToken(token: string): Promise<User | null>;
 
     abstract deleteEmailConfirmationToken(token: string): Promise<void>;
-
-
-
 
     /**
      * Creates a user (if they user does not already exist based on email or phone number) 
@@ -48,7 +64,13 @@ abstract class IdentityDao {
      */
     abstract createUser(user: User): Promise<User>;
 
+    abstract getUserCredentials(userId: string): Promise<Array<UserCredential>>;
+
+    abstract getUserCredentialForAuthentication(userId: string): Promise<UserCredential | null>;
+
     abstract addUserCredential(userCredential: UserCredential): Promise<void>;
+
+    abstract deleteUserCredential(userId: string, dateCreatedMs?: number): Promise<void>;
 
     abstract updateUser(user: User): Promise<User>;
 
@@ -70,6 +92,14 @@ abstract class IdentityDao {
     abstract assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
 
     /**
+     * Used for changing the assignment of the relationship type to an existing user-tenant-rel record
+     * @param tenantId 
+     * @param userId 
+     * @param relType 
+     */
+    abstract updateUserTenantRel(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
+
+    /**
      * Cannot remove a user from their PRIMARY tenant. If necessary, a user can be assigned a
      * GUEST relationship type to the tenant, then assigned a PRIMARY relationship to another
      * tenant
@@ -83,6 +113,56 @@ abstract class IdentityDao {
 
     abstract getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>>;
 
+    abstract createUserAuthenticationStates(arrUserAuthenticationState: Array<UserAuthenticationState>): Promise<Array<UserAuthenticationState>>;
+
+    abstract getUserAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>>;
+
+    abstract updateUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState>;
+
+    abstract deleteUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState>;
+
+    abstract createUserRegistrationStates(arrRegistrationState: Array<UserRegistrationState>): Promise<Array<UserRegistrationState>>;
+
+    abstract getUserRegistrationStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>;
+
+    abstract getUserRegistrationStatesByEmail(email: string): Promise<Array<UserRegistrationState>>;
+
+    abstract updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
+
+    abstract deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
+
+    abstract getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>;
+
+    abstract createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>;
+    
+    abstract updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>;
+
+    abstract deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>;
+
+    abstract deleteExpiredData(): Promise<void>;
+
+    abstract addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted): Promise<UserTermsAndConditionsAccepted>;
+
+    abstract getUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<UserTermsAndConditionsAccepted | null>;
+
+    abstract deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void>;
+
+    abstract getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>;
+
+    abstract addRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>;
+
+    abstract updateRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>;
+
+    abstract deleteRecoveryEmail(userId: string): Promise<void>;
+
+    abstract addUserDuressCredential(userCredential: UserCredential): Promise<void>;
+
+    abstract getUserDuressCredential(userId: string): Promise<UserCredential | null>;
+
+    abstract deleteUserDuressCredential(userId: string): Promise<void>;
+
+    abstract addUserAuthenticationHistory(userId: string, authenticatedAtMs: number): Promise<void>;
+    
 }
 
 export default IdentityDao;

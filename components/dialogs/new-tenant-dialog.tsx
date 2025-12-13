@@ -1,12 +1,14 @@
 "use client";
 import { TenantCreateInput } from "@/graphql/generated/graphql-types";
 import { TENANT_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
-import { Alert, Button, Checkbox, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, FormControlLabel, Switch, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
+import { useIntl } from 'react-intl';
+
 
 
 export interface NewTenantDialogProps {
@@ -24,7 +26,6 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
 }) => {
 
 
-
     const initInput: TenantCreateInput = {
         allowAnonymousUsers: false,
         allowForgotPassword: false,
@@ -32,14 +33,15 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
         allowSocialLogin: false,
         allowUnlimitedRate: false,
         allowUserSelfRegistration: false,
-        claimsSupported: [],
         enabled: true,
         federatedAuthenticationConstraint: "",
         migrateLegacyUsers: false,
         tenantId: "",
         tenantName: "",
         tenantType: "",
-        verifyEmailOnSelfRegistration: false
+        verifyEmailOnSelfRegistration: false,
+        registrationRequireCaptcha: false,
+        registrationRequireTermsAndConditions: false
     }
 
     // HOOKS
@@ -47,6 +49,8 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const intl = useIntl();
+
 
     // STATE VARIABLES    
     const [tenantInput, setTenantInput] = React.useState<TenantCreateInput>(initInput);
@@ -61,11 +65,11 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
             },
             onCompleted(data) {
                 onCreateEnd(true);
-                router.push(`${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${data.createTenant.tenantId}`);
+                router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${data.createTenant.tenantId}`);
                 onClose();
             },
             onError(error) {
-                setErrorMessage(error.message)
+                setErrorMessage(intl.formatMessage({id: error.message}));
                 onCreateEnd(false);
             },
         }
@@ -133,86 +137,157 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
                                 </Select>
                             </Grid2>
                             <Grid2 marginBottom={"16px"} container size={12}>
-                                <Grid2 alignContent={"center"} size={10}>Allow unlimited rate</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.allowUnlimitedRate === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.allowUnlimitedRate = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={tenantInput.allowUnlimitedRate === true}
+                                            onChange={(_, checked: boolean) => {
+                                                tenantInput.allowUnlimitedRate = checked; 
+                                                // if checked, clear out the rate limit and the default rate limit period values too
+                                                if(checked){
+                                                    tenantInput.defaultRateLimit = 0;
+                                                    tenantInput.defaultRateLimitPeriodMinutes = 0;
+                                                }
+                                                else{
+                                                    tenantInput.defaultRateLimitPeriodMinutes = DEFAULT_RATE_LIMIT_PERIOD_MINUTES;
+                                                }
+                                                setTenantInput({...tenantInput});
+                                            }}
+                                        />
+                                    }
+                                    label="Allow unlimited rate"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />  
+                                
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>
                                 <div>Default Rate Limit</div>
                                 <TextField name="defaultRateLimit" id="defaultRateLimit" 
+                                    type="number"
                                     onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimit = n; setTenantInput({...tenantInput})}}}
-                                    value={tenantInput.defaultRateLimit} fullWidth={true} size="small" 
+                                    value={tenantInput.defaultRateLimit ? tenantInput.defaultRateLimit : ""} fullWidth={true} size="small" 
+                                    disabled={tenantInput.allowUnlimitedRate === true}
                                 />
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>
                                 <div>Default Rate Limit Period (minutes)</div>
                                 <TextField 
-                                    onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimitPeriodMinutes = n; setTenantInput({...tenantInput})}}}
+                                    disabled={true}
+                                    type="number"
                                     name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes" 
-                                    value={tenantInput.defaultRateLimitPeriodMinutes} fullWidth={true} size="small" 
+                                    value={tenantInput.defaultRateLimitPeriodMinutes ? tenantInput.defaultRateLimitPeriodMinutes : "" } fullWidth={true} size="small"                                     
                                 />
                             </Grid2>
 
-                            <Grid2 container size={12}>
-                                <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.allowUserSelfRegistration === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
-                                <Grid2 alignContent={"center"} size={10}>Allow anonymous users</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.allowAnonymousUsers === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
-                                <Grid2 alignContent={"center"} size={10}>Allow social login</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.allowSocialLogin === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.allowSocialLogin = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
-                                <Grid2 alignContent={"center"} size={10}>Verify email on registration</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.verifyEmailOnSelfRegistration === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
-                                <Grid2 alignContent={"center"} size={10}>Migrate legacy users</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.migrateLegacyUsers === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
-                                <Grid2 alignContent={"center"} size={10}>Allow login by phone number</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.allowLoginByPhoneNumber === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
-                                <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={tenantInput.allowForgotPassword === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput})}}
-                                    />
-                                </Grid2>
-                                <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                    />
-                                </Grid2>
-                            </Grid2>
+                            <Stack spacing={1}>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="allowUserSelfRegistration"
+                                            checked={tenantInput.allowUserSelfRegistration === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    label="Allow user self-registration"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />  
+                                
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="allowAnonymousUsers"
+                                            checked={tenantInput.allowAnonymousUsers === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    label="Allow anonymous users"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                /> 
+                                                                
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="allowSocialLogin"
+                                            checked={tenantInput.allowSocialLogin === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.allowSocialLogin = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    label="Allow social login"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />
+
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="verifyEmailOnSelfRegistration"
+                                            checked={tenantInput.verifyEmailOnSelfRegistration === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    label="Verify email on registration"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />
+                                
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="migrateLegacyUsers"
+                                            checked={tenantInput.migrateLegacyUsers === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    label="Migrate legacy users"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />
+
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="allowLoginByPhoneNumber"
+                                            checked={tenantInput.allowLoginByPhoneNumber === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    label="Allow login by phone number"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />
+
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="allowForgotPassword"
+                                            checked={tenantInput.allowForgotPassword === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    
+                                    label="Allow password recovery"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />
+
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="registrationRequireCaptcha"
+                                            checked={tenantInput.registrationRequireCaptcha === true}
+                                            onChange={(_, checked: boolean) => {tenantInput.registrationRequireCaptcha = checked; setTenantInput({...tenantInput})}}
+                                        />
+                                    }
+                                    label="Require CAPTCHA on Registration"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                    
+                                />
+
+                            </Stack>
                         </Grid2>
                     </Grid2>
 

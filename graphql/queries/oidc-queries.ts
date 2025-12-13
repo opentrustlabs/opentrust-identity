@@ -1,20 +1,27 @@
 import { gql } from "@apollo/client";
 
 export const TENANTS_QUERY = gql(`
-    query getTenants($tenantIds: [String!], $federatedOIDCProviderId: String) {
-        getTenants(tenantIds: $tenantIds, federatedOIDCProviderId: $federatedOIDCProviderId) {
+    query getTenants($tenantIds: [String!], $federatedOIDCProviderId: String, $scopeId: String) {
+        getTenants(tenantIds: $tenantIds, federatedOIDCProviderId: $federatedOIDCProviderId, scopeId: $scopeId) {
             tenantId
             tenantName
             tenantDescription
-            tenantType
             enabled
-            claimsSupported
             allowUnlimitedRate
             allowUserSelfRegistration
             allowSocialLogin
             allowAnonymousUsers
             verifyEmailOnSelfRegistration
             federatedAuthenticationConstraint
+            federatedauthenticationconstraintid
+            markForDelete
+            tenantType
+            tenanttypeid
+            migrateLegacyUsers
+            allowLoginByPhoneNumber
+            allowForgotPassword
+            defaultRateLimit
+            defaultRateLimitPeriodMinutes            
         }
     }    
 `);
@@ -26,11 +33,11 @@ export const TENANT_META_DATA_QUERY = gql(`
                 tenantid
                 adminheaderbackgroundcolor
                 adminheadertextcolor
-                adminlogo
                 adminheadertext
                 authenticationheaderbackgroundcolor
                 authenticationheadertextcolor
                 authenticationlogo
+                authenticationlogouri
                 authenticationheadertext
             }
             tenant {
@@ -38,7 +45,6 @@ export const TENANT_META_DATA_QUERY = gql(`
                 tenantName
                 tenantDescription
                 enabled
-                claimsSupported
                 allowUnlimitedRate
                 allowUserSelfRegistration
                 allowSocialLogin
@@ -51,24 +57,32 @@ export const TENANT_META_DATA_QUERY = gql(`
                 tenanttypeid
                 migrateLegacyUsers
                 allowLoginByPhoneNumber
-                allowForgotPassword            
+                allowForgotPassword
+                registrationRequireCaptcha
+                registrationRequireTermsAndConditions
+                termsAndConditionsUri
+            }
+            systemSettings {
+                allowDuressPassword
+                allowRecoveryEmail
+            }
+            socialOIDCProviders {
+                federatedOIDCProviderDescription
+                federatedOIDCProviderId
+                federatedOIDCProviderName
+                federatedOIDCProviderTenantId
+                federatedOIDCProviderType 
+                socialLoginProvider
+            }
+            recaptchaMetaData {
+                recaptchaSiteKey
+                useEnterpriseCaptcha
+                useCaptchaV3
             }
         }
     }
 `);
 
-export const CLIENTS_QUERY = gql(`
-    query getClients ($tenantId: String) {
-        getClients (tenantId: $tenantId){
-            tenantId
-            clientId            
-            clientName
-            clientDescription
-            enabled            
-            clientType
-        }
-    }    
-`);
 
 export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
     query getLoginUserNameHandler($username: String!, $tenantId: String, $preauthToken: String) {
@@ -93,39 +107,49 @@ export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
 `);
 
 export const ME_QUERY = gql(`
-    query me {
-        me {
-            address
-            countryCode
-            domain
+    query me($isMyProfileView: Boolean) {
+        me (isMyProfileView: $isMyProfileView) {
+            userId
+            federatedOIDCProviderSubjectId
             email
             emailVerified
-            enabled
-            federatedOIDCProviderSubjectId
+            domain
             firstName
             lastName
-            locked
-            managementAccessTenantId
             middleName
-            nameOrder
             phoneNumber
+            address
+            addressLine1
+            city
+            stateRegionProvince
+            postalCode
+            countryCode
             preferredLanguageCode
+            locked
+            enabled
+            nameOrder
+            tenantId
+            tenantName
+            managementAccessTenantId
+            expiresAtMs
+            principalType
             scope {
                 scopeDescription
                 scopeId
                 scopeName
             }
-            tenantId
-            tenantName
-            twoFactorAuthType
-            userId
+            recoveryEmail {
+                userId
+                email
+                emailVerified
+            }                
         }
     }
 `);
 
 export const AUTHORIZATION_GROUPS_QUERY = gql(`
-    query getAuthorizationGroups {
-        getAuthorizationGroups {
+    query getAuthorizationGroups($tenantId: String) {
+        getAuthorizationGroups(tenantId: $tenantId) {
             tenantId
             groupId
             groupName
@@ -141,7 +165,6 @@ export const TENANT_DETAIL_QUERY = gql(`
             tenantName
             tenantDescription
             enabled
-            claimsSupported
             allowUnlimitedRate
             allowUserSelfRegistration
             allowSocialLogin
@@ -154,9 +177,13 @@ export const TENANT_DETAIL_QUERY = gql(`
             tenanttypeid
             migrateLegacyUsers
             allowLoginByPhoneNumber
-            allowForgotPassword             
-        }       
-        
+            allowForgotPassword
+            defaultRateLimit
+            defaultRateLimitPeriodMinutes
+            registrationRequireCaptcha
+            registrationRequireTermsAndConditions
+            termsAndConditionsUri
+        }        
     }
 `);
 
@@ -176,6 +203,8 @@ export const CLIENT_DETAIL_QUERY = gql(`
             userTokenTTLSeconds
             clientTokenTTLSeconds
             maxRefreshTokenCount
+            markForDelete
+            audience
         }
     }
 `);
@@ -189,6 +218,7 @@ export const AUTHORIZATION_GROUP_DETAIL_QUERY = gql(`
             tenantId
             allowForAnonymousUsers
             default
+            markForDelete
         }
     }
 `);
@@ -241,6 +271,45 @@ export const REL_SEARCH_QUERY = gql(`
     }
 `);
 
+export const LOOKAHEAD_SEARCH_QUERY = gql(`
+    query lookahead($term: String!) {
+        lookahead(term: $term) {
+            category
+            resultList {
+                displayValue
+                id
+            }
+        }
+    }    
+`);
+
+export const TENANT_RATE_LIMIT_REL_VIEW_QUERY = gql(`
+    query getRateLimitTenantRelViews($rateLimitServiceGroupId: String, $tenantId: String) {
+        getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId, tenantId: $tenantId) {
+            tenantId
+            tenantName
+            servicegroupid
+            servicegroupname
+            allowUnlimitedRate
+            rateLimit
+            rateLimitPeriodMinutes           
+        }
+    }    
+`);
+
+// getRateLimitTenantRels(tenantId: String, rateLimitServiceGroupId: String)
+export const TENANT_RATE_LIMIT_REL_QUERY = gql(`
+    query getRateLimitTenantRels($tenantId: String, $rateLimitServiceGroupId: String) {
+        getRateLimitTenantRels(tenantId: $tenantId, rateLimitServiceGroupId: $rateLimitServiceGroupId) {
+            tenantId
+            servicegroupid
+            allowUnlimitedRate
+            rateLimit
+            rateLimitPeriodMinutes           
+        }
+    }    
+`);
+
 
 export const USER_DETAIL_QUERY = gql(`
     query getUserById($userId: String!) {
@@ -261,10 +330,15 @@ export const USER_DETAIL_QUERY = gql(`
             postalCode
             countryCode
             preferredLanguageCode
-            twoFactorAuthType
             locked
             enabled
             nameOrder
+            markForDelete
+            recoveryEmail {
+                userId
+                email
+                emailVerified
+            }
         }
     }    
 `);
@@ -289,6 +363,7 @@ export const AUTHENTICATION_GROUP_DETAIL_QUERY = gql(`
             authenticationGroupName
             authenticationGroupDescription
             defaultGroup
+            markForDelete
         }
     }
 `);
@@ -301,6 +376,7 @@ export const FEDERATED_OIDC_PROVIDERS_QUERY = gql(`
             federatedOIDCProviderName
             federatedOIDCProviderDescription
             federatedOIDCProviderType
+            socialLoginProvider
         }
     }
 `)
@@ -322,7 +398,10 @@ export const FEDERATED_OIDC_PROVIDER_DETAIL_QUERY = gql(`
             clientauthtypeid
             federatedOIDCProviderTenantId	
             federatedoidcprovidertypeid
-            socialLoginProvider       
+            socialLoginProvider
+            markForDelete
+            federatedOIDCProviderResponseType
+            federatedOIDCProviderSubjectType
         }
     }
 `);
@@ -352,19 +431,20 @@ export const SIGNING_KEY_DETAIL_QUERY = gql(`
             keyTypeId
             keyUse
             privateKeyPkcs8
-            password
-            certificate
+            keyPassword
+            keyCertificate
             publicKey
             expiresAtMs
-            status
+            keyStatus
             statusId
+            markForDelete
         }
     }
 `);
 
 export const SCOPE_QUERY = gql(`
-    query getScope($tenantId: String) {
-        getScope(tenantId: $tenantId){
+    query getScope($tenantId: String!, $filterBy: ScopeFilterCriteria!) {
+        getScope(tenantId: $tenantId, filterBy: $filterBy){
             scopeId
             scopeName
             scopeDescription
@@ -394,17 +474,25 @@ export const RATE_LIMITS_QUERY = gql(`
     }
 `);
 
+export const RATE_LIMIT_BY_ID_QUERY = gql(`
+    query getRateLimitServiceGroupById($serviceGroupId: String!) {
+        getRateLimitServiceGroupById(serviceGroupId: $serviceGroupId) {
+            servicegroupid
+            servicegroupname
+            servicegroupdescription
+            markForDelete
+        }
+    }
+`);
+
 export const LOGIN_FAILURE_CONFIGURATION_QUERY = gql(`
-    query getLoginFailurePolicy($tenantId: String!){
-        getLoginFailurePolicy(tenantId: $tenantId) {
+    query getTenantLoginFailurePolicy($tenantId: String!){
+        getTenantLoginFailurePolicy(tenantId: $tenantId) {
             tenantId
             loginFailurePolicyType
-            loginfailurepolicytypeid
             failureThreshold
             pauseDurationMinutes
-            numberOfPauseCyclesBeforeLocking
-            initBackoffDurationMinutes
-            numberOfBackoffCyclesBeforeLocking
+            maximumLoginFailures
         }
     }
 `);
@@ -423,10 +511,9 @@ export const TENANT_PASSWORD_CONFIG_QUERY = gql(`
             specialCharactersAllowed
             requireMfa
             mfaTypesRequired
-            allowMfa
-            mfaTypesAllowed
             maxRepeatingCharacterLength
-            passwordRotationPeriodDays        
+            passwordRotationPeriodDays
+            passwordHistoryPeriod
         }
     }
 `);
@@ -447,7 +534,7 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY = gql(`
         getAnonymousUserConfiguration(tenantId: $tenantId){
             tenantId 
             defaultcountrycode
-            defaultlangugecode
+            defaultlanguagecode
             tokenttlseconds
         }
     }
@@ -459,11 +546,11 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
             tenantid
             adminheaderbackgroundcolor
             adminheadertextcolor
-            adminlogo
             adminheadertext
             authenticationheaderbackgroundcolor
             authenticationheadertextcolor
             authenticationlogo
+            authenticationlogouri
             authenticationlogomimetype
             authenticationheadertext                      
         }
@@ -523,6 +610,188 @@ export const USER_TENANT_RELS_QUERY = gql(`
             tenantId
             tenantName
             relType
+        }
+    }
+`);
+
+export const USER_AUTHORIZATION_GROUP_QUERY = gql(`
+    query getUserAuthorizationGroups($userId: String!) {
+        getUserAuthorizationGroups(userId: $userId){
+            tenantId
+            groupId
+            groupName
+            groupDescription
+            default
+            allowForAnonymousUsers
+        }
+    }
+`);
+
+export const GET_SECRET_VALUE_QUERY = gql(`
+    query getSecretValue($objectId: String!, $objectType: SecretObjectType!){
+        getSecretValue(objectId: $objectId, objectType: $objectType)
+    }
+`);
+
+export const VALIDATE_TOTP_TOKEN_QUERY = gql(`
+    query validateTOTP($userId: String!, $totpValue: String!) {
+        validateTOTP(userId: $userId, totpValue: $totpValue)
+    }
+`);
+
+export const GET_CLIENT_SCOPE_QUERY = gql(`
+    query getClientScopes($clientId: String!) {
+        getClientScopes(clientId: $clientId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }    
+`);
+
+export const GET_AUTHORIZATION_GROUP_SCOPE_QUERY = gql(`
+    query getAuthorizationGroupScopes($groupId: String!) {
+        getAuthorizationGroupScopes(groupId: $groupId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }     
+`);
+
+export const GET_USER_SCOPE_QUERY = gql(`
+    query getUserScopes($userId: String!, $tenantId: String!) {
+        getUserScopes(userId: $userId, tenantId: $tenantId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }     
+`);
+
+export const USER_MFA_REL_QUERY = gql(`
+    query getUserMFARels($userId: String!) {
+        getUserMFARels(userId: $userId) {
+            userId
+            mfaType
+            primaryMfa
+        }
+    }
+`);
+
+export const USER_SESSIONS_QUERY = gql(`
+    query getUserSessions($userId: String!) {
+        getUserSessions(userId: $userId) {
+            tenantId
+            clientId
+            userId
+            tenantName
+            clientName
+        }
+    }
+`);
+
+export const STATE_PROVINCE_REGIONS_QUERY = gql(`
+    query getStateProvinceRegions($countryCode: String!) {
+        getStateProvinceRegions(countryCode: $countryCode) {
+            isoCountryCode
+            isoEntryCode
+            isoEntryName
+            isoSubsetType
+        }
+    }   
+`);
+
+export const CAPTCHA_CONFIG_QUERY = gql(`
+    query getCaptchaConfig {
+        getCaptchaConfig {
+            alias
+            projectId
+            siteKey
+            apiKey
+            minScoreThreshold
+            useCaptchaV3
+            useEnterpriseCaptcha
+        }
+    }
+`);
+
+export const SYSTEM_SETTINGS_QUERY = gql(`
+    query getSystemSettings {
+        getSystemSettings {
+            softwareVersion
+            allowRecoveryEmail
+            allowDuressPassword
+            rootClientId
+            enablePortalAsLegacyIdp
+            auditRecordRetentionPeriodDays
+            noReplyEmail
+            contactEmail
+            systemCategories {
+                categoryName
+                categoryEntries {
+                    categoryKey
+                    categoryValue
+                }
+            }
+        }
+    }    
+`);
+
+export const RUNNING_JOBS_QUERY = gql(`
+    query getRunningJobs {
+        getRunningJobs {
+            markForDeleteItems {
+                markForDeleteId
+                objectType
+                objectId
+                submittedBy
+                submittedDate
+                startedDate
+                completedDate
+            }
+            schedulerLocks {
+                lockName
+                lockInstanceId
+                lockStartTimeMS
+                lockExpiresAtMS
+            }
+        }
+    }
+`);
+
+export const GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY = gql(`
+    query getAuthorizationScopeApprovalData($preAuthToken: String!) {
+        getAuthorizationScopeApprovalData(preAuthToken: $preAuthToken) {
+            clientId
+            clientName
+            requiresUserApproval
+            requestedScope {
+                scopeId
+                scopeName
+                scopeDescription
+            }
+        }
+    }
+`);
+
+export const SYSTEM_INITIALIZATION_READY_QUERY = gql(`
+    query systemInitializationReady {
+        systemInitializationReady {
+            systemInitializationReady
+            systemInitializationReadyErrors {
+                errorCode
+                errorKey
+                errorMessage
+            }
+            systemInitializationWarnings {
+                errorCode
+                errorKey
+                errorMessage
+            }
         }
     }
 `);

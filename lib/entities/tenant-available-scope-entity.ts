@@ -1,28 +1,31 @@
-import type { TenantAvailableScope } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "tenant_available_scope"
-})
-class TenantAvailableScopeEntity implements TenantAvailableScope {
-    
-    constructor(m?: TenantAvailableScope){
-        if(m){
-            Object.assign(this, m);
+const TenantAvailableScopeEntity = new EntitySchema({
+
+
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        },
+        accessRuleId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "accessruleid"
         }
-    }
-    
-    __typename?: "TenantAvailableScope";
-    
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
+    },
 
-    @PrimaryKey({fieldName: "scopeid"})
-    scopeId: string;
+    tableName: "tenant_available_scope",
+    name: "tenantAvailableScope",
 
-    @Property({fieldName: "accessruleid", nullable: true})
-    accessRuleId: string | null;
-   
-}
+});
+
 
 export default TenantAvailableScopeEntity;

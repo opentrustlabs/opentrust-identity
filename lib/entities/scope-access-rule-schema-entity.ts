@@ -1,9 +1,9 @@
 import type { ScopeAccessRuleSchema } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-@Entity({
-    tableName: "scope_access_rule_schema"
-})
+
+// @Entity({
+//     tableName: "scope_access_rule_schema"
+// })
 class ScopeAccessRuleSchemaEntity {
 
     constructor(scopeAccessRuleSchema?: ScopeAccessRuleSchema){
@@ -17,16 +17,12 @@ class ScopeAccessRuleSchemaEntity {
     }
     __typename?: "ScopeAccessRuleSchema" | undefined;
     
-    @PrimaryKey({fieldName: "scopeaccessruleschemaid"})
     scopeAccessRuleSchemaId: string;
     
-    @Property({fieldName: "schemaversion"})
     schemaVersion: number;
     
-    @Property({fieldName: "scopeid"})
     scopeId: string;
     
-    @Property({fieldName: "scopeaccessruleschema"})
     scopeAccessRuleSchema: Buffer;
 
     public toModel(): ScopeAccessRuleSchema {

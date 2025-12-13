@@ -3,50 +3,89 @@ import React, { Context, ReactNode } from "react";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { useQuery } from "@apollo/client";
 import { ME_QUERY } from "@/graphql/queries/oidc-queries";
+import DataLoading from "../layout/data-loading";
+import { useAuthSessionContext } from "./auth-session-context";
+import { useInternationalizationContext } from "./internationalization-context";
 
 
-
-
-export interface AuthContextProps {
-    children: ReactNode
-}
 
 const DEFAULT_PROFILE = null;
 
-export const AuthContext: Context<PortalUserProfile | null> = React.createContext<PortalUserProfile | null>(DEFAULT_PROFILE);
+export interface AuthContextProps {
+    portalUserProfile: PortalUserProfile | null,
+    forceProfileRefetch: () => void
+}
 
-const AuthContextProvider: React.FC<AuthContextProps> = ({
+export const AuthContext: Context<AuthContextProps> = React.createContext<AuthContextProps>(
+    {
+        portalUserProfile: DEFAULT_PROFILE,
+        forceProfileRefetch: () => {}
+    }
+);
+
+export interface AuthContextProviderProps {
+    children: ReactNode
+}
+
+const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     children
 }) => {
+    
+    const sessionProps = useAuthSessionContext();
+    const i18nContext = useInternationalizationContext();
 
-    const {data, error, loading, previousData} = useQuery(
-        ME_QUERY, {
-            //pollInterval: 15000,
-            pollInterval: 3600000,
+    const {data, loading, previousData, refetch} = useQuery(ME_QUERY, {          
+            pollInterval: 900000,
             fetchPolicy: "no-cache",
             notifyOnNetworkStatusChange: true,
-            nextFetchPolicy: "no-cache"
+            nextFetchPolicy: "no-cache",
+            skip: sessionProps.getTokenTtlMs() < 0,
+            onCompleted(data) {
+                if(data && data.me){
+                    const portalUserProfile: PortalUserProfile = data.me;
+                    if(!i18nContext.hasSelectedLanguage()){
+                        if(portalUserProfile.preferredLanguageCode){
+                            i18nContext.setLanguage(portalUserProfile.preferredLanguageCode);
+                        }
+                    }
+                }
+            },
         }
     );
 
-    if(loading && !previousData && !data) return <div></div>
+    if(loading && !previousData && !data) return (<div><DataLoading dataLoadingSize="xl" color={null}/></div>)
     if(loading && previousData) return (
         <AuthContext.Provider 
-            value={previousData.me}
+            value={{
+                portalUserProfile: previousData.me,
+                forceProfileRefetch: () => {refetch()}
+            }}
+        >{children}</AuthContext.Provider>
+    )
+    if(!loading && previousData && sessionProps.getTokenTtlMs() < 0) return (
+        <AuthContext.Provider 
+            value={{
+                portalUserProfile: previousData.me,
+                forceProfileRefetch: () => {refetch()}
+            }}
         >{children}</AuthContext.Provider>
     )
     if(data) return (
         <AuthContext.Provider 
-            value={data.me}
+            value={{
+                portalUserProfile: data.me,
+                forceProfileRefetch: () => {refetch()}
+            }}
         >{children}</AuthContext.Provider>
     )
-    if(error) return (
+    return (
         <AuthContext.Provider 
-            value={DEFAULT_PROFILE}
+            value={{
+                portalUserProfile: DEFAULT_PROFILE,
+                forceProfileRefetch: () => {refetch()}
+            }}
         >{children}</AuthContext.Provider>
-    )
-       
-    
+    )    
 
 }
 

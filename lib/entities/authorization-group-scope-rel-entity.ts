@@ -1,27 +1,30 @@
-import type { AuthorizationGroupScopeRel, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "authorization_group_scope_rel"
-})
-class AuthorizationGroupScopeRelEntity implements AuthorizationGroupScopeRel {
+const AuthorizationGroupScopeRelEntity = new EntitySchema({
 
-    constructor(m?: AuthorizationGroupScopeRel){
-        if(m){
-            Object.assign(this, m);
+
+    columns: {
+        groupId: {
+            type: String,
+            primary: true,
+            name: "groupid"
+        },
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        },
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
         }
-    }
-    __typename?: "AuthorizationGroupScopeRel" | undefined;
+    },
 
-    @PrimaryKey({fieldName: "groupid"})
-    groupId: string;
+    tableName: "authorization_group_scope_rel",
+    name: "authorizationGroupScopeRel",
 
-    @PrimaryKey({fieldName: "scopeid"})
-    scopeId: string;
+});
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-}
 
 export default AuthorizationGroupScopeRelEntity;

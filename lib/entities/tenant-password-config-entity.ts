@@ -1,67 +1,106 @@
-import type { Maybe, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "tenant_password_config"
-})
-class TenantPasswordConfigEntity implements TenantPasswordConfig {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(tenantPasswordConfig?: TenantPasswordConfig){
-        if(tenantPasswordConfig){
-            Object.assign(this, tenantPasswordConfig)
+const TenantPasswordConfigEntity = new EntitySchema({
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        passwordHashingAlgorithm: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "passwordhashingalgorithm"
+        },
+        passwordMaxLength: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "passwordmaxlength"
+        },
+        passwordMinLength: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "passwordminlength"
+        },
+        requireLowerCase: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requirelowercase",
+            transformer: BooleanTransformer
+        },
+        requireNumbers: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requirenumbers",
+            transformer: BooleanTransformer
+        },
+        requireSpecialCharacters: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requirespecialcharacters",
+            transformer: BooleanTransformer
+        },
+        requireUpperCase: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requireuppercase",
+            transformer: BooleanTransformer
+        },
+        specialCharactersAllowed: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "specialcharactersallowed"
+        },
+        requireMfa: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requiremfa",
+            transformer: BooleanTransformer
+        },
+        mfaTypesRequired: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "mfatypesrequired"
+        },
+        maxRepeatingCharacterLength: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "maxrepeatingcharacterlength"
+        },
+        passwordRotationPeriodDays: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "passwordrotationperioddays"
+        },
+        passwordHistoryPeriod: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "passwordhistoryperiod"
         }
-    }
-    
-    __typename?: "TenantPasswordConfig";
+    },
+    tableName: "tenant_password_config",
+    name: "tenantPasswordConfig",
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
+})
 
-    @Property({fieldName: "passwordhashingalgorithm"})
-    passwordHashingAlgorithm: string;
 
-    @Property({fieldName: "passwordmaxlength"})
-    passwordMaxLength: number;
-
-    @Property({fieldName: "passwordminlength"})
-    passwordMinLength: number;
-
-    @Property({fieldName: "requirelowercase"})
-    requireLowerCase: boolean;
-
-    @Property({fieldName: "requirenumbers"})
-    requireNumbers: boolean;
-
-    @Property({fieldName: "requirespecialcharacters"})
-    requireSpecialCharacters: boolean;
-
-    @Property({fieldName: "requireuppercase"})
-    requireUpperCase: boolean;
-
-    @Property({fieldName: "specialcharactersallowed"})
-    specialCharactersAllowed?: Maybe<string> | undefined;
-
-    @Property({fieldName: "allowmfa"})
-    allowMfa: boolean;
-
-    @Property({fieldName: "mfatypesallowed"})
-    mfaTypesAllowed?: Maybe<string> | undefined;
-
-    @Property({fieldName: "requiremfa"})
-    requireMfa: boolean;
-
-    @Property({fieldName: "mfatypesrequired"})
-    mfaTypesRequired?: Maybe<string> | undefined;
-
-    @Property({fieldName: "maxrepeatingcharacterlength"})
-    maxRepeatingCharacterLength?: Maybe<number> | undefined;
-
-    @Property({fieldName: "passwordrotationperioddays"})
-    passwordRotationPeriodDays?: Maybe<number> | undefined;
-
-    @Property({fieldName: "passwordhistoryperiod"})
-    passwordHistoryPeriod?: Maybe<number> | undefined;
-
-}
 
 export default TenantPasswordConfigEntity;

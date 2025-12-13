@@ -1,31 +1,24 @@
-import type { FederatedOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+
+const FederatedOIDCProviderDomainRelEntity = new EntitySchema({
 
 
-@Entity({
-    tableName: "federated_oidc_provider_domain_rel"
-})
-class FederatedOIDCProviderDomainRelEntity {
-
-    constructor(federatedOidcProviderDomainRel?: FederatedOidcProviderDomainRel){
-        if(federatedOidcProviderDomainRel){
-            this.domain = federatedOidcProviderDomainRel.domain;
-            this.federatedoidcproviderid = federatedOidcProviderDomainRel.federatedOIDCProviderId;
+    columns: {
+        federatedOIDCProviderId: {
+            type: String,
+            primary: true,
+            name: "federatedoidcproviderid"
+        },
+        domain: {
+            type: String,
+            primary: true,
+            name: "domain"
         }
-    }
+    },
 
-    @PrimaryKey()
-    federatedoidcproviderid: string;
+    tableName: "federated_oidc_provider_domain_rel",
+    name: "federatedOidcProviderDomainRel",
 
-    @PrimaryKey()
-    domain: string;
-
-    public toModel(): FederatedOidcProviderDomainRel {
-        return {
-            federatedOIDCProviderId: this.federatedoidcproviderid,
-            domain: this.domain
-        }
-    }
-}
+});
 
 export default FederatedOIDCProviderDomainRelEntity;

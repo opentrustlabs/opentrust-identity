@@ -1,45 +1,70 @@
-import type { AuthorizationCodeData, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "authorization_code_data"
-})
-class AuthorizationCodeDataEntity implements AuthorizationCodeData {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(m?: AuthorizationCodeData){
-        if(m){
-            Object.assign(this , m);
+const AuthorizationCodeDataEntity = new EntitySchema({
+    tableName: "authorization_code_data",
+    name: "authorizationCodeData",
+    columns: {
+        code: {
+            type: String,
+            primary: true,
+            name: "code"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        codeChallenge: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallenge"
+        },
+        codeChallengeMethod: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallengemethod"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        redirectUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "redirecturi"
+        },
+        scope: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scope"
+        },
+        userId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "userid"
         }
     }
-    __typename?: "AuthorizationCodeData" | undefined;
-    
-    @PrimaryKey({fieldName: "code"})
-    code: string;
+});
 
-    @Property({fieldName: "clientid"})
-    clientId: string;
 
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "codechallenge", nullable: true})
-    codeChallenge?: Maybe<string> | undefined;
-
-    @Property({fieldName: "codechallengemethod", nullable: true})
-    codeChallengeMethod?: Maybe<string> | undefined;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtMs: number;
-
-    @Property({fieldName: "redirecturi"})
-    redirectUri: string;
-
-    @Property({fieldName: "scope"})
-    scope: string;
-    
-    @Property({fieldName: "userid"})
-    userId: string;
-  
-}
 
 export default AuthorizationCodeDataEntity;

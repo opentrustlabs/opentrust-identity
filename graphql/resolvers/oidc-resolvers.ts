@@ -1,73 +1,60 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
+import { Resolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
-import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
-import { GraphQLError } from "graphql";
 import ContactService from "@/lib/service/contact-service";
-import IdentitySerivce from "@/lib/service/identity-service";
-import { t } from "@mikro-orm/core";
+import IdentityService from "@/lib/service/identity-service";
+import RateLimitService from "@/lib/service/rate-limit-service";
+import { OIDCContext } from "../graphql-context";
+import ViewSecretService from "@/lib/service/view-secret-service";
+import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
+import I18NService from "@/lib/service/i18n-service";
+import RegisterUserService from "@/lib/service/register-user-service";
+import AuthenticateUserService from "@/lib/service/authenticate-user-service";
+import SecretShareService from "@/lib/service/secret-share-service";
+import SystemInitializationService from "@/lib/service/system-initialization-service";
 
 
 const resolvers: Resolvers = {
     Query: {
-        me: (_, __, oidcContext) => {
-            const profile: PortalUserProfile = {
-                domain: "charter.net",
-                email: "dhayek@charter.net",
-                emailVerified: true,
-                enabled: true,
-                firstName: "David",
-                lastName: "Hayek",
-                locked: false,
-                nameOrder: NAME_ORDER_WESTERN,
-                scope: [{
-                    scopeId: "id",
-                    scopeName: "all",
-                    scopeDescription: "",
-                    scopeUse: ""
-                }],
-                tenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
-                tenantName: "First Tenant",
-                userId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
-                countryCode: "US",
-                preferredLanguageCode: "en",
-                managementAccessTenantId: "ad3e45b1-3e62-4fe2-ba59-530d35ae93d5"
-            }
-            // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
-            // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
-            // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
-            // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
-            return profile;
+        me: (_, { isMyProfileView }, oidcContext) => {            
+            const identityService: IdentityService = new IdentityService(oidcContext);
+            return identityService.me(isMyProfileView || null);            
         },
         getUserById: (_, { userId }, oidcContext) => {
-            const identityService: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const identityService: IdentityService = new IdentityService(oidcContext);
             return identityService.getUserById(userId);            
         },
         getUserTenantRels: (_, { userId }, oidcContext) => {
-            const identityService: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const identityService: IdentityService = new IdentityService(oidcContext);
             return identityService.getUserTenantRels(userId);
         },
         search: (_, { searchInput }, oidcContext) => {
             const searchService: SearchService = new SearchService(oidcContext);
-            return searchService.search(searchInput);
+            return searchService.search(searchInput);            
         },
-        relSearch: (_, { relSearchInput}, oidcContext) => {
+        lookahead: (_, { term }, oidcContext) => {
             const searchService: SearchService = new SearchService(oidcContext);
-            return searchService.relSearch(relSearchInput);
+            return searchService.lookahead(term);
+        },
+        relSearch: async (_, { relSearchInput}, oidcContext) => {            
+            const searchService: SearchService = new SearchService(oidcContext);
+            const res = await searchService.relSearch(relSearchInput);
+            return res;
         },
         getRootTenant: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getRootTenant();
         },
-        getTenants: (_, { tenantIds, federatedOIDCProviderId }, oidcContext) => {
+        getTenants: (_, { tenantIds, federatedOIDCProviderId, scopeId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
-            return tenantService.getTenants(tenantIds || undefined, federatedOIDCProviderId || undefined);
+            return tenantService.getTenants(tenantIds || undefined, federatedOIDCProviderId || undefined, scopeId || undefined);
         },
         getTenantById: (_: any, { tenantId }, oidcContext: any ) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -76,10 +63,6 @@ const resolvers: Resolvers = {
         getTenantMetaData: (_: any, { tenantId }, oidcContext: any ) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantMetaData(tenantId);
-        },
-        getClients: (_, { tenantId }, oidcContext) => {
-            const clientService: ClientService = new ClientService(oidcContext);
-            return clientService.getClients(tenantId || undefined);
         },        
         getClientById: (_: any, { clientId }, oidcContext: any) => {
             const clientService: ClientService = new ClientService(oidcContext);
@@ -93,13 +76,17 @@ const resolvers: Resolvers = {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             return keysService.getSigningKeyById(signingKeyId);
         },
-        getScope: (_: any, __: any, oidcContext) => {
+        getScope: (_: any, { tenantId, filterBy }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            return scopeService.getScope();
+            return scopeService.getScope(tenantId, filterBy);
         },
         getScopeById: (_: any, { scopeId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             return scopeService.getScopeById(scopeId);
+        },
+        getAuthorizationScopeApprovalData: (_: any, { preAuthToken }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
+            return clientService.getAuthorizationScopeApprovalData(preAuthToken);
         },
         getAuthenticationGroups: (_: any, { tenantId, clientId, userId }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
@@ -124,31 +111,22 @@ const resolvers: Resolvers = {
         getFederatedOIDCProviderById: (_: any, { federatedOIDCProviderId }, oidcContext) => {
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return providerService.getFederatedOIDCProviderById(federatedOIDCProviderId);
-        },
-        getLoginUserNameHandler: (_: any, { username, tenantId, preauthToken }, oidcContext) => {
-            const response: LoginUserNameHandlerResponse = {
-                action: LoginUserNameHandlerAction.EnterPassword,
-                oidcRedirectActionHandlerConfig: {
-                    clientId: "12343218723894",
-                    redirectUri: "http://localhost:3000/authorize/oidc/redirect",
-                    responseMode: "query",
-                    responseType: "code",
-                    state: "928374839029817341234",
-                    codeChallenge: "",
-                    codeChallengeMethod: "",
-                    scope: "email id profile offline"
-                },
-                errorActionHandler: {
-                    errorCode: "403",
-                    errorMessage: "This is an error message. You do not have access to this client or tenant."
-                    
-                }
-            }
-            return response;
-            //(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
-        },
+        },        
         getRateLimitServiceGroups: (_:any, { tenantId }, oidcContext) => {
-            return [];
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitServiceGroups(tenantId || null);
+        },
+        getRateLimitServiceGroupById: (_: any, { serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitServiceGroupById(serviceGroupId);
+        },
+        getRateLimitTenantRelViews: (_: any, { rateLimitServiceGroupId, tenantId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitTenantRelViews(rateLimitServiceGroupId || null, tenantId || null);
+        },
+        getRateLimitTenantRels: (_: any, { tenantId, rateLimitServiceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitTenantRel(tenantId || null, rateLimitServiceGroupId || null);
         },
         getTenantPasswordConfig: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -181,18 +159,82 @@ const resolvers: Resolvers = {
         getFederatedOIDCProviderDomainRels: (_: any, { federatedOIDCProviderId, domain }, oidcContext) => {
             const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return service.getFederatedOIDCProviderDomainRels(federatedOIDCProviderId || null, domain || null);
+        },
+        getUserAuthorizationGroups: (_: any, { userId }, oidcContext) => {
+            const service: GroupService = new GroupService(oidcContext);
+            return service.getUserAuthorizationGroups(userId);
+        },
+        getSecretValue: async (_: any, { objectId, objectType }, oidcContext) => {
+            const service: ViewSecretService = new ViewSecretService(oidcContext);
+            const val: string | null | undefined = await service.viewSecret(objectId, objectType);
+            return val;
+        },
+        getMarkForDeleteById: (_: any, { markForDeleteId }, oidcContext) => {
+            const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
+            return service.getMarkForDeleteById(markForDeleteId);
+        },
+        getDeletionStatus: (_: any, { markForDeleteId }, oidcContext) => {
+            const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
+            return service.getDeletionStatus(markForDeleteId);
+        },
+        getClientScopes: (_: any, { clientId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getClientScopes(clientId);
+        },
+        getAuthorizationGroupScopes: (_: any, { groupId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getAuthorizationGroupScopes(groupId);
+        },
+        getUserScopes: (_: any, { userId, tenantId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getUserScopes(userId, tenantId);
+        },
+        getUserMFARels: (_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getUserMFARels(userId);            
+        },
+        getUserSessions: (_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getUserSessions(userId);
+        },
+        getStateProvinceRegions: (_: any, { countryCode }, oidcContext) => {
+            const service: I18NService = new I18NService(oidcContext);
+            return service.getStateProvinceRegions(countryCode);
+        },
+        getTenantLoginFailurePolicy: (_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getTenantLoginFailurePolicy(tenantId);
+        },
+        getCaptchaConfig: (_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getCaptchaConfig();
+        },
+        getSystemSettings: (_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getSystemSettings();
+        },
+        getRunningJobs: (_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getJobData();
+        },
+        systemInitializationReady: (_: any, {}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.systemInitializationReady();
+        },
+        getAnonymousUserConfiguration: (_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getAnonymousUserConfiguration(tenantId);
         }
     },
-    Mutation: {
-        createRootTenant: async(_: any, { tenantInput }, oidcContext) => {
+    Mutation: {        
+        updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
-                claimsSupported: tenantInput.claimsSupported,
-                enabled: true,
-                tenantId: "",
-                allowUnlimitedRate: tenantInput.allowUnlimitedRate,
+                tenantId: tenantInput.tenantId,
+                enabled: tenantInput.enabled,
                 tenantName: tenantInput.tenantName,
-                tenantDescription: tenantInput.tenantDescription ?? "",
+                allowUnlimitedRate: tenantInput.allowUnlimitedRate,
+                tenantDescription: tenantInput.tenantDescription,
                 allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
@@ -202,42 +244,17 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: false,
                 migrateLegacyUsers: false,
                 allowLoginByPhoneNumber: false,
-                allowForgotPassword: false
-            };
-            await tenantService.createRootTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
-            return tenant;
-        },
-        updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);
-            let tenant: Tenant = {
-                tenantId: tenantInput.tenantId,
-                claimsSupported: tenantInput.claimsSupported,
-                enabled: tenantInput.enabled,
-                tenantName: tenantInput.tenantName,
-                allowUnlimitedRate: tenantInput.allowUnlimitedRate,
-                tenantDescription: tenantInput.tenantDescription,
-                allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
-                verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
-                federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
-                markForDelete: tenantInput.markForDelete,
-                tenantType: TENANT_TYPE_ROOT_TENANT,
-                allowSocialLogin: false,
-                allowAnonymousUsers: false,
-                migrateLegacyUsers: false,
-                allowLoginByPhoneNumber: false,
-                allowForgotPassword: false
+                allowForgotPassword: false,
+                registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
+                registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri
             }
-            await tenantService.updateRootTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            await tenantService.updateRootTenant(tenant);        
             return tenant;
         },
         createTenant: async (_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: true,
                 tenantId: "",
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -254,18 +271,18 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
+                registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
+                registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri
             }
-            await tenantService.createTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            await tenantService.createTenant(tenant);         
             return tenant; 
         },
         updateTenant: async (_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
                 tenantId: tenantInput.tenantId,
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: tenantInput.enabled,
                 tenantName: tenantInput.tenantName,
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -273,25 +290,21 @@ const resolvers: Resolvers = {
                 allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
-                markForDelete: tenantInput.markForDelete,
+                markForDelete: false,
                 tenantType: tenantInput.tenantType,
                 allowSocialLogin: tenantInput.allowSocialLogin,
                 allowAnonymousUsers: tenantInput.allowAnonymousUsers,
                 migrateLegacyUsers: tenantInput.migrateLegacyUsers,
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
-                defaultRateLimit: tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
+                defaultRateLimit: tenantInput.allowUnlimitedRate ? null : tenantInput.defaultRateLimit,
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
+                registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
+                registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri
             }
-            const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            const updatedTenant: Tenant = await tenantService.updateTenant(tenant);          
             return updatedTenant;
-        },
-        deleteTenant: async (_: any, { tenantId }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);
-            await tenantService.deleteTenant(tenantId);
-            return tenantId;
         },
         createClient: async (_: any, { clientInput }, oidcContext) => {
             const clientService: ClientService = new ClientService(oidcContext);
@@ -308,11 +321,11 @@ const resolvers: Resolvers = {
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
                 maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
-                clienttypeid: ""
+                clienttypeid: "",
+                markForDelete: false,
+                audience: clientInput.audience
             }
-            await clientService.createClient(client);
-            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            //await clientService.assignContactsToClient(client.clientId, contacts);
+            await clientService.createClient(client);            
             return client;
         },
         updateClient: async (_: any, { clientInput }, oidcContext) => {
@@ -330,17 +343,12 @@ const resolvers: Resolvers = {
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
                 maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
-                clienttypeid: ""
+                clienttypeid: "",
+                markForDelete: false,
+                audience: clientInput.audience
             }
             await clientService.updateClient(client);
-            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            //await clientService.assignContactsToClient(client.clientId, contacts);
             return client;
-        },
-        deleteClient: async(_: any, { clientId }, oidcContext) => {
-            const clientService: ClientService = new ClientService(oidcContext);
-            await clientService.deleteClient(clientId);
-            return clientId;
         },
         createSigningKey: async(_: any, { keyInput }, oidcContext) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
@@ -350,19 +358,26 @@ const resolvers: Resolvers = {
                 keyUse: keyInput.keyUse,
                 keyName: keyInput.keyName,
                 keyId: "",
-                certificate: keyInput.certificate,
+                keyCertificate: keyInput.keyCertificate,
                 privateKeyPkcs8: keyInput.privateKeyPkcs8,
-                password: keyInput.password,
-                expiresAtMs: keyInput.expiresAtMs ? keyInput.expiresAtMs : Date.now() + (120 * 24 * 60 * 60 * 1000), // TODO - derive from the certificate's expiration
-                status: SIGNING_KEY_STATUS_ACTIVE,
+                keyPassword: keyInput.keyPassword,
+                expiresAtMs: keyInput.expiresAtMs ? keyInput.expiresAtMs : Date.now() + (120 * 24 * 60 * 60 * 1000), // see service impl for parsing of certificate value
+                keyStatus: SIGNING_KEY_STATUS_ACTIVE,
                 keyTypeId: "",
                 publicKey: keyInput.publicKey,
-                statusId: ""
+                statusId: "",
+                markForDelete: false,
+                createdAtMs: Date.now()
             };
             await keysService.createSigningKey(key);
             return key;
         },
-        updateSigningKey: async(_: any, {keyInput }, oidcContext) => {
+        autoCreateSigningKey: async(_: any, { keyInput }, oidcContext) => {
+            const keysService: SigningKeysService = new SigningKeysService(oidcContext);
+            const key: SigningKey = await keysService.autoCreateSigningKey(keyInput);
+            return key;
+        },
+        updateSigningKey: async(_: any, { keyInput }, oidcContext) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             const key: SigningKey = {
                 keyType: "",
@@ -370,22 +385,19 @@ const resolvers: Resolvers = {
                 keyUse: "",
                 keyName: keyInput.keyName || "",
                 keyId: keyInput.keyId,
-                certificate: "",
+                keyCertificate: "",
                 privateKeyPkcs8: "",
-                password: "",
+                keyPassword: "",
                 expiresAtMs: 0,
-                status: keyInput.status,
+                keyStatus: keyInput.status,
                 keyTypeId: "",
                 publicKey: "",
-                statusId: ""
+                statusId: "",
+                markForDelete: false,
+                createdAtMs: 0
             };
             const updatedKey = await keysService.updateSigningKey(key);
             return updatedKey;
-        },
-        deleteSigningKey: async(_: any, { keyId }, oidcContext) => {
-            const keysService: SigningKeysService = new SigningKeysService(oidcContext);
-            await keysService.deleteSigningKey(keyId);
-            return keyId;
         },
         createScope: async(_: any, { scopeInput }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -393,7 +405,8 @@ const resolvers: Resolvers = {
                 scopeId: "",
                 scopeName: scopeInput.scopeName,
                 scopeDescription: scopeInput.scopeDescription,
-                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT
+                scopeUse: scopeInput.scopeUse, //SCOPE_USE_APPLICATION_MANAGEMENT,
+                markForDelete: false
             };
             await scopeService.createScope(scope);
             return scope;
@@ -404,35 +417,68 @@ const resolvers: Resolvers = {
                 scopeId: scopeInput.scopeId,
                 scopeName: scopeInput.scopeName,
                 scopeDescription: scopeInput.scopeDescription,
-                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT
+                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT,
+                markForDelete: false
             };
             await scopeService.updateScope(scope);
             return scope;
         },
-        deleteScope: async(_: any, { scopeId }, oidcContext) => {
+        assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            await scopeService.deleteScope(scopeId);
-            return scopeId;
+            const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
+            return rel;
         },
-        // assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
-        //     const scopeService: ScopeService = new ScopeService(oidcContext);
-        //     const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
-        //     return rel;
-        // },
-        removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
+        bulkAssignScopeToTenant: async(_: any, {tenantId, bulkScopeInput}, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToTenant(tenantId, bulkScopeInput);
+        },
+        removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {            
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromTenant(tenantId, scopeId);
             return scopeId;
         },
-        // assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
-        //     const scopeService: ScopeService = new ScopeService(oidcContext);
-        //     const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
-        //     return rel;
-        // },
+        assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
+            return rel;
+        },
+        bulkAssignScopeToClient: async(_: any, { clientId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToClient(tenantId, clientId, bulkScopeInput);
+        },
         removeScopeFromClient: async(_: any, { scopeId, tenantId, clientId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromClient(tenantId, clientId, scopeId);
             return scopeId;
+        },
+        assignScopeToAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);            
+            const rel = await scopeService.assignScopeToAuthorizationGroup(groupId, scopeId, tenantId);
+            return rel;
+        },
+        bulkAssignScopeToAuthorizationGroup: async(_: any, { groupId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToAuthorizationGroup(groupId, tenantId, bulkScopeInput);
+        },
+        removeScopeFromAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromAuthorizationGroup(groupId, scopeId, tenantId);
+            return scopeId;
+        },
+        assignScopeToUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToUser(userId, tenantId, scopeId);
+            return rel;
+        },
+        bulkAssignScopeToUser: async(_: any, { userId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToUser(userId, tenantId, bulkScopeInput);
+        },
+        removeScopeFromUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromUser(userId, tenantId, scopeId);
+            return scopeId;
+
         },
         createAuthenticationGroup: async(_: any, { authenticationGroupInput }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
@@ -441,7 +487,8 @@ const resolvers: Resolvers = {
                 authenticationGroupName: authenticationGroupInput.authenticationGroupName,
                 authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
                 tenantId: authenticationGroupInput.tenantId,
-                defaultGroup: authenticationGroupInput.defaultGroup
+                defaultGroup: authenticationGroupInput.defaultGroup,
+                markForDelete: false
             }
             await authenticationGroupService.createAuthenticationGroup(authenticationGroup);
             return authenticationGroup;
@@ -453,15 +500,11 @@ const resolvers: Resolvers = {
                 authenticationGroupName: authenticationGroupInput.authenticationGroupName,
                 authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
                 tenantId: authenticationGroupInput.tenantId,
-                defaultGroup: authenticationGroupInput.defaultGroup
+                defaultGroup: authenticationGroupInput.defaultGroup,
+                markForDelete: false
             }
             await authenticationGroupService.updateAuthenticationGroup(authenticationGroup);
-            return authenticationGroupInput;
-        },
-        deleteAuthenticationGroup: async(_: any, { authenticationGroupId }, oidcContext) => {
-            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
-            await authenticationGroupService.deleteAuthenticationGroup(authenticationGroupId);
-            return authenticationGroupId;
+            return authenticationGroup;
         },
         assignAuthenticationGroupToClient: async(_: any, { authenticationGroupId, clientId }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
@@ -481,7 +524,8 @@ const resolvers: Resolvers = {
                 groupName: groupInput.groupName,
                 tenantId: groupInput.tenantId,
                 groupDescription: groupInput.groupDescription,
-                allowForAnonymousUsers: groupInput.allowForAnonymousUsers
+                allowForAnonymousUsers: groupInput.allowForAnonymousUsers,
+                markForDelete: false
             };
             await groupService.createGroup(group);
             return group;
@@ -494,15 +538,11 @@ const resolvers: Resolvers = {
                 groupName: groupInput.groupName,
                 tenantId: groupInput.tenantId,
                 groupDescription: groupInput.groupDescription,
-                allowForAnonymousUsers: groupInput.allowForAnonymousUsers
+                allowForAnonymousUsers: groupInput.allowForAnonymousUsers,
+                markForDelete: false
             };
             await groupService.updateGroup(group);
             return group;
-        },
-        deleteAuthorizationGroup: async(_: any, { groupId }, oidcContext ) => {
-            const groupService: GroupService = new GroupService(oidcContext);
-            await groupService.deleteGroup(groupId);
-            return groupId;
         },
         addUserToAuthorizationGroup: async(_: any, { groupId, userId }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
@@ -528,8 +568,10 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
                 scopes: oidcProviderInput.scopes,
                 federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
-                socialLoginProvider: oidcProviderInput.socialLoginProvider
-                
+                socialLoginProvider: oidcProviderInput.socialLoginProvider,
+                markForDelete: false,
+                federatedOIDCProviderResponseType: oidcProviderInput.federatedOIDCProviderResponseType,
+                federatedOIDCProviderSubjectType: oidcProviderInput.federatedOIDCProviderSubjectType
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.createFederatedOIDCProvider(oidcProvider);
@@ -549,54 +591,35 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
                 scopes: oidcProviderInput.scopes,
                 federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
-                socialLoginProvider: oidcProviderInput.socialLoginProvider
+                socialLoginProvider: oidcProviderInput.socialLoginProvider,
+                markForDelete: false,
+                federatedOIDCProviderResponseType: oidcProviderInput.federatedOIDCProviderResponseType,
+                federatedOIDCProviderSubjectType: oidcProviderInput.federatedOIDCProviderSubjectType
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.updateFederatedOIDCProvider(oidcProvider);
             return oidcProvider;
         },
-        deleteFederatedOIDCProvider: async(_: any, { federatedOIDCProviderId }, oidcContext) => {
-            const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
-            await providerService.deleteFederatedOIDCProvider(federatedOIDCProviderId);
-            return federatedOIDCProviderId;
-        },
-        login: async(_: any, { username, password }, oidcContext ) => {
-            const response: LoginAuthenticationHandlerResponse = {
-                status: LoginAuthenticationHandlerAction.Error,
-                successConfig: {
-                    code: "123412341234",
-                    redirectUri: "http://localhost:3000/not/avalid/uri",
-                    responseMode: "fragment",
-                    state: "347820198273401987324"
-                },
-                secondFactorType: SecondFactorType.Totp,
-                errorActionHandler: {
-                    errorCode: "error code",
-                    errorMessage: "Authentication failed"
-                }
+        setTenantLoginFailurePolicy: async(_: any, { tenantLoginFailurePolicyInput }, oidcContext) => {
+            const loginFailurePolicy: TenantLoginFailurePolicy = {
+                failureThreshold: tenantLoginFailurePolicyInput.failureThreshold,
+                loginFailurePolicyType: tenantLoginFailurePolicyInput.loginFailurePolicyType,
+                tenantId: tenantLoginFailurePolicyInput.tenantId,
+                pauseDurationMinutes: tenantLoginFailurePolicyInput.pauseDurationMinutes,
+                maximumLoginFailures: tenantLoginFailurePolicyInput.maximumLoginFailures
             }
-            return response;
+            const service: TenantService = new TenantService(oidcContext);
+            return service.setTenantLoginFailurePolicy(loginFailurePolicy);
+            
         },
-        updateLoginFailurePolicy: async(_: any, { loginFailurePolicyInput }, oidcContext) => {
-            const loginFailurePolicy: LoginFailurePolicy = {
-                failureThreshold: loginFailurePolicyInput.failureThreshold,
-                loginFailurePolicyType: loginFailurePolicyInput.loginFailurePolicyType,
-                tenantId: loginFailurePolicyInput.tenantId,
-                initBackoffDurationMinutes: loginFailurePolicyInput.initBackoffDurationMinutes || 0,
-                numberOfBackoffCyclesBeforeLocking: loginFailurePolicyInput.numberOfBackoffCyclesBeforeLocking || 0,
-                numberOfPauseCyclesBeforeLocking: loginFailurePolicyInput.numberOfPauseCyclesBeforeLocking || 0,
-                pauseDurationMinutes: loginFailurePolicyInput.pauseDurationMinutes || 0
-            }            
-            // TODO 
-            // Implement the DAO and Service interfaces for assigning login failure policies.
-            return loginFailurePolicy;
-        },
+        removeTenantLoginFailurePolicy: async(_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            await service.removeTenantLoginFailurePolicy(tenantId);
+            return tenantId;
+        },  
         setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContext) => {
-            //const tenantService: TenantService = new TenantService(oidcContext);
-            // TODO
-            // Implement the service and DAO classes
+            const tenantService: TenantService = new TenantService(oidcContext);
             const tenantPasswordConfig: TenantPasswordConfig = {
-                allowMfa: passwordConfigInput.allowMfa,
                 passwordHashingAlgorithm: passwordConfigInput.passwordHashingAlgorithm,
                 passwordMaxLength: passwordConfigInput.passwordMaxLength,
                 passwordMinLength: passwordConfigInput.passwordMinLength,
@@ -607,14 +630,18 @@ const resolvers: Resolvers = {
                 requireUpperCase: passwordConfigInput.requireUpperCase,
                 tenantId: passwordConfigInput.tenantId,
                 maxRepeatingCharacterLength: passwordConfigInput.maxRepeatingCharacterLength,
-                mfaTypesAllowed: passwordConfigInput.mfaTypesAllowed,
                 mfaTypesRequired: passwordConfigInput.mfaTypesRequired,
                 passwordHistoryPeriod: passwordConfigInput.passwordHistoryPeriod,
                 passwordRotationPeriodDays: passwordConfigInput.passwordRotationPeriodDays,
                 specialCharactersAllowed: passwordConfigInput.specialCharactersAllowed
-            }
-            //await tenantService.assignPasswordConfigToTenant(passwordConfigInput.tenantId, tenantPasswordConfig);
+            };
+            await tenantService.assignPasswordConfigToTenant(tenantPasswordConfig);
             return tenantPasswordConfig;
+        },
+        removeTenantPasswordConfig: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantPasswordConfig(tenantId);
+            return tenantId;
         },
         setTenantLegacyUserMigrationConfig: async(_: any, { tenantLegacyUserMigrationConfigInput }, oidcContext) => {
             const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig = {
@@ -627,33 +654,43 @@ const resolvers: Resolvers = {
             await tenantService.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);            
             return tenantLegacyUserMigrationConfig;
         },
-        setTenantAnonymousUserConfig: async(_: any, { tenantAnonymousUserConfigInput }, oidcContext) => {
-            // TODO
-            // Implement the service and dao functions.
-            //const tenantService: TenantService = new TenantService(oidcContext);
+        setTenantAnonymousUserConfig: async(_: any, { tenantAnonymousUserConfigInput }, oidcContext) => {            
+            const tenantService: TenantService = new TenantService(oidcContext);
             const anonymousUserConfig: TenantAnonymousUserConfiguration = {
                 tenantId: tenantAnonymousUserConfigInput.tenantId,
                 tokenttlseconds: tenantAnonymousUserConfigInput.tokenttlseconds,
                 defaultcountrycode: tenantAnonymousUserConfigInput.defaultcountrycode,
-                defaultlangugecode: tenantAnonymousUserConfigInput.defaultlangugecode
+                defaultlanguagecode: tenantAnonymousUserConfigInput.defaultlanguagecode
             }
-            //await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
+            await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
             return anonymousUserConfig;
         },
-        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
-            // TODO
-            // Implement the service and dao functions.
-            // const tenantService: TenantService = new TenantService(oidcContext);
+        removeTenantAnonymousUserConfig: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantAnonymousUserConfig(tenantId);
+            return tenantId;
+        },
+        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {            
+            const tenantService: TenantService = new TenantService(oidcContext);
             const tenantLookAndFeel: TenantLookAndFeel = {
                 tenantid: tenantLookAndFeelInput.tenantid,
                 authenticationheaderbackgroundcolor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
                 authenticationheadertextcolor: tenantLookAndFeelInput.authenticationheadertextcolor,
                 authenticationheadertext: tenantLookAndFeelInput.authenticationheadertext,
                 authenticationlogo: tenantLookAndFeelInput.authenticationlogo,
-                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype
+                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype,
+                adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
+                adminheadertext: tenantLookAndFeelInput.adminheadertext,
+                adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
+                authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri
             }
-            // await tenantService.createTenantLookAndFeel(tenantLookAndFeel);
+            await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
             return tenantLookAndFeel;
+        },
+        removeTenantLookAndFeel: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantLookAndFeel(tenantId);
+            return tenantId;
         },
         addDomainToTenantManagement: async(_: any, { tenantId, domain }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -725,7 +762,7 @@ const resolvers: Resolvers = {
             return authenticationGroupId;
         },
         updateUser: async(_: any, { userInput }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);            
+            const service: IdentityService = new IdentityService(oidcContext);            
             const user: User = {
                 domain: userInput.domain,
                 email: userInput.email,
@@ -745,23 +782,301 @@ const resolvers: Resolvers = {
                 postalCode: userInput.postalCode,
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
-                twoFactorAuthType: userInput.twoFactorAuthType
+                markForDelete: false,
+                forcePasswordResetAfterAuthentication: false
             }
             await service.updateUser(user);
             return user;
         },
         assignUserToTenant: async(_: any, { tenantId, userId, relType }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const service: IdentityService = new IdentityService(oidcContext);
             return service.assignUserToTenant(tenantId, userId, relType);
         },
         updateUserTenantRel: async(_: any, { tenantId, userId, relType }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const service: IdentityService = new IdentityService(oidcContext);
             return service.assignUserToTenant(tenantId, userId, relType);
         },
         removeUserFromTenant: async(_: any, { tenantId, userId }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const service: IdentityService = new IdentityService(oidcContext);
             await service.removeUserFromTenant(tenantId, userId);
             return userId;
+        },
+        createRateLimitServiceGroup: async(_: any, { rateLimitServiceGroupInput }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: RateLimitServiceGroup = await service.createRateLimitServiceGroup({
+                servicegroupid: "",
+                servicegroupname: rateLimitServiceGroupInput.servicegroupname,
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription,
+                markForDelete: false
+            });
+            return r;
+        },
+        updateRateLimitServiceGroup: async(_: any, { rateLimitServiceGroupInput }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: RateLimitServiceGroup = await service.updateRateLimitServiceGroup({
+                servicegroupid: rateLimitServiceGroupInput.servicegroupid,
+                servicegroupname: rateLimitServiceGroupInput.servicegroupname,
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription,
+                markForDelete: false
+            });
+            return r;
+        },
+        assignRateLimitToTenant: async(_: any, { tenantId, serviceGroupId, allowUnlimited, limit, rateLimitPeriodMinutes }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: TenantRateLimitRel = await service.assignRateLimitToTenant(tenantId, serviceGroupId, allowUnlimited || false, limit || 0, rateLimitPeriodMinutes || 0);
+            return r;
+        },
+        updateRateLimitForTenant: async(_: any, { tenantId, serviceGroupId, allowUnlimited, limit, rateLimitPeriodMinutes }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: TenantRateLimitRel = await service.updateRateLimitForTenant(tenantId, serviceGroupId, allowUnlimited || false, limit || 0, rateLimitPeriodMinutes || 0);
+            return r;
+        },
+        removeRateLimitFromTenant: async(_: any, { tenantId, serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            await service.removeRateLimitFromTenant(tenantId, serviceGroupId);
+            return serviceGroupId;
+        },
+        markForDelete: async(_: any, { markForDeleteInput }, oidcContext) => {
+            const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
+            // markForDeleteId, submitted by, and submitted date to be assigned by the service class.
+            const m: MarkForDelete = {
+                markForDeleteId: "",
+                objectType: markForDeleteInput.markForDeleteObjectType,
+                objectId: markForDeleteInput.objectId,
+                submittedBy: "",
+                submittedDate: 0
+            }
+            await service.markForDelete(m);
+            return m;
+
+        },
+        generateTOTP: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            const totpResponse = await service.createTOTP(userId);
+            return totpResponse;
+        },
+        deleteTOTP: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteTOTP(userId);
+            return userId;
+        },
+        deleteFIDOKey: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteFIDOKey(userId);
+            return userId;
+        },
+        deleteUserSession: async(_: any, { userId, tenantId, clientId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteUserSession(userId, clientId, tenantId);
+            return userId;
+        },
+        createFido2RegistrationChallenge: async(_: any, {userId, sessionToken, sessionTokenType }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.createFido2RegistrationChallenge(userId, sessionToken || null, sessionTokenType || null);
+        },
+        createFido2AuthenticationChallenge: async(_: any, { userId, sessionToken, sessionTokenType }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.createFido2AuthenticationChallenge(userId, sessionToken || null, sessionTokenType || null);
+        },
+        createUser: async(_: any, { tenantId, userInput }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.createUser(userInput, tenantId);
+        },        
+        authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken, returnToUri, deviceCodeId}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateHandleUserNameInput(username, tenantId || null, preAuthToken || null, returnToUri || null, deviceCodeId || null);
+        },
+        authenticateUser: async(_: any, { username, password, authenticationSessionToken, tenantId, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, useRecoveryEmail }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, useRecoveryEmail);
+        },
+        authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateRotatePassword(userId, newPassword, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateValidateTOTP: async(_: any, { authenticationSessionToken, totpTokenValue, userId, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateValidateTOTP(userId, totpTokenValue, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateConfigureTOTP: async(_: any, { userId, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateConfigureTOTP(userId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateValidateSecurityKey: async(_: any, { userId, authenticationSessionToken, fido2KeyAuthenticationInput, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateValidateSecurityKey(userId, authenticationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
+        },
+        authenticateRegisterSecurityKey: async(_: any, { userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateRegisterSecurityKey(userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken || null);
+        },
+        authenticateValidatePasswordResetToken: async(_: any, { token, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateValidatePasswordResetToken(token, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateVerifyEmailAddress: async(_: any, { userId, token, authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateVerifyEmailAddress(userId, token, authenticationSessionToken, preAuthToken || null);
+        },
+        cancelAuthentication: async(_: any, { authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.cancelAuthentication(authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateWithSocialOIDCProvider: async(_: any, { federatedOIDCProviderId, preAuthToken, tenantId }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateWithSocialOIDCProvider(preAuthToken || null, tenantId, federatedOIDCProviderId);
+        },
+        authenticateUserAndMigrate: async(_: any, { authenticationSessionToken, password, tenantId, username, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateUserAndMigrate(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateAcceptTermsAndConditions: async(_: any, {accepted, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateAcceptTermsAndConditions(accepted, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateHandleUserCodeInput: async(_: any, { userCode }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateHandleUserCodeInput(userCode);
+        },
+        registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId, recaptchaToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null, recaptchaToken || null);
+        },
+        registerVerifyEmailAddress: async(_: any, { userId, token, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerVerifyEmailAddress(userId, token, registrationSessionToken, preAuthToken);
+        },
+        registerConfigureTOTP: async(_: any, { userId, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerConfigureTOTP(userId, registrationSessionToken, preAuthToken, skip);
+        },
+        registerValidateTOTP: async(_: any, { userId, totpTokenValue, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerValidateTOTP(userId, registrationSessionToken, totpTokenValue, preAuthToken);
+        },
+        registerConfigureSecurityKey: async(_: any, { userId, registrationSessionToken, skip, fido2KeyRegistrationInput, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerConfigureSecurityKey(userId, registrationSessionToken, fido2KeyRegistrationInput || null, preAuthToken || null, skip);
+        },
+        registerValidateSecurityKey: async(_: any, { userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerValidateSecurityKey(userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
+        },
+        registerAddRecoveryEmail: async(_: any, { userId, registrationSessionToken, recoveryEmail, skip, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerAddRecoveryEmail(userId, recoveryEmail || null, registrationSessionToken, preAuthToken || null, skip);
+        },
+        registerVerifyRecoveryEmail: async(_: any, { userId, token, registrationSessionToken, preAuthToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerVerifyRecoveryEmail(userId, token, registrationSessionToken, preAuthToken || null);
+        },
+        registerAddDuressPassword: async(_: any, { userId, password, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerAddDuressPassword(userId, password || null, skip, registrationSessionToken, preAuthToken || null);
+        },
+        cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken, deviceCodeId }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.cancelRegistration(userId, registrationSessionToken, preAuthToken || null, deviceCodeId || null);
+        },
+        unlockUser: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.unlockUser(userId);
+            return true;
+        },
+        updateSystemSettings: async(_: any, { systemSettingsUpdateInput }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.updateSystemSettings(systemSettingsUpdateInput);
+        },
+        generateSecretShareLink: async(_: any, { email, objectId, secretShareObjectType}, oidcContext) => {
+            const service: SecretShareService = new SecretShareService(oidcContext);
+            return service.generateSecretShareLink(objectId, secretShareObjectType, email);
+        },
+        enterSecretValue: async(_: any, { secretValue, otp }, oidcContext) => {
+            const service: SecretShareService = new SecretShareService(oidcContext);
+            return service.enterSecretValue(otp, secretValue);
+        },
+        swapPrimaryAndRecoveryEmail: async(_: any, { }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.swapPrimaryAndRecoveryEmail();
+        },
+        deleteRecoveryEmail: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteRecoveryEmail(userId);
+            return true;
+        },
+        profileHandleEmailChange: async(_: any, { newEmail }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileHandleEmailChange(newEmail);
+        },
+        profileAddRecoveryEmail: async(_: any, { recoveryEmail }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileAddRecoveryEmail(recoveryEmail);
+        },
+        profileValidateEmail: async(_: any, { token, changeEmailSessionToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileValidateEmail(token, changeEmailSessionToken);
+        },
+        profileCancelEmailChange: async(_: any, { changeEmailSessionToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileCancelEmailChange(changeEmailSessionToken);
+        },
+        setCaptchaConfig: async(_: any, { captchaConfigInput }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.setCaptchaConfig(captchaConfigInput);
+        },            
+        removeCaptchaConfig: async(_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            await service.removeCaptchaConfig();
+            return "";
+        },
+        systemInitializationAuthentication: async(_: any, {privateKey, password}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.systemInitializationAuthentication(privateKey, password || null);
+        },
+        initializeSystem: async(_: any, { systemInitializationInput }, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.initializeSystem(systemInitializationInput);
+        },
+        createFederatedAuthTest: async(_: any, { clientAuthType, clientId, scope, usePkce, wellKnownUri, clientSecret, responseType}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.createFederatedAuthTest(clientId, clientSecret || null, usePkce, scope, wellKnownUri, clientAuthType, responseType);
+        }
+    },
+    PortalUserProfile: {
+        recoveryEmail: async(profile: PortalUserProfile, _: any, oidcContext: OIDCContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getRecoveryEmail(profile.userId);
+        }
+    },
+    User: {
+        recoveryEmail: async(user: User, _: any, oidcContext: OIDCContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getRecoveryEmail(user.userId);
+        }
+    },
+    RelSearchResultItem : {
+        owningtenantname: async (item: RelSearchResultItem, _: any, oidcContext: OIDCContext) => {
+            let tenant: Tenant | null = null;
+            if(oidcContext.requestCache.has(item.owningtenantid)){
+                tenant = oidcContext.requestCache.get(item.owningtenantid);
+                return tenant?.tenantName || "";
+            }
+            else{
+                const service: TenantService = new TenantService(oidcContext);
+                tenant = await service.getTenantById(item.owningtenantid);
+                if(tenant){
+                    oidcContext.requestCache.set(item.owningtenantid, tenant);
+                    return tenant.tenantName;
+                }
+                else{
+                    return "";
+                }
+            }
+            
         }
     }
 }

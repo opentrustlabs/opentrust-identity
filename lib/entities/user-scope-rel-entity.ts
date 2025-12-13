@@ -1,28 +1,30 @@
-import type { Maybe, UserScopeRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "user_scope_rel"
-})
-class UserScopeRelEntity implements UserScopeRel {
+const UserScopeRelEntity = new EntitySchema({
 
-    constructor(m?: UserScopeRel){
-        if(m){
-            Object.assign(this, m);
+
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        },
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
         }
-    }
-    __typename?: "UserScopeRel";
+    },
 
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
+    tableName: "user_scope_rel",
+    name: "userScopeRel",
 
-    @PrimaryKey({fieldName: "scopeid"})
-    scopeId: string;
-
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    
-}
+});
 
 export default UserScopeRelEntity;
+

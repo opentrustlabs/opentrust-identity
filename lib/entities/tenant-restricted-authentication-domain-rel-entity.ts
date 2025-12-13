@@ -1,23 +1,26 @@
-import type { TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "tenant_restricted_authentication_domain_rel"
-})
-class TenantRestrictedAuthenticationDomainRelEntity implements TenantRestrictedAuthenticationDomainRel{
+const TenantRestrictedAuthenticationDomainRelEntity = new EntitySchema({
 
-    constructor(tenantAuthenticationDomainRel?: TenantRestrictedAuthenticationDomainRel){
-        Object.assign(this, tenantAuthenticationDomainRel)
-    }
 
-    __typename?: "TenantRestrictedAuthenticationDomainRel";
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        domain: {
+            type: String,
+            primary: true,
+            name: "domain"
+        }
+    },
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;    
+    tableName: "tenant_restricted_authentication_domain_rel",
+    name: "tenantRestrictedAuthenticationDomainRel",
 
-    @PrimaryKey({fieldName: "domain"})
-    domain: string;    
+});
 
-}
+
 
 export default TenantRestrictedAuthenticationDomainRelEntity;

@@ -1,29 +1,41 @@
 "use client";
-import { Scope } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, PortalUserProfile, Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_DELETE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
-import Divider from "@mui/material/Divider";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import SchemaIcon from '@mui/icons-material/Schema';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
-import InputAdornment from "@mui/material/InputAdornment";
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import StraightenIcon from '@mui/icons-material/Straighten';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import { SCOPE_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { useMutation } from "@apollo/client";
+import { SCOPE_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import ScopeTenantConfiguration from "./scope-tenant-configuration";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
+import PolicyIcon from '@mui/icons-material/Policy';
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
 
 
 export interface ScopeDetailProps {
@@ -32,7 +44,47 @@ export interface ScopeDetailProps {
 
 const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
 
+    // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
+    const initInput: ScopeUpdateInput = {
+        scopeDescription: scope.scopeDescription,
+        scopeId: scope.scopeId,
+        scopeName: scope.scopeName
+    }
+
+    // STATE VARIABLES
+    const [scopeUpdateInput, setScopeUpdateInput] = React.useState<ScopeUpdateInput>(initInput);
+    const [markDirty, setMarkDirty] = React.useState<boolean>(false);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
+    const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(scope.markForDelete);
+    const [disableInputs] = React.useState<boolean>(scope.markForDelete || !containsScope(SCOPE_UPDATE_SCOPE, profile?.scope || []));
+    const [canDeleteScope] = React.useState<boolean>(containsScope(SCOPE_DELETE_SCOPE, profile?.scope || []));
+
+
+    // GRAPHQL FUNCTIONS
+    const [updateScopeMutation] = useMutation(SCOPE_UPDATE_MUTATION, {
+        variables: {
+            scopeInput: scopeUpdateInput
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+            setMarkDirty(false);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        },
+        refetchQueries: [SCOPE_DETAIL_QUERY]
+    })
+
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
         href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
@@ -40,14 +92,12 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     },);
     arrBreadcrumbs.push({
         linkText: "Scope / Access Control",
-        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=oidc-providers`
+        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=scope-access-control`
     });
     arrBreadcrumbs.push({
         linkText: scope.scopeName,
         href: null
-    })
-
-
+    });
 
     return (
         <Typography component={"div"} >
@@ -55,49 +105,182 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2
-                            className="detail-page-subheader"
-                            sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }}
-                            fontWeight={"bold"}
-                            size={12}
+                        <Paper
+                            elevation={0}
+
+                            sx={{
+                                width: "100%",
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                            }}
                         >
-                            Overview
-                        </Grid2>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: DEFAULT_BACKGROUND_COLOR,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                        }}
+                                    >
+                                        <PolicyIcon sx={{ fontSize: 28 }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {scope.scopeName}
+                                        </Typography>
+                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                                            <Chip
+                                                label={SCOPE_USE_DISPLAY.get(scope.scopeUse)}
+                                                size="small"
+                                                sx={{ fontWeight: 500 }}
+                                            />                                           
+                                        </Stack>                                        
+                                    </Box>
+                                </Stack>
+                                {isMarkedForDelete !== true && scope.scopeUse !== SCOPE_USE_IAM_MANAGEMENT && canDeleteScope &&
+                                    <SubmitMarkForDelete 
+                                        objectId={scope.scopeId}
+                                        objectType={MarkForDeleteObjectType.Scope}
+                                        confirmationMessage={`Confirm deletion of scope: ${scope.scopeName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                } 
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Stack>
+                        </Paper>
                         <Grid2 size={12}>
+                            {errorMessage &&
+                                <Grid2 size={12} marginBottom={"8px"}>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                </Grid2>                                
+                            }
+                            {isMarkedForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This scope definition has been marked for deletion. No changes to the scope definition are permitted."}
+                                />
+                            }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Name</div>
-                                            <TextField disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} name="providerName" id="providerName" value={scope.scopeName} fullWidth={true} size="small" />
+                                    {ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES.includes(scope.scopeName) &&
+                                        <Grid2 size={12} marginBottom={"8px"}>
+                                            <Alert severity="info">This scope is exclusive to the Root Tenant and cannot be added to any other tenant and cannot be edited.</Alert>                                            
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Description</div>
+                                    }
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
+                                        <Stack spacing={3}>                                            
+                                            <TextField 
+                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || disableInputs === true} 
+                                                name="scopeName" 
+                                                id="scopeName" 
+                                                value={scopeUpdateInput.scopeName} 
+                                                fullWidth={true} 
+                                                label="Scope Name"
+                                                onChange={(evt) => {
+                                                    scopeUpdateInput.scopeName = evt.target.value;
+                                                    setScopeUpdateInput({...scopeUpdateInput});
+                                                    setMarkDirty(true);
+                                                }}
+                                                
+                                            />                                        
+                                        
                                             <TextField
-                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}
-                                                name="providerDescription"
-                                                id="providerDescription"
-                                                value={scope.scopeDescription}
+                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || disableInputs === true}
+                                                name="scopeDescription"
+                                                id="scopeDescription"
+                                                value={scopeUpdateInput.scopeDescription}
                                                 fullWidth={true}
-                                                size="small"
+                                                label="Scope Description"
                                                 multiline={true}
                                                 rows={2}
+                                                onChange={(evt) => {
+                                                    scopeUpdateInput.scopeDescription = evt.target.value;
+                                                    setScopeUpdateInput({...scopeUpdateInput});
+                                                    setMarkDirty(true);
+                                                }}
                                             />
-                                        </Grid2>
+
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                    Object ID
+                                                </Typography>
+                                                <Paper
+                                                    variant="outlined"
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: 'grey.50',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                                        {scope.scopeId}
+                                                    </Typography>
+                                                    <Tooltip title="Copy to clipboard">
+                                                        <ContentCopyIcon
+                                                            sx={{ cursor: "pointer", ml: 1, color: 'action.active' }}
+                                                            onClick={() => {
+                                                                copyContentToClipboard(scope.scopeId, "Scope ID copied to clipboard");
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </Paper>
+                                            </Box>                                        
+                                        </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Scope Use</div>
-                                            <TextField disabled={true} name="providerName" id="providerName" value={scope.scopeUse} fullWidth={true} size="small" />
-                                        </Grid2>
+                                        <Stack spacing={3}>
+                                            <TextField 
+                                                disabled={true} 
+                                                name="scopeUse" 
+                                                id="scopeUse" 
+                                                value={SCOPE_USE_DISPLAY.get(scope.scopeUse)} 
+                                                fullWidth={true} 
+                                                label="Scope Use"
+                                            />
+                                        </Stack>
                                     </Grid2>
                                 </Grid2>
-                                {/* TODO Show the button only when the scope is editable, which it will not be for IAM Management types of scope */}
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setMarkDirty(false);
+                                        setScopeUpdateInput(initInput);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        updateScopeMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                    disableSubmit={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}                                    
+                                />
                             </Paper>
                         </Grid2>
+                        
+                        {/* TODO
+                            work out the access rule schema using FGA or ABAC
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion defaultExpanded={true}  >
                                 <AccordionSummary
@@ -131,7 +314,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         </Grid2>
                                     </Typography>
                                     <Divider />
-                                    {["1", "2", "3"].map(                                            
+                                    {[].map(                                            
                                         (name: string) => (
                                             <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} >
                                                 <Divider></Divider>
@@ -146,79 +329,39 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                     )}
                                 </AccordionDetails>
                             </Accordion>
-                        </Grid2>
+                        </Grid2> */}
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"scope-tenant-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Tenant</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                            <TextField
-                                                label={"Filter Tenants"}
-                                                size={"small"}
-                                                name={"filter"}
-                                                value={""}
-                                                
-                                                slotProps={{
-                                                    input: {
-                                                        endAdornment: (
-                                                            <InputAdornment position="end">
-                                                                <CloseOutlinedIcon
-                                                                    sx={{ cursor: "pointer" }}
-                                                                    onClick={() => {  }}
-                                                                />
-                                                            </InputAdornment>
-                                                        )
-                                                    }
-                                                }}
-                                            />
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    
-                                    <Typography component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                        <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                            <Grid2 size={8}>Tenant</Grid2>
-                                            <Grid2 size={3}>Access Rule</Grid2>
-                                            <Grid2 size={1}></Grid2>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider />
-                                    {["Home Depot Prod", "Amgen", "Pfizer", "AirBnB", "MilliporeSigma", ].map(                                            
-                                        (name: string, idx: number) => (
-                                            <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} >
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={8}>{name}</Grid2>                                                                                                        
-                                                    <Grid2 size={3}>{idx === 1 || idx === 4 ? <StraightenIcon /> : <AddBoxIcon />}</Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>                                                
-                                        )
-                                    )}
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ScopeTenantConfiguration 
+                                            scopeId={scope.scopeId}
+                                            scopeUse={scope.scopeUse}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            }} 
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            isExclusiveInternalScope={ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES.includes(scope.scopeName) }
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                     </Grid2>
@@ -229,6 +372,25 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                     </Grid2>
                 </DetailPageRightNavContainer>
             </DetailPageContainer>
+            <Backdrop
+                sx={{ color: '#fff'}}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+            <Snackbar
+                open={showMutationSnackbar}
+                autoHideDuration={4000}
+                onClose={() => setShowMutationSnackbar(false)}                
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Scope Updated
+                </Alert>
+            </Snackbar>
 
         </Typography>
 

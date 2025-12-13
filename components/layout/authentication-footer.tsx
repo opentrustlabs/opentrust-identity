@@ -1,25 +1,34 @@
 "use client";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from "@/utils/consts";
 import Container from "@mui/material/Container";
 import React from "react";
 
 
 export interface AuthenticationFooterProps {
-    tenantMetaData: TenantMetaData
+    tenantMetaData: TenantMetaData,
+    isAuthenticateToPortal: boolean
 }
 
 const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
-    tenantMetaData
+    tenantMetaData,
+    isAuthenticateToPortal
 }) => {
 
+    let backgroundColor = DEFAULT_BACKGROUND_COLOR;
+    let textColor = DEFAULT_TEXT_COLOR;
+    if(!isAuthenticateToPortal){
+        backgroundColor = tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
+        textColor = tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
+    } 
 
     return (
         <div 
             style={{
-                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2", 
+                backgroundColor: backgroundColor,
                 width: "100%", 
-                height: "8vh", 
-                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white"
+                minHeight: "5vh", 
+                color: textColor
             }}
 
         >
@@ -27,12 +36,7 @@ const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
             <Container
                 maxWidth="xl"
             >
-                <div>
-                    {
-                        /* TODO
-                            Add footer links
-                        */
-                    }
+                <div style={{fontSize: "0.8em", padding: "8px"}}>                    
                 </div>
             </Container>
         </div>

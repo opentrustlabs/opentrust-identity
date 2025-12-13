@@ -1,61 +1,119 @@
-import type { FederatedOidcAuthorizationRel, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "federated_oidc_authorization_rel"
-})
-class FederatedOIDCAuthorizationRelEntity implements FederatedOidcAuthorizationRel {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(m?: FederatedOidcAuthorizationRel){
-        if(m){
-            Object.assign(this, m);
+const FederatedOIDCAuthorizationRelEntity = new EntitySchema({
+    columns: {
+        state: {
+            type: String,
+            primary: true,
+            name: "state"
+        },
+        federatedOIDCAuthorizationRelType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcauthorizationreltype"
+        },
+        email: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "email"
+        },
+        userId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "userid"
+        },
+        codeVerifier: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codeverifier"
+        },
+        codechallengemethod: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallengemethod"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        federatedOIDCProviderId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcproviderid"
+        },
+        initClientId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "initclientid"
+        },
+        initCodeChallenge: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "initcodechallenge"
+        },
+        initCodeChallengeMethod: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "initcodechallengemethod"
+        },
+        initRedirectUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "initredirecturi"
+        },
+        initResponseMode: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "initresponsemode"
+        },
+        initResponseType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "initresponsetype"
+        },
+        initScope: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "initscope"
+        },
+        initState: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "initstate"
+        },
+        initTenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "inittenantid"
         }
-    }
-    __typename?: "FederatedOIDCAuthorizationRel" | undefined;
-    
-    @PrimaryKey({fieldName: "state"})
-    state: string;
+    },
 
-    @Property({fieldName: "codeverifier", nullable: true})
-    codeVerifier?: Maybe<string> | undefined;
+    tableName: "federated_oidc_authorization_rel",
+    name: "federatedOidcAuthorizationRel",
 
-    @Property({fieldName: "codechallengemethod", nullable: true})
-    codechallengemethod?: Maybe<string> | undefined;
+});
 
-    @Property({fieldName: "expiresatms"})
-    expiresAtMs: number;
-
-    @Property({fieldName: "federatedoidcproviderid"})
-    federatedOIDCProviderId: string;
-
-    @Property({fieldName: "initclientid"})
-    initClientId: string;
-
-    @Property({fieldName: "initcodechallenge"})
-    initCodeChallenge?: Maybe<string> | undefined;
-
-    @Property({fieldName: "initcodechallengemethod"})
-    initCodeChallengeMethod?: Maybe<string> | undefined;
-
-    @Property({fieldName: "initredirecturi"})
-    initRedirectUri: string;
-
-    @Property({fieldName: "initresponsemode"})
-    initResponseMode: string;
-
-    @Property({fieldName: "initresponsetype"})
-    initResponseType: string;
-
-    @Property({fieldName: "initscope"})
-    initScope: string;
-
-    @Property({fieldName: "initstate"})
-    initState: string;
-
-    @Property({fieldName: "inittenantid"})
-    initTenantId: string;
-  
- 
-}
 
 export default FederatedOIDCAuthorizationRelEntity;

@@ -1,24 +1,35 @@
 "use client";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from "@/utils/consts";
 import { Container, Stack } from "@mui/material";
 import React from "react";
 
 export interface AuthenticationHeaderProps {
-    tenantMetaData: TenantMetaData
+    tenantMetaData: TenantMetaData,
+    isAuthenticateToPortal: boolean
 }
 
 const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
-    tenantMetaData
+    tenantMetaData,
+    isAuthenticateToPortal
 }) => {
+
+    let backgroundColor = DEFAULT_BACKGROUND_COLOR;
+    let textColor = DEFAULT_TEXT_COLOR;
+    if(!isAuthenticateToPortal){
+        backgroundColor = tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
+        textColor = tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
+    } 
 
     return (
         <div 
             style={{
-                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2", 
+                backgroundColor: backgroundColor, 
                 width: "100%", 
-                height: "8vh", 
-                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white",
-                borderBottom: "1px solid grey"
+                height: "5vh",
+                minHeight: "70px",
+                color: textColor,
+                borderBottom: "1px solid lightgrey"
             }}
         >
             <Container
@@ -33,14 +44,28 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                     {tenantMetaData.tenantLookAndFeel?.authenticationlogo &&
                         <div style={{verticalAlign: "center"}}>
                             <img 
+                                alt="tenant logo"
                                 style={{display: "block"}} 
                                 src={`/api/${tenantMetaData.tenant.tenantId}/logo`}
                                 height="48px" >
                             </img>
                         </div>
                     }
+                    {tenantMetaData.tenantLookAndFeel?.authenticationlogouri &&
+                        <div style={{verticalAlign: "center"}}>
+                            <img 
+                                alt="tenant logo"
+                                style={{display: "block"}} 
+                                src={tenantMetaData.tenantLookAndFeel?.authenticationlogouri}
+                                height="48px" >
+                            </img>
+                        </div>
+                    }
                     {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
+                    }
+                    {!tenantMetaData.tenantLookAndFeel?.authenticationheadertext && isAuthenticateToPortal &&
+                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>OpenTrust Identity</div>                        
                     }
                 </Stack>
             </Container>

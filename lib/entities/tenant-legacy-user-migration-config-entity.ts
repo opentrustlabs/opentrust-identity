@@ -1,33 +1,36 @@
-import type { TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
+import { EntitySchema } from 'typeorm';
 
+const TenantLegacyUserMigrationConfigEntity = new EntitySchema({
 
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
-
-@Entity({
-    tableName: "tenant_legacy_user_migration_config"
-})
-class TenantLegacyUserMigrationConfigEntity implements TenantLegacyUserMigrationConfig {
-
-    constructor(tenantLegacyUserMigrationConfig?: TenantLegacyUserMigrationConfig){
-        if(tenantLegacyUserMigrationConfig){
-            Object.assign(this, tenantLegacyUserMigrationConfig);
+    tableName: "tenant_legacy_user_migration_config",
+    name: "tenantLegacyUserMigrationConfig",
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        authenticationUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "authenticationuri"
+        },
+        userProfileUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "userprofileuri"
+        },
+        usernameCheckUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "usernamecheckuri"
         }
     }
+});
 
-    __typename?: "TenantLegacyUserMigrationConfig";
-    
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
 
-    @Property({fieldName: "authenticationuri"})
-    authenticationUri: string;
-    
-    @Property({fieldName: "userprofileuri"})
-    userProfileUri: string;
-
-    @Property({fieldName: "usernamecheckuri"})
-    usernameCheckUri: string;
-
-}
 
 export default TenantLegacyUserMigrationConfigEntity;

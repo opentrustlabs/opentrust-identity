@@ -1,30 +1,42 @@
-import type { UserTenantRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "user_tenant_rel"
-})
-class UserTenantRelEntity implements UserTenantRel {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(userTenantRel?: UserTenantRel){
-        if(userTenantRel){
-            Object.assign(this, userTenantRel);
+const UserTenantRelEntity = new EntitySchema({
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        relType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "reltype"
+        },
+        enabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "enabled",
+            transformer: BooleanTransformer
         }
-    }
-    __typename?: "UserTenantRel" | undefined;
+    },
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
+    tableName: "user_tenant_rel",
+    name: "userTenantRel",
 
-    @PrimaryKey({fieldName: "userid"})
-    userId: string; 
-    
-    @Property({fieldName: "enabled"})
-    enabled: boolean;
+});
 
-    @Property({fieldName: "reltype"})
-    relType: string;
-    
-}
+
 
 export default UserTenantRelEntity;

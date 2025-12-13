@@ -1,44 +1,42 @@
-import type { AccessRule } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "access_rule"
-})
-class AccessRuleEntity {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(accessRule?: AccessRule){
-        if(accessRule){
-            this.accessRuleId = accessRule.accessRuleId;
-            this.accessRuleName = accessRule.accessRuleName;
-            this.scopeAccessRuleSchemaId = accessRule.scopeAccessRuleSchemaId;
-            this.accessRuleDefinition = Buffer.from(accessRule.accessRuleDefinition);
+const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
+
+const AccessRuleEntity = new EntitySchema({
+    tableName: "access_rule",
+    name: "accessRule",    
+    columns: {
+        accessRuleId: {
+            type: String,
+            primary: true,
+            name: "accessruleid"
+        },
+        accessRuleName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "accessrulename"
+        },
+        scopeAccessRuleSchemaId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopeconstraintschemaid"
+        },
+        accessRuleDefinition: {
+            type: blobType,
+            primary: false,
+            nullable: false,
+            name: "accessruledefinition",
+            transformer: stringToBlobTransformer()
         }
-    }
-    __typename?: "AccessRule" | undefined;
-    
-    @PrimaryKey({fieldName: "accessruleid"})
-    accessRuleId: string;
+    } 
+});
 
-    @Property({fieldName: "accessrulename"})
-    accessRuleName: string;
-
-    @Property({fieldName: "scopeconstraintschemaid"})
-    scopeAccessRuleSchemaId: string;
-
-    @Property({fieldName: "accessruledefinition"})
-    accessRuleDefinition: Buffer;
-    
-    public toModel(): AccessRule {
-        const m: AccessRule = {
-            accessRuleDefinition: this.accessRuleDefinition.toString("utf-8"),
-            accessRuleId: this.accessRuleId,
-            accessRuleName: this.accessRuleName,
-            scopeAccessRuleSchemaId: this.scopeAccessRuleSchemaId,
-            __typename: "AccessRule"
-        }
-        return m;
-    }
-        
-}
 
 export default AccessRuleEntity;

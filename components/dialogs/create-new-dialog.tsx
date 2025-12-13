@@ -1,5 +1,5 @@
 "use client";
-import { Backdrop, CircularProgress, Dialog, Snackbar } from "@mui/material";
+import { Backdrop, CircularProgress, Dialog } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -12,6 +12,8 @@ import NewOIDCProviderDialog from "./new-oidc-provider-dialog";
 import NewSigningKeyDialog from "./new-signing-key-dialog";
 import NewAuthenticationGroupDialog from "./new-authentication-group-dialog";
 import NewAuthorizationGroupDialog from "./new-authorization-group-dialog";
+import NewRateLimitDialog from "./new-rate-limit-dialog";
+import NewScopeDialog from "./new-scope-dialog";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -30,7 +32,7 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
 
     // CONTEXTS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-
+        
     // STATE
     const [createNewType, setCreateNewType] = React.useState<string | null>(null);
     const [selectedTenant, setSelectedTenant] = React.useState<string | null>(
@@ -64,7 +66,7 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                 {createNewType !== null && requiresParentTenant(createNewType) && selectedTenant === null &&
                     <TenantSelector onSelected={setSelectedTenant} onCancel={onCancel} />
                 }
-                {createNewType === "tenant" &&
+                {createNewType === "tenant" && 
                     <NewTenantDialog
                         onCancel={onCancel}
                         onClose={onClose}
@@ -119,7 +121,19 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     />
                 }
                 {createNewType === "scope-access-control" &&
-                    <div>You want to create a new scope-access-control</div>
+                    <NewScopeDialog
+                        onCancel={onCancel}
+                        onClose={onClose}
+                        onCreateEnd={(success: boolean) => {
+                            setShowMutationBackdrop(false);
+                            if(success){
+                                onClose();
+                            }
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
+                    />
                 }
                 {createNewType === "oidc-provider" &&
                     <NewOIDCProviderDialog
@@ -137,7 +151,20 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     />
                 }
                 {createNewType === "rate-limit" &&
-                    <div>You want to create a new rate-limit</div>
+                    <NewRateLimitDialog
+                        onCancel={onCancel}
+                        onClose={onClose}
+                        onCreateEnd={(success: boolean) => {
+                            setShowMutationBackdrop(false);
+                            if(success){
+                                onClose();
+                            }
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
+                    />
+                    
                 }
                 {createNewType === "key" && selectedTenant !== null &&
                     <NewSigningKeyDialog

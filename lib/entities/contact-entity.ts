@@ -1,36 +1,47 @@
-import type { Contact, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "contact"
-})
-class  ContactEntity implements Contact {
+const ContactEntity = new EntitySchema({
 
-    constructor(m?: Contact){
-        if(m){
-            Object.assign(this, m);
+
+    columns: {
+        contactid: {
+            type: String,
+            primary: true,
+            name: "contactid"
+        },
+        objectid: {
+            type: String,
+            primary: false,
+            name: "objectid",
+            nullable: false
+        },
+        objecttype: {
+            type: String,
+            primary: false,
+            name: "objecttype",
+            nullable: false
+        },
+        email: {
+            type: String,
+            primary: false,
+            name: "email",
+            nullable: false
+        },
+        name: {
+            type: String,
+            primary: false,
+            name: "contactname",
+            nullable: true
+        },
+        userid: {
+            type: String,
+            primary: false,
+            name: "userid",
+            nullable: true
         }
-    }
-    __typename?: "Contact";
-
-    @PrimaryKey({fieldName: "contactid"})
-    contactid: string;
-
-    @Property({fieldName: "objectid"})
-    objectid: string;
-
-    @Property({fieldName: "email"})
-    email: string;
-
-    @Property({fieldName: "objecttype"})
-    objecttype: string;
-    
-    @Property({fieldName: "contactname", nullable: true})
-    name: Maybe<string> | undefined;
-    
-    @Property({fieldName: "userid", nullable: true})
-    userid?: Maybe<string> | undefined;
-   
-}
+    },
+    tableName: "contact",
+    name: "contact",
+});
 
 export default ContactEntity;

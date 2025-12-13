@@ -1,76 +1,83 @@
-import type { FooterLink, Maybe, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "tenant_look_and_feel"
-})
-class TenantLookAndFeelEntity {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(m?: TenantLookAndFeel){
-        if(m){
-            this.tenantid = m.tenantid;
-            this.adminheaderbackgroundcolor = m.adminheaderbackgroundcolor;
-            this.adminheadertext = m.adminheadertext;
-            this.adminheadertextcolor = m.adminheadertextcolor;
-            this.adminlogo = Buffer.from(m.adminlogo || "");
-            this.authenticationheaderbackgroundcolor = m.authenticationheaderbackgroundcolor;
-            this.authenticationheadertext = m.authenticationheadertext;
-            this.authenticationheadertextcolor = m.authenticationheadertextcolor;
-            this.authenticationlogo = Buffer.from(m.authenticationlogo || "");
-            this.authenticationlogomimetype = m.authenticationlogomimetype;
+const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
+
+
+const TenantLookAndFeelEntity = new EntitySchema({
+
+
+    columns: {
+        tenantid: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        adminheaderbackgroundcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "adminheaderbackgroundcolor"
+        },
+        adminheadertext: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "adminheadertext"
+        },
+        adminheadertextcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "adminheadertextcolor"
+        },
+        authenticationheaderbackgroundcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationheaderbackgroundcolor"
+        },
+        authenticationheadertext: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationheadertext"
+        },
+        authenticationheadertextcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationheadertextcolor"
+        },
+
+        authenticationlogouri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationlogouri"
+        },
+        authenticationlogomimetype: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationlogomimetype"
+        },
+        authenticationlogo: {
+            type: blobType,
+            primary: false,
+            nullable: true,
+            name: "authenticationlogo",
+            transformer: stringToBlobTransformer()
         }
-    }
-    __typename?: "TenantLookAndFeel" | undefined;
+    },
+    tableName: "tenant_look_and_feel",
+    name: "tenantLookAndFeel",
 
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantid: string;
+});
 
-    @Property({fieldName: "adminheaderbackgroundcolor"})
-    adminheaderbackgroundcolor?: Maybe<string> | undefined;
-
-    @Property({fieldName: "adminheadertext"})
-    adminheadertext?: Maybe<string> | undefined;
-
-    @Property({fieldName: "adminheadertextcolor"})
-    adminheadertextcolor?: Maybe<string> | undefined;
-
-    @Property({fieldName: "adminlogo"})
-    adminlogo?: Buffer | undefined;
-    
-    @Property({fieldName: "authenticationheaderbackgroundcolor"})
-    authenticationheaderbackgroundcolor?: Maybe<string> | undefined;
-
-    @Property({fieldName: "authenticationheadertext"})
-    authenticationheadertext?: Maybe<string> | undefined;
-
-    @Property({fieldName: "authenticationheadertextcolor"})
-    authenticationheadertextcolor?: Maybe<string> | undefined;
-
-    @Property({fieldName: "authenticationlogo"})
-    authenticationlogo?: Buffer | undefined;
-
-    @Property({fieldName: "authenticationlogomimetype"})
-    authenticationlogomimetype: Maybe<string> | undefined;
-    
-    footerlinks?: Maybe<Maybe<FooterLink>[]> | undefined;
-    
-    public toModel(): TenantLookAndFeel{
-        const m: TenantLookAndFeel = {
-            __typename: "TenantLookAndFeel",
-            tenantid: this.tenantid,
-            adminheaderbackgroundcolor: this.adminheaderbackgroundcolor,
-            adminheadertext: this.adminheadertext,
-            adminheadertextcolor: this.adminheadertextcolor,
-            adminlogo: this.adminlogo?.toString("utf-8"),
-            authenticationheaderbackgroundcolor: this.authenticationheaderbackgroundcolor,
-            authenticationheadertext: this.authenticationheadertext,
-            authenticationheadertextcolor: this.authenticationheadertextcolor,
-            authenticationlogo: this.authenticationlogo?.toString("utf-8"),
-            authenticationlogomimetype: this.authenticationlogomimetype    
-        };
-        return m;
-    }
-    
-}
 
 export default TenantLookAndFeelEntity;

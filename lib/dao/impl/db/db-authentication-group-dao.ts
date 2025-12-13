@@ -1,128 +1,240 @@
 import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel } from "@/graphql/generated/graphql-types";
 import AuthenticationGroupDao from "../../authentication-group-dao";
-import connection  from "@/lib/data-sources/db";
-import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
-import AuthenticationGroupClientRelEntity from "@/lib/entities/authentication-group-client-rel-entity";
-import AuthenticationGroupUserRelEntity from "@/lib/entities/authentication-group-user-rel-entity";
-import { QueryOrder } from "@mikro-orm/core";
+import RDBDriver from "@/lib/data-sources/rdb";
+import { Brackets, In } from "typeorm";
 
 class DBAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
-        const em = connection.em.fork();
         
+        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
+
         if(tenantId){
-            const authnGroups: Array<AuthenticationGroupEntity> = await em.find(AuthenticationGroupEntity, 
+            const authnGroups = await authnGroupRepo.find(
                 {
-                    tenantId: tenantId
-                },
-                {
-                    orderBy: {
-                        authenticationGroupName: QueryOrder.ASC
-                    }
-                }
-            );
-            return Promise.resolve(authnGroups);
-        }
-        else if(clientId){
-            const rels: Array<AuthenticationGroupClientRelEntity> = await this.getAuthenticationGroupClientRels(clientId);
-            const inValues: Array<string> = rels.map((r: AuthenticationGroupClientRelEntity) => r.authenticationGroupId);
-            const authnGroups = await em.find(AuthenticationGroupEntity, 
-                {
-                    authenticationGroupId: inValues
-                },
-                {
-                    orderBy: {
-                        authenticationGroupName: QueryOrder.ASC
+                    where: {
+                        tenantId: tenantId
+                    },
+                    order: {
+                        authenticationGroupName: "ASC"
                     }
                 }
             )
-            return Promise.resolve(authnGroups);
+            return authnGroups;
+        }
+        else if(clientId){
+            const rels: Array<AuthenticationGroupClientRel> = await this.getAuthenticationGroupClientRels(clientId);
+            
+            const inValues: Array<string> = rels.map(
+                (r: AuthenticationGroupClientRel) => {              
+                    return r.authenticationGroupId
+                }
+            );            
+            const authnGroups = await authnGroupRepo.find({
+                where: {
+                    authenticationGroupId: In(inValues)
+                },
+                order: {
+                    authenticationGroupName: "ASC"
+                }
+            });
+            return authnGroups;
+        }
+        else if(userId){
+            const rels: Array<AuthenticationGroupUserRel> = await this.getAuthenticationGroupUserRels(userId);
+            const inValues: Array<string> = rels.map( (r: AuthenticationGroupUserRel) => r.authenticationGroupId);
+            const authnGroups = await authnGroupRepo.find({
+                where: {
+                    authenticationGroupId: In(inValues)
+                },
+                order: {
+                    authenticationGroupName: "ASC"
+                }
+            });
+            return authnGroups;
         }
         else {
             return [];
         }
     }
 
-    protected async getAuthenticationGroupClientRels(clientId: string): Promise<Array<AuthenticationGroupClientRelEntity>> {
-        const em = connection.em.fork();
-        const results: Array<AuthenticationGroupClientRelEntity> = await em.find(AuthenticationGroupClientRelEntity, {
-            clientId: clientId
+    public async getDefaultAuthenticationGroups(tenantId: string): Promise<Array<AuthenticationGroup>>{
+        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
+        const authnGroups = await authnGroupRepo.find({
+            where: {
+                tenantId: tenantId,
+                defaultGroup: true
+            },
+            order: {
+                authenticationGroupName: "ASC"
+            }
         });
+        return authnGroups;
+    }
+
+    protected async getAuthenticationGroupClientRels(clientId: string): Promise<Array<AuthenticationGroupClientRel>> {
+        const authnGroupClientRelRepo = await RDBDriver.getInstance().getAuthenticationGroupClientRelRepository();
+        const results = await authnGroupClientRelRepo.find({
+            where: {
+                clientId: clientId
+            }
+        });        
         return results && results.length > 0 ? Promise.resolve(results) : Promise.resolve([]);
     }
     
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupEntity | null = await em.findOne(
-            AuthenticationGroupEntity, {
+        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
+        const result = await authnGroupRepo.findOne({
+            where: {
                 authenticationGroupId: authenticationGroupId
             }
-        );
-        return Promise.resolve(entity);
+        })
+        return result;
     }
 
     public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupEntity = new AuthenticationGroupEntity(authenticationGroup);
-        await em.persistAndFlush(entity);        
+        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
+        await authnGroupRepo.insert(authenticationGroup);
         return Promise.resolve(authenticationGroup);
     }
 
     public async updateAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupEntity = new AuthenticationGroupEntity(authenticationGroup);
-        em.upsert(entity);
-        await em.flush();
+        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
+        await authnGroupRepo.update(
+            {
+                authenticationGroupId: authenticationGroup.authenticationGroupId
+            },
+            authenticationGroup
+        );
         return Promise.resolve(authenticationGroup);
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
-        const em = connection.em.fork();
-        // TODO
-        // DELETE ALL OF THE RELATIONSHIP VALUES
+        
+        // 1.   Delete the authn/client rels
+        const authnGroupClientRelRepo = await RDBDriver.getInstance().getAuthenticationGroupClientRelRepository();
+        await authnGroupClientRelRepo.delete({
+            authenticationGroupId: authenticationGroupId
+        });
+        
+        // 2.   Delete the authn/user rels
+        await this.deleteUserAuthenticationGroupRels(authenticationGroupId);
 
-        return Promise.resolve();
+        // 3.   Finally delete the authn group itself
+        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
+        await authnGroupRepo.delete({
+            authenticationGroupId: authenticationGroupId
+        });
+                
+    }
+
+    public async deleteUserAuthenticationGroupRels(authenticationGroupId: string): Promise<void>{
+        // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids   
+        const authnGroupUserRelRepo = await RDBDriver.getInstance().getAuthenticationGroupUserRelRepository();     
+        let hasMoreRecords = true;
+        while(hasMoreRecords){            
+            const userRels = await authnGroupUserRelRepo.find({
+                where: {
+                    authenticationGroupId: authenticationGroupId
+                },
+                take: 1000
+            });
+            if(userRels.length === 0){
+                hasMoreRecords = false;
+                break;
+            } 
+            const conditions = userRels.map(
+                (rel: AuthenticationGroupUserRel) => {
+                    return {
+                        userId: rel.userId,
+                        authenticationGroupId: rel.authenticationGroupId
+                    }
+                }
+            );
+
+            await authnGroupUserRelRepo
+                .createQueryBuilder()
+                .delete()
+                .from("authenticationGroupUserRel")
+                .where(
+                    new Brackets(
+                        qb => {
+                            conditions.forEach(
+                                (condition, index) => {
+                                    if(index === 0) {
+                                        qb.where(
+                                            "userId = :userId_0 AND authenticationGroupId = :authenticationGroupId_0",
+                                            {
+                                                ["userId_0"]: condition.userId,
+                                                ["authenticationGroupId_0"]: condition.authenticationGroupId
+                                            }
+                                        )
+                                    }
+                                    else{
+                                        qb.orWhere(
+                                            `userId = :userId_${index} AND authenticationGroupId = :authenticationGroupId_${index}`,
+                                            {
+                                                [`userId_${index}`]: condition.userId,
+                                                [`authenticationGroupId_${index}`]: condition.authenticationGroupId
+                                            }
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    )
+                )
+                .execute();                       
+        }
     }
 
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupClientRelEntity = new AuthenticationGroupClientRelEntity({
+        const authnGroupClientRelRepo = await RDBDriver.getInstance().getAuthenticationGroupClientRelRepository();
+        const model: AuthenticationGroupClientRel = {
             authenticationGroupId: authenticationGroupId,
             clientId: clientId
-        });
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
+        };
+        await authnGroupClientRelRepo.insert(model);
+        return Promise.resolve(model);
     }
 
     public async removeAuthenticationGroupFromClient(authenticationGroupId: string, clientId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(AuthenticationGroupClientRelEntity, {
+        const authnGroupClientRelRepo = await RDBDriver.getInstance().getAuthenticationGroupClientRelRepository();
+        await authnGroupClientRelRepo.delete({
             clientId: clientId,
             authenticationGroupId: authenticationGroupId
-        });
-        await em.flush();
+        });        
         return Promise.resolve();
     }
 
     public async assignUserToAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<AuthenticationGroupUserRel> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupUserRelEntity = new AuthenticationGroupUserRelEntity({
+        const authnGroupUserRelRepo = await RDBDriver.getInstance().getAuthenticationGroupUserRelRepository();
+        const model: AuthenticationGroupUserRel = {
             userId: userId,
             authenticationGroupId: authenticationGroupId
-        });
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
+        };
+        await authnGroupUserRelRepo.insert(model);
+        return Promise.resolve(model);
     }
 
     public async removeUserFromAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(AuthenticationGroupUserRelEntity, {
+        const authnGroupUserRelRepo = await RDBDriver.getInstance().getAuthenticationGroupUserRelRepository();
+        await authnGroupUserRelRepo.delete({
             userId: userId,
-            authenticationGroupId: authenticationGroupId
+            authenticationGroupId: authenticationGroupId            
         });
-        await em.flush();
         return Promise.resolve();
+    }
+
+    protected async getAuthenticationGroupUserRels(userId: string): Promise<Array<AuthenticationGroupUserRel>> {
+        const authnGroupUserRelRepo = await RDBDriver.getInstance().getAuthenticationGroupUserRelRepository();
+        const results = await authnGroupUserRelRepo.find({
+            where: {
+                userId: userId
+            }
+        })
+        return results;
+        
     }
 
 }

@@ -1,46 +1,81 @@
-import type { Maybe, RefreshData } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property, Ref } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "refresh_data"
-})
-class RefreshDataEntity implements RefreshData {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(m?: RefreshData){
-        if(m){
-            Object.assign(this, m);
+const RefreshDataEntity = new EntitySchema({
+    columns: {
+        refreshToken: {
+            type: String,
+            primary: true,
+            name: "refreshtoken"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        userId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "userid"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        redirecturi: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "redirecturi"
+        },
+        refreshCount: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "refreshcount"
+        },
+        refreshTokenClientType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "refreshtokenclienttype"
+        },
+        scope: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scope"
+        },
+        codeChallenge: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallenge"
+        },
+        codeChallengeMethod: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallengemethod"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
         }
-    }
+    },
+    tableName: "refresh_data",
+    name: "refreshData",
 
-    __typename?: "RefreshData" | undefined;
-    
-    @PrimaryKey({fieldName: "refreshtoken"})
-    refreshToken: string;
+});
 
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "clientid"})
-    clientId: string;
-
-    @Property({fieldName: "redirecturi"})
-    redirecturi: string;
-
-    @Property({fieldName: "refreshcount"})
-    refreshCount: number;
-    
-    @Property({fieldName: "refreshtokenclienttype"})
-    refreshTokenClientType: string;
-
-    //@Property({fieldName: ""})
-    refreshtokenclienttypeid?: Maybe<string> | undefined;
-
-    @Property({fieldName: "scope"})
-    scope: string;
-    
-}
-
-export default RefreshDataEntity
+export default RefreshDataEntity;

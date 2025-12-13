@@ -1,9 +1,10 @@
 import { AES_GCM_CIPHER, AUTH_TAG_LENGTH, IV_LENGTH_IN_BYTES, MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
 import { createCipheriv, randomBytes, KeyObject, CipherGCM, createDecipheriv, DecipherGCM, createSecretKey,  } from "node:crypto";
-import BaseKms from "./base-kms";
+import Kms from "./kms";
 import path from "node:path";
 import { KMS_KEYS_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
+import { logWithDetails } from "../logging/logger";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
@@ -14,7 +15,23 @@ interface KmsKey {
 
 const allKeys: Array<KmsKey> = JSON.parse(getFileContents(`${dataDir}/${KMS_KEYS_FILE}`, "[]"));
 
-class FSBasedKms extends BaseKms {
+/**
+ * Each key should be a 256 bit string, base64 encoded and
+ * the key file should be formatted as follows, for example:
+ * <pre>
+ * [
+ *       {
+ *           "kid": 1,
+ *           "key": "ptmwQK7r3fpCWI8hQjyQuI3CdGrmEJHXpAUGahF6wpw="
+ *       },
+ *       {
+ *           "kid": 2,
+ *           "key": "ptmwQK7r3fpCWI8hQjyQuI3CdGrmEJHXpAUGahF6wpw="
+ *       }
+ *   ]
+ *   </pre>
+ */
+class FSBasedKms extends Kms {
 
 
     /**
@@ -23,7 +40,7 @@ class FSBasedKms extends BaseKms {
      * @param aad 
      * @returns 
      */
-    public async  encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
+    public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
 
         if(data.length > MAX_ENCRYPTION_LENGTH){
             return Promise.resolve(null);
@@ -172,7 +189,9 @@ class FSBasedKms extends BaseKms {
             
             return Promise.resolve(outputBuffer);
         }
-        catch(error){
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error decrypting buffer. ${e.message}`, {e});
             return Promise.resolve(null);
         }
     }

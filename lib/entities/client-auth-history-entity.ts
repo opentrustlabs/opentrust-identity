@@ -1,31 +1,42 @@
-import type { ClientAuthHistory } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "client_auth_history"
-})
-class ClientAuthHistoryEntity implements ClientAuthHistory {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(m?: ClientAuthHistory){
-        if(m){
-            Object.assign(this, m);
-        }
-    }
-    __typename?: "ClientAuthHistory" | undefined;
+const ClientAuthHistoryEntity = new EntitySchema({
     
-    @PrimaryKey({fieldName: "jti"})
-    jti: string;
+    columns: {
+        jti: {
+            type: String,
+            primary: true,
+            name: "jti"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        expiresAtSeconds: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatseconds"
+        }
+    },
 
-    @Property({fieldName: "clientid"})
-    clientId: string;
+    tableName: "client_auth_history",
+    name: "clientAuthHistory",
 
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
+});
 
-    @Property({fieldName: "expiresatms"})
-    expiresAtSeconds: number;
-   
-
-}
 
 export default ClientAuthHistoryEntity;

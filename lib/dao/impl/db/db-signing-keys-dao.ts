@@ -1,97 +1,92 @@
-import { SigningKey, Contact } from "@/graphql/generated/graphql-types";
+import { SigningKey } from "@/graphql/generated/graphql-types";
 import SigningKeysDao from "../../signing-keys-dao";
-import connection  from "@/lib/data-sources/db";
-import SigningKeyEntity from "@/lib/entities/signing-key-entity";
-import ContactEntity from "@/lib/entities/contact-entity";
-import { CONTACT_TYPE_FOR_SIGNING_KEY, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
-import { QueryOrder } from "@mikro-orm/core";
+import { SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import RDBDriver from "@/lib/data-sources/rdb";
 
 class DBSigningKeysDao extends SigningKeysDao {
 
     
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
-        const em = connection.em.fork();
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {};
         if(tenantId){
-            queryParams.tenantid = tenantId;
+            queryParams.tenantId = tenantId;
         }
-        const entities: Array<SigningKeyEntity> = await em.find(
-            SigningKeyEntity, 
-            queryParams,
-            {
-                orderBy: {
-                    keyName: QueryOrder.ASC
-                }
+        
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        const results = await signingKeysRepo.find({
+            where: queryParams,
+            order: {
+                keyName: "ASC"
             }
-        );
-        const models = entities.map(
-            e => e.toModel()
-        );
-        return Promise.resolve(models);
+        });
+        return results;
     }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
-        const em = connection.em.fork();
-        const entity: SigningKeyEntity | null = await em.findOne(
-            SigningKeyEntity, {
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        const result = await signingKeysRepo.findOne({
+            where: {
                 keyId: keyId
             }
-        );
-        return entity ? Promise.resolve(entity.toModel()) : Promise.resolve(null);
+        });
+        return result;
     }
+ 
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
-        const em = connection.em.fork();
-        const entity: SigningKeyEntity = new SigningKeyEntity(key);
-        await em.persistAndFlush(entity);
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        await signingKeysRepo.insert(key);
         return Promise.resolve(key);
     }
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey>{
-        const em = connection.em.fork();
-        const entity: SigningKeyEntity = new SigningKeyEntity(key);
-        await em.upsert(entity);
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        // Do not update the certificate, private key, public key 
+        await signingKeysRepo.update(
+            {
+                keyId: key.keyId
+            },
+            {
+                keyName: key.keyName,
+                markForDelete: key.markForDelete,
+                keyStatus: key.keyStatus
+            }
+        );
         return Promise.resolve(key);
     }
 
     public async revokeSigningKey(keyId: string): Promise<void> {
+        
         const key: SigningKey | null = await this.getSigningKeyById(keyId);
         if(key){
-            key.status = SIGNING_KEY_STATUS_REVOKED;
-            const em = connection.em.fork();
-            const entity: SigningKeyEntity = new SigningKeyEntity(key);
-            await em.upsert(entity);
-            await em.flush()
+            key.keyStatus = SIGNING_KEY_STATUS_REVOKED;
+            const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+            await signingKeysRepo.update(
+                {
+                    keyId: key.keyId
+                },
+                key
+            );
         }
         return Promise.resolve();
     }
 
-    public async deleteSigningKey(keyId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(SigningKeyEntity, {keyId: keyId});
-        em.flush();
-        return Promise.resolve();
-    }
-
-
-    public async assignContactsToSigningKey(keyId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
-        const em = connection.em.fork();
-        await em.nativeDelete(ContactEntity, {
+    public async deleteSigningKey(keyId: string): Promise<void> {        
+        
+        const contactRepo = await RDBDriver.getInstance().getContactRepository();
+        await contactRepo.delete({
             objectid: keyId
         });
-        await em.flush();
-        const entities = contactList.map(
-            (c: Contact) => {
-                c.objectid = keyId;
-                c.objecttype = CONTACT_TYPE_FOR_SIGNING_KEY;
-                return new ContactEntity(c);                
-            }
-        );
-        for(let i = 0; i < entities.length; i++){
-            await em.persistAndFlush(entities[i]);
-        }
-        return Promise.resolve(contactList);
+
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        await signingKeysRepo.delete({
+            keyId: keyId
+        });
+        return Promise.resolve();
     }
+
     
 }
 

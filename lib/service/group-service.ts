@@ -4,17 +4,22 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
-import { NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
+import { AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 import IdentityDao from "../dao/identity-dao";
+import { authorizeByScopeAndTenant, filterResultsByTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
+import { logWithDetails } from "../logging/logger";
 
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const groupDao: GroupDao = DaoImpl.getInstance().getAuthorizationGroupDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const groupDao: GroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const searchClient: Client = getOpenSearchClient();
-const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class GroupService {
 
@@ -25,41 +30,179 @@ class GroupService {
     }
 
     public async getGroups(tenantId?: string): Promise<Array<AuthorizationGroup>> {
-        return groupDao.getAuthorizationGroups(tenantId);
+
+        const getData = ServiceAuthorizationWrapper(
+            {
+                async preProcess(oidcContext, tenantId) {
+                    if(!tenantId){
+                        if(oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+                            if(oidcContext.portalUserProfile && oidcContext.portalUserProfile.managementAccessTenantId){
+                                return [oidcContext.portalUserProfile.managementAccessTenantId];
+                            }
+                            else{
+                                return [tenantId];
+                            }
+                        }
+                        else{
+                            return [tenantId];
+                        }
+                    }
+                    return [tenantId];
+                },
+                async performOperation(_, ...args): Promise<Array<AuthorizationGroup>> {
+                    const groups = await groupDao.getAuthorizationGroups(...args);
+                    return groups;
+                }
+            }
+        );
+        const data = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE], tenantId);
+        return data ? data : [];
+        
     }
 
-    public async getGroupById(groupId: string): Promise<AuthorizationGroup> {
-        
-        const group: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
-        if(!group){
-            throw new GraphQLError("ERROR_GROUP_NOT_FOUND");
-        }
-        return Promise.resolve(group);        
+    public async getGroupById(groupId: string): Promise<AuthorizationGroup | null> {            
+        const getData = ServiceAuthorizationWrapper(
+            {
+                async performOperation(_, groupId): Promise<AuthorizationGroup | null> {
+                    const result = await groupDao.getAuthorizationGroupById(groupId);
+                    return result;
+                },
+                async additionalConstraintCheck(oidcContext: OIDCContext, result: AuthorizationGroup | null) {
+                    if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+                        return {isAuthorized: false, errorDetail: ERROR_CODES.EC00027, result: null};
+                    }
+                    else{
+                        return { isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR, result: result};
+                    } 
+                }
+            }
+        );
+        const t = await getData(this.oidcContext, [AUTHORIZATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], groupId);
+        return t;           
     }
 
     public async createGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
+
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_CREATE_SCOPE, group.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+
         const tenant: Tenant | null = await tenantDao.getTenantById(group.tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND_FOR_GROUP_CREATION");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00009}});
+        }
+
+        // Only allow for anonymous users if the default flag is also selected
+        // Otherwise, just unset the allow-for-anon flag if the default gorup flag
+        // is false
+        if(group.allowForAnonymousUsers === true && group.default === false){
+            group.allowForAnonymousUsers = false;
+        }
+        
         group.groupId = randomUUID().toString();
 
         await groupDao.createAuthorizationGroup(group);
         await this.updateSearchIndex(group);
+        changeEventDao.addChangeEvent({
+            objectId: group.groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...group})
+        });
         return Promise.resolve(group);
     }
 
     public async updateGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
+        
         const existingGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(group.groupId);
         if(!existingGroup){
-            throw new GraphQLError("ERROR_GROUP_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00028.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00028}});
         }
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_UPDATE_SCOPE, existingGroup.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+
+        // If the incoming authz group is set to default, but previous it had been set to NOT be the default, then
+        // we need to remove all of the authz/group rels after the db and search index have been updated.
+        const needToDeleteUserGroupRels: boolean = group.default === true && existingGroup.default === false;
+        
         existingGroup.groupName = group.groupName;
-        existingGroup.default = group.default;
         existingGroup.groupDescription = group.groupDescription;
+        existingGroup.default = group.default;
+
+        // Only allow for anonymous users if the default flag is also selected
+        // Otherwise, just unset the allow-for-anon flag if the default gorup flag
+        // is false
+        if(group.allowForAnonymousUsers === true && group.default === false){
+            existingGroup.allowForAnonymousUsers = false;
+        }
+        else{
+            existingGroup.allowForAnonymousUsers = group.allowForAnonymousUsers;
+        }
+        
         await groupDao.updateAuthorizationGroup(existingGroup);
         await this.updateSearchIndex(existingGroup);
+        changeEventDao.addChangeEvent({
+            objectId: group.groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...group})
+        });
+
+        if(needToDeleteUserGroupRels === true){
+            // No need to wait on this since it may contain 1000s of relationships.
+            groupDao.deleteUserAuthorizationGroupRels(group.groupId);
+            this.deleteUserGroupRelSearchRecords(group.groupId);
+            
+        }
+
         return Promise.resolve(existingGroup);
+    }
+
+    protected async deleteUserGroupRelSearchRecords(groupId: string): Promise<void>{
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query: any = {
+            bool: {
+                must: []
+            }
+        }
+        query.bool.must.push({
+            term: { parentid: groupId }
+        });
+        query.bool.must.push({
+            term: { childtype: SearchResultType.User }
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const searchBody: any = {
+            query: query
+        }
+        try {
+            searchClient.deleteByQuery({
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: searchBody,
+                requests_per_second: 100,
+                conflicts: "proceed",
+                wait_for_completion: false,
+                scroll: "240m"
+            });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch (err: any) {
+            logWithDetails("error", `Error bulk deleting user-authz-group rel search index records. ${err.message}.`, {...err, groupId});
+        }            
     }
 
     protected async updateSearchIndex(group: AuthorizationGroup): Promise<void> {
@@ -80,29 +223,51 @@ class GroupService {
             id: group.groupId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
+        });
+
+        const relSearch: RelSearchResultItem = {
+            childid: group.groupId,
+            childname: group.groupName,
+            childtype: SearchResultType.AuthorizationGroup,
+            owningtenantid: group.tenantId,
+            parentid: group.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: group.groupDescription
+        }
+        await searchClient.index({
+            id: `${group.tenantId}::${group.groupId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
         });        
     }
-
-    public async deleteGroup(groupId: string): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
+    
 
     public async addUserToGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
         const user: User | null = await identityDao.getUserBy("id", userId);
         // Checks:
         // 1.   Does the user exist
         if(!user){
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         // 2.   Does the authz group exist
         const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
         if(!authzGroup){
-            throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00028.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00028}});
         }
         // 3.   Is the user a member of the tenant?
         const userTenantRel: UserTenantRel | null = await identityDao.getUserTenantRel(authzGroup.tenantId, userId);
         if(!userTenantRel){
-            throw new GraphQLError("ERROR_INVALID_TENANT_FOR_USER");
+            throw new GraphQLError(ERROR_CODES.EC00029.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00029}});
+        }
+
+        // Is the user authorized to perform the action?
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, authzGroup.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+
+        if(authzGroup.default === true){
+            throw new GraphQLError(ERROR_CODES.EC00226.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00226}});
         }
 
         const r: AuthorizationGroupUserRel = await groupDao.addUserToAuthorizationGroup(userId, groupId);
@@ -113,7 +278,7 @@ class GroupService {
             childtype: SearchResultType.User,
             owningtenantid: authzGroup.tenantId,
             parentid: authzGroup.groupId,
-            parenttype: SearchResultType.AuthenticationGroup,
+            parenttype: SearchResultType.AuthorizationGroup,
             childdescription: user.email
         }
         await searchClient.index({
@@ -123,18 +288,69 @@ class GroupService {
             refresh: "wait_for"
         });
 
+        changeEventDao.addChangeEvent({
+            objectId: groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({groupId, userId})
+        });
+
         return Promise.resolve(r);
         
     }
     
     public async removeUserFromGroup(userId: string, groupId: string): Promise<void> {
-        await groupDao.removeUserFromAuthorizationGroup(userId, groupId);
-        
-        await searchClient.delete({
-            id: `${groupId}::${userId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            refresh: "wait_for"
-        });  
+        const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
+        if(authzGroup){
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, authzGroup.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+            }
+
+            await groupDao.removeUserFromAuthorizationGroup(userId, groupId);        
+            await searchClient.delete({
+                id: `${groupId}::${userId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+                refresh: "wait_for"
+            });  
+        }
+
+        changeEventDao.addChangeEvent({
+            objectId: groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({groupId, userId})
+        });
+
+        return Promise.resolve();
+    }
+
+    public async getUserAuthorizationGroups(userId: string): Promise<Array<AuthorizationGroup>> {
+
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function (): Promise<Array<AuthorizationGroup>>  {
+                    const groups: Array<AuthorizationGroup> = await groupDao.getUserAuthorizationGroups(userId);
+                    return groups;
+                }, 
+                postProcess: async function(oidcContext: OIDCContext, result: Array<AuthorizationGroup> | null) {
+                    if(result && oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+                        return filterResultsByTenant(result, oidcContext, (g: AuthorizationGroup) => g.tenantId);   
+                    }
+                    else {
+                        return result;
+                    }                    
+                },
+            }
+        );
+        const groups = await getData(this.oidcContext, [AUTHORIZATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE]);
+        return groups || [];
     }
 }
 

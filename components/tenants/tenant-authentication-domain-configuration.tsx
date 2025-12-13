@@ -11,31 +11,40 @@ import { Alert, Button, DialogActions, DialogTitle, Divider, Grid2, TextField, T
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { useIntl } from 'react-intl';
 
 export interface TenantAuthenticationDomainConfigurationProps {
     tenantId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDomainConfigurationProps> = ({
     tenantId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
+
+    // STATE VARIABLES
     const [selectedDomainToAdd, setSelectedDomainToAdd] = React.useState<string | null>(null);
     const [selectedDomainToDelete, setSelectedDomainToDelete] = React.useState<string | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [addDialogOpen, setAddDialogOpen] = React.useState(false);
 
+
+    // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(TENANT_AUTHENTICATION_DOMAIN_REL_QUERY, {
         variables: {
             tenantId: tenantId
         }
-    })
+    });
 
     const [addTenantAuthenticationDomainRel] = useMutation(TENANT_RESTRICTED_DOMAIN_REL_ADD_MUTATION, {
         variables: {
@@ -48,7 +57,7 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_AUTHENTICATION_DOMAIN_REL_QUERY]
     });
@@ -64,7 +73,7 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_AUTHENTICATION_DOMAIN_REL_QUERY]
     });
@@ -81,6 +90,8 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
                 <Dialog 
                     open={deleteDialogOpen}
                     onClose={() => {setDeleteDialogOpen(false); setSelectedDomainToDelete(null);}}
+                    maxWidth="sm"
+                    fullWidth={true}
                 >
                     <DialogContent>
 
@@ -120,10 +131,14 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
                     <Grid2 size={12} textAlign={"center"}>No restricted domains found</Grid2>
                 }
                 {data.getDomainsForTenantAuthentication.map(
-                    (rel: TenantManagementDomainRel, idx: number) => (
+                    (rel: TenantManagementDomainRel) => (
                         <Grid2 container key={rel.domain} size={12}>
                             <Grid2  size={10.8}>{rel.domain}</Grid2>
-                            <Grid2 size={1.2}><RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} /></Grid2>                            
+                            <Grid2 size={1.2}>
+                                {readOnly !== true &&
+                                    <RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} />
+                                }
+                             </Grid2>
                         </Grid2>
                     )
                 )}
@@ -131,7 +146,9 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
             <Divider />
             <Grid2 padding={"8px"} container size={12} spacing={0}>                
                 <Grid2 size={1}>
-                    <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
+                    {readOnly !== true &&
+                        <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
+                    }
                 </Grid2>
                 <Grid2 size={11}></Grid2>
             </Grid2>

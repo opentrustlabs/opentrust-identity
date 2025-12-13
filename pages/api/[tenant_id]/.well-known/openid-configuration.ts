@@ -3,14 +3,14 @@ import TenantDao from "../../../../lib/dao/tenant-dao";
 import { Tenant } from '../../../../graphql/generated/graphql-types';
 import { ErrorResponseBody } from '../../../..//lib/models/error';
 import { GRANT_TYPES_SUPPORTED } from "../../../../utils/consts";
-import { DaoImpl } from "../../../../lib/data-sources/dao-impl";
+import { DaoFactory } from "../../../../lib/data-sources/dao-factory";
 
 const {
     AUTH_DOMAIN
 } = process.env;
 
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 
 
 export default async function handler(
@@ -28,9 +28,9 @@ export default async function handler(
         const e: ErrorResponseBody =  {
             statusCode: 405,
             errorDetails: [{
+                errorCode: "405",
                 errorKey: "ERROR_METHOD_NOT_ALLOWED",
-                errorMessageCanonical: "Method not allowed",
-                errorMessageTranslated: ""
+                errorMessage: "Method not allowed"
             }]
         };
         res.status(405).json(e)
@@ -44,9 +44,9 @@ export default async function handler(
         const e: ErrorResponseBody =  {
             statusCode: 404,
             errorDetails: [{
+                errorCode: "404",
                 errorKey: "ERROR_TENANT_NOT_FOUND",
-                errorMessageCanonical: "Tenant not found",
-                errorMessageTranslated: ""
+                errorMessage: "Tenant not found"
             }]
         };
         res.status(404).json(e);
@@ -54,16 +54,16 @@ export default async function handler(
     else {
         
         res.status(200).json({
-            issuer: `${AUTH_DOMAIN}/${tenantId}`,
-            authorization_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/authorize`,
-            token_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/token`,
-            revocation_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/revoke`,
-            userinfo_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/userinfo`,
-            jwks_uri: `${AUTH_DOMAIN}/${tenantId}/oidc/keys`,
+            issuer: `${AUTH_DOMAIN}/api/${tenantId}`,
+            authorization_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/authorize`,
+            token_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/token`,
+            revocation_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/revoke`,
+            userinfo_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`,
+            jwks_uri: `${AUTH_DOMAIN}/api/${tenantId}/oidc/keys`,
             token_endpoint_auth_methods_supported: [
+                "client_secret_basic",
                 "client_secret_post",
-                "client_secret_jwt",
-                "none"
+                "client_secret_jwt"                
             ],
             response_modes_supported: [
                 "query",
@@ -78,18 +78,15 @@ export default async function handler(
                 "aud",
                 "iat",
                 "exp",
-                "at_hash",
                 "name",
                 "given_name",
                 "family_name",
                 "middle_name",
-                "nickname",
-                "preferred_username",
-                "profile",
                 "phone_number",
                 "address",
                 "updated_at",
                 "email",
+                "email_verified",
                 "country_code"
             ],
             claims_parameter_supported: false,
@@ -121,8 +118,6 @@ export default async function handler(
 
         });
     }
-
-    
 }
 
 

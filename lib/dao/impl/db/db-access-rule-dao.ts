@@ -1,45 +1,56 @@
 import { AccessRule } from "@/graphql/generated/graphql-types";
 import AccessRuleDao from "../../access-rule-dao";
-import connection  from "@/lib/data-sources/db";
-import AccessRuleEntity from "@/lib/entities/access-rule-entity";
+import RDBDriver from "@/lib/data-sources/rdb";
 
 class DBAccessRuleDao extends AccessRuleDao {
 
-    public async getAccessRules(tenant?: string): Promise<Array<AccessRule>> {
-        const em = connection.em.fork();
-        const arr: Array<AccessRuleEntity> = await em.findAll(AccessRuleEntity);
-        return Promise.resolve(arr.map(a => a.toModel()));
+    public async getAccessRules(tenantId?: string): Promise<Array<AccessRule>> {
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const whereParams: any = {};
+        if(tenantId){
+            whereParams.tenantId = tenantId
+        };
+
+        const accessRuleRepo = await RDBDriver.getInstance().getAccessRuleRepository();
+        const arr = await accessRuleRepo.find({
+            where: whereParams
+        });
+
+        return arr;        
     }
 
     public async getAccessRuleById(accessRuleId: string): Promise<AccessRule | null> {
-        const em = connection.em.fork();
-        const entity: AccessRuleEntity | null = await em.findOne(AccessRuleEntity, {accessRuleId: accessRuleId});
-        if(!entity){
-            return Promise.resolve(null);
-        }
-        return Promise.resolve(entity.toModel());        
+        const accessRuleRepo = await RDBDriver.getInstance().getAccessRuleRepository();
+        const result = await accessRuleRepo.findOne({
+            where: {
+                accessRuleId: accessRuleId
+            }
+        });
+        return result;
     }
 
     public async createAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        const em = connection.em.fork();
-        const entity: AccessRuleEntity = new AccessRuleEntity(accessRule);
-        await em.persistAndFlush(entity);
+        const accessRuleRepo = await RDBDriver.getInstance().getAccessRuleRepository();
+        await accessRuleRepo.insert(accessRule);
         return Promise.resolve(accessRule);
     }
 
     public async updateAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        const em = connection.em.fork();
-        const entity: AccessRuleEntity = new AccessRuleEntity(accessRule);
-        await em.upsert(entity);
-        await em.flush();
+
+        const accessRuleRepo = await RDBDriver.getInstance().getAccessRuleRepository();
+        await accessRuleRepo.update(
+            {
+                accessRuleId: accessRule.accessRuleId
+            },
+            accessRule
+        );        
         return Promise.resolve(accessRule);
     }
 
-    public async deleteAccessRule(accessRuleId: string): Promise<void> {
-        // TODO
-        // DELETE RELATIONSHIPS
+    public async deleteAccessRule(): Promise<void> {
         throw new Error("Method not implemented.");
-    }
+    }    
     
 }
 

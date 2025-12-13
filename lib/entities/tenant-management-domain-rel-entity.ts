@@ -1,31 +1,22 @@
-import type { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "tenant_management_domain_rel"
-})
-class TenantManagementDomainRelEntity {
+const TenantManagementDomainRelEntity = new EntitySchema({
 
-    constructor(tenantManagementDomainRel?: TenantManagementDomainRel){
-        if(tenantManagementDomainRel){
-            this.tenantid = tenantManagementDomainRel.tenantId;
-            this.domain = tenantManagementDomainRel.domain;
+    tableName: "tenant_management_domain_rel",
+    name: "tenantManagementDomainRel",
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        domain: {
+            type: String,
+            primary: true,
+            name: "domain"
         }
+
     }
-
-    @PrimaryKey()
-    tenantid: string;
-
-    @PrimaryKey()
-    domain: string;
-
-    public toModel(): TenantManagementDomainRel {
-        return {
-            tenantId: this.tenantid,
-            domain: this.domain
-        }
-    }
-
-}
+});
 
 export default TenantManagementDomainRelEntity;

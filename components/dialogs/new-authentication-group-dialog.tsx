@@ -2,10 +2,12 @@
 import { AuthenticationGroupCreateInput } from "@/graphql/generated/graphql-types";
 import { AUTHENTICATION_GROUP_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
-import { Alert, Button, Checkbox, DialogActions, DialogContent, DialogTitle, Grid2, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid2, Stack, Switch, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
+import { useIntl } from 'react-intl';
+
 
 
 export interface NewAuthenticationGroupDialogProps {
@@ -36,6 +38,8 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const intl = useIntl();
+
 
     // STATE VARIABLES    
     const [authnGroupInput, setAuthnGroupInput] = React.useState<AuthenticationGroupCreateInput>(initInput);
@@ -57,7 +61,7 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message)
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );
@@ -69,8 +73,8 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
 
             <DialogContent>
                 <Typography component={"div"}>
-                    <Grid2 container size={12} spacing={3} marginBottom={"16px"} >
-                        <Grid2 size={12}>
+                    <Grid2 container size={12} spacing={1} marginBottom={"8px"} >
+                        
                             {errorMessage &&
                                 <Grid2 size={{ xs: 12 }} textAlign={"center"}>
                                     <Stack
@@ -83,14 +87,14 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
                                     </Stack>
                                 </Grid2>
                             }
-                            <Grid2 marginBottom={"16px"}>
+                            <Grid2 size={12} marginBottom={"8px"}>
                                 <div>Group Name</div>
                                 <TextField name="authnGroupName" id="authnGroupName" 
                                     value={authnGroupInput.authenticationGroupName} fullWidth={true} size="small" 
                                     onChange={(evt) => {authnGroupInput.authenticationGroupName = evt.target.value; setAuthnGroupInput({...authnGroupInput})}}
                                 />
                             </Grid2>
-                            <Grid2 marginBottom={"16px"}>                                
+                            <Grid2 size={12} marginBottom={"8px"}>                                
                                 <div>Group Description</div>
                                 <TextField name="authnGroupDescription" id="authnGroupDescription" 
                                     value={authnGroupInput.authenticationGroupDescription} 
@@ -99,16 +103,19 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
 
                                 />
                             </Grid2>
-                            <Grid2 marginBottom={"16px"}>
-                                <Grid2 alignContent={"center"} size={10}>Default</Grid2>
-                                <Grid2 size={2}>
-                                    <Checkbox 
-                                        checked={authnGroupInput.defaultGroup}
-                                        onChange={(_, checked) => {authnGroupInput.defaultGroup = checked; setAuthnGroupInput({...authnGroupInput})}}
-                                    />
-                                </Grid2>
-                            </Grid2>
-                        </Grid2>
+                            <Grid2 size={12} container marginBottom={"8px"}>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={authnGroupInput.defaultGroup}
+                                            onChange={(_, checked) => {authnGroupInput.defaultGroup = checked; setAuthnGroupInput({...authnGroupInput})}}
+                                        />
+                                    }
+                                    label="Default"
+                                    sx={{ margin: "4px", fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                    labelPlacement="start"
+                                />                                
+                            </Grid2>                        
                     </Grid2>
 
                 </Typography>

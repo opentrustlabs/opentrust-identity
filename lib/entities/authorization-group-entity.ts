@@ -1,37 +1,63 @@
-import type { AuthorizationGroup, Maybe } from "@/graphql/generated/graphql-types"
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "authorization_group"
-})
-class AuthorizationGroupEntity implements AuthorizationGroup {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(authorizationGroup?: AuthorizationGroup){
-        if(authorizationGroup){
-            Object.assign(this, authorizationGroup);
+
+const AuthorizationGroupEntity = new EntitySchema({
+
+    columns: {
+        groupId: {
+            type: String,
+            primary: true,
+            name: "groupid"
+        },
+        groupName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "groupname"
+        },
+        groupDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "groupdescription"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        default: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "defaultgroup",
+            transformer: BooleanTransformer
+        },
+        allowForAnonymousUsers: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowforanonymoususers",
+            transformer: BooleanTransformer
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
-    }
+    },
 
-    __typename?: "AuthorizationGroup" | undefined
-    
-    @PrimaryKey({fieldName: "groupid"})
-    groupId: string;
+    tableName: "authorization_group",
+    name: "authorizationGroup",
 
-    @Property({fieldName: "groupname"})
-    groupName: string;
-
-    @Property({fieldName: "groupdescription"})
-    groupDescription?: Maybe<string> | undefined;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "defaultgroup"})
-    default: boolean;
-
-    @Property({fieldName: "allowforanonymoususers"})
-    allowForAnonymousUsers: boolean;
-
-}
+});
 
 export default AuthorizationGroupEntity;

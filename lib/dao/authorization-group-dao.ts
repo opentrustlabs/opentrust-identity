@@ -4,6 +4,8 @@ import { AuthorizationGroup, AuthorizationGroupUserRel } from "@/graphql/generat
 abstract class AuthorizationGroupDao {
         
         abstract getAuthorizationGroups(tenantId?: string): Promise<Array<AuthorizationGroup>>;
+
+        abstract getDefaultAuthorizationGroups(tenantId: string): Promise<Array<AuthorizationGroup>>;
     
         abstract getAuthorizationGroupById(groupId: string): Promise<AuthorizationGroup | null>;
     
@@ -12,6 +14,8 @@ abstract class AuthorizationGroupDao {
         abstract updateAuthorizationGroup(group: AuthorizationGroup): Promise<AuthorizationGroup>;
     
         abstract deleteAuthorizationGroup(groupId: string): Promise<void>;
+
+        abstract deleteUserAuthorizationGroupRels(groupId: string): Promise<void>;
     
         abstract addUserToAuthorizationGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel>;
     

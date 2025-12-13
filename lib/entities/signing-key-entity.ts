@@ -1,83 +1,103 @@
-import type { Maybe, SigningKey } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-@Entity({
-    tableName: "signing_key"
-})
-class SigningKeyEntity {
+const {
+    RDB_DIALECT
+} = process.env;
 
-    constructor(signingKey?: SigningKey){
-        if(signingKey){
-            this.expiresAtMs = signingKey.expiresAtMs;
-            this.keyId = signingKey.keyId;
-            this.keyType = signingKey.keyType;
-            this.keyUse = signingKey.keyUse;
-            this.keyName = signingKey.keyName;
-            this.status = signingKey.status;
-            this.tenantId = signingKey.tenantId;
-            this.certificate = Buffer.from(signingKey.certificate ? signingKey.certificate : "");
-            this.privateKeyPkcs8 = Buffer.from(signingKey.privateKeyPkcs8);
-            this.publicKey = Buffer.from(signingKey.publicKey ? signingKey.publicKey : "");
-            this.password = signingKey.password;
+
+const SigningKeyEntity = new EntitySchema({
+
+
+    columns: {
+        keyId: {
+            type: String,
+            primary: true,
+            name: "keyid"
+        },
+        keyType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keytype"
+        },
+        keyName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keyname"
+        },
+        keyUse: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keyuse"
+        },
+        keyPassword: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "keypassword"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        createdAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "createdatms"
+        },
+        keyStatus: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keystatus"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "tenantid"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        privateKeyPkcs8: {
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
+            primary: false,
+            nullable: false,
+            name: "privatekeypkcs8",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
+        },
+        publicKey: {
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
+            primary: false,
+            nullable: true,
+            name: "publickey",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
+        },
+        keyCertificate: {
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
+            primary: false,
+            nullable: true,
+            name: "keycertificate",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
         }
-    }
-    __typename?: "SigningKey";
+    },
 
-    @PrimaryKey({fieldName: "keyid"})
-    keyId: string;
+    tableName: "signing_key",
+    name: "signingKey",
 
-    @Property({fieldName: "keytype"})
-    keyType: string;
-    
-    keytypeid?: Maybe<string> | undefined;
+});
 
-    @Property({fieldName: "keyname"})
-    keyName: string;
-    
-    @Property({fieldName: "keyuse"})
-    keyUse: string;
-    
-    @Property({fieldName: "privatekeypkcs8"})
-    privateKeyPkcs8: Buffer;
 
-    @Property({fieldName: "password"})
-    password?: Maybe<string> | undefined;
-
-    @Property({fieldName: "publickey"})
-    publicKey?: Buffer | undefined;
-
-    @Property({fieldName: "certificate"})
-    certificate: Buffer | undefined;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtMs: number;
-
-    @Property({fieldName: "status"})
-    status: string;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    public toModel(): SigningKey {
-        const m: SigningKey = {
-            expiresAtMs: this.expiresAtMs,
-            keyId: this.keyId,
-            keyType: this.keyType,
-            keyUse: this.keyUse,
-            privateKeyPkcs8: this.privateKeyPkcs8.toString("utf-8"),
-            status: this.status,
-            tenantId: this.tenantId,
-            certificate: this.certificate?.toString("utf-8"),
-            password: this.password,
-            publicKey: this.publicKey?.toString("utf-8"),
-            keyTypeId: "",
-            statusId: "",
-            keyName: this.keyName,
-            __typename: "SigningKey"
-        }
-        return m;
-    }
-
-}
 
 export default SigningKeyEntity;

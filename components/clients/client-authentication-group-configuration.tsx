@@ -1,7 +1,7 @@
 "use client";
 import { AUTHENTICATION_GROUPS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT_MUTATION, REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION } from "@/graphql/mutations/oidc-mutations";
@@ -15,19 +15,21 @@ import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import DialogTitle from "@mui/material/DialogTitle";
-import { TextField } from "@mui/material";
-import { AuthenticationGroup } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import GeneralSelector from "../dialogs/general-selector";
-import client from "../apollo-client/apollo-client";
-
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import Link from "next/link";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE } from "@/utils/consts";
+import { useIntl } from 'react-intl';
 
 
 export interface ClientAuthenticationGroupConfigurationProps {
     tenantId: string,
     clientId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
 }
 
 const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroupConfigurationProps> = ({
@@ -37,12 +39,20 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
     onUpdateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
+    
     // STATE VARIABLES
-    const [groupToAdd, setGroupToAdd] = React.useState<string | null>(null);
     const [groupToRemove, setGroupToRemove] = React.useState<AuthenticationGroup | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
+    const [canAddRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -59,7 +69,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
         },
         onError(error) {
             onUpdateEnd(false);            
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
@@ -74,7 +84,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
@@ -123,9 +133,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                         query={AUTHENTICATION_GROUPS_QUERY}
                         queryVars={{tenantId: tenantId}}
                         dataMapper={(d) => {
-                            const preExistingIds = data.getAuthenticationGroups.map( (g: AuthenticationGroup) => g.authenticationGroupId);
-                            console.log(preExistingIds);
-                            console.log(d.getAuthenticationGroups);
+                            const preExistingIds = data.getAuthenticationGroups.map( (g: AuthenticationGroup) => g.authenticationGroupId);                            
                             if(d && d.getAuthenticationGroups){
                                 return d.getAuthenticationGroups
                                 .filter(
@@ -146,10 +154,10 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                                 return [];
                             }
                         }}
+                        multiSelect={false}
                         helpText="Select a valid group"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(id) => {
-                            setGroupToAdd(id);
+                        onSelected={(id: string | Array<string>) => {                            
                             onUpdateStart();
                             addAuthenticationGroupMutation({
                                 variables: {
@@ -162,17 +170,25 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                     />
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setSelectDialogOpen(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Authentication Group</div>
-                </Grid2>
-                
+            {canAddRel &&
+                <React.Fragment>
+                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{cursor: "pointer"}}
+                                onClick={() => setSelectDialogOpen(true)}
+                            />
+                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Authentication Group</div>
+                        </Grid2>                
+                    </Grid2>            
+                    <Divider />
+                </React.Fragment>
+            }
+
+            <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
+                <Grid2 size={11}>Group name</Grid2>
+                <Grid2 size={1}></Grid2>
             </Grid2>
-            <Divider />
             {data.getAuthenticationGroups.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
@@ -187,13 +203,17 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                             <React.Fragment key={group.authenticationGroupId}>
                                 <Grid2 size={12}><Divider /></Grid2>
                                 <Grid2 size={11}>
-                                    {group.authenticationGroupName}                                    
+                                    <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${group.authenticationGroupId}`} target="_blank">
+                                        {group.authenticationGroupName} 
+                                    </Link>                                   
                                 </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setGroupToRemove(group); setShowRemoveConfirmationDialog(true);}}
-                                    />
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {canRemoveRel &&
+                                        <RemoveCircleOutlineIcon
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {setGroupToRemove(group); setShowRemoveConfirmationDialog(true);}}
+                                        />
+                                    }
                                 </Grid2>                                
                             </React.Fragment>
                         )

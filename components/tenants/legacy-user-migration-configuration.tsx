@@ -7,25 +7,31 @@ import ErrorComponent from "../error/error-component";
 import { TenantLegacyUserMigrationConfig, TenantLegacyUserMigrationConfigInput } from "@/graphql/generated/graphql-types";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
 import { LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+
 
 export interface LegacyUserMigrationConfigurationProps {
     tenantId: string,
     allowLegacyUserMigration: boolean,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfigurationProps> = ({
     tenantId,
     allowLegacyUserMigration,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
-    let initInput: TenantLegacyUserMigrationConfigInput = {
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
+    const initInput: TenantLegacyUserMigrationConfigInput = {
         authenticationUri: "",
         tenantId: tenantId,
         userProfileUri: "",
@@ -35,7 +41,6 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    // const [showReset, setShowReset] = React.useState<boolean>(false);
     const [tenantLegacyUserMigrationConfigInput, setTenantLegacyUserMigrationConfigInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
     //const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
 
@@ -53,7 +58,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                 initInput.userProfileUri = config.userProfileUri;
                 initInput.usernameCheckUri = config.usernameCheckUri;
             }
-            setTenantLegacyUserMigrationConfigInput({...initInput});
+            setTenantLegacyUserMigrationConfigInput({ ...initInput });
             // setRevertToInput({...initInput});
         },
     });
@@ -68,7 +73,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             //setShowReset(true);
         }
     });
@@ -79,61 +84,70 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
     if (tenantLegacyUserMigrationConfigInput) return (
 
         <>
-            <Grid2 container size={12} spacing={2}>
+            <Grid2 marginTop={"8px"} container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <div>{errorMessage}</div>
                     </Grid2>
                 }
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Authentication URI</div>
-                    <TextField name="authenticationUri" id="authenticationUri"
-                        disabled={allowLegacyUserMigration !== true}
-                        value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.authenticationUri : ""}
-                        onChange={(evt) => { tenantLegacyUserMigrationConfigInput.authenticationUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
-                        fullWidth={true} size="small"
-                    />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>User Profile URI</div>
-                    <TextField name="userProfileUri" id="userProfileUri"
-                        disabled={allowLegacyUserMigration !== true}
-                        value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.userProfileUri : ""}
-                        onChange={(evt) => { tenantLegacyUserMigrationConfigInput.userProfileUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
-                        fullWidth={true} size="small"
-                    />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>User Name-Check URI</div>
-                    <TextField name="namecheckUri" id="namecheckUri"
-                        disabled={allowLegacyUserMigration !== true}
-                        value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.usernameCheckUri: ""}
-                        onChange={(evt) => { tenantLegacyUserMigrationConfigInput.usernameCheckUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
-                        fullWidth={true} size="small"
-                    />
-                </Grid2>
+                {!allowLegacyUserMigration &&
+                    <Grid2 container size={12} margin={"8px 0px"} justifyContent={"center"} fontWeight={"bold"} fontSize={"0.9em"}>
+                        To make configuration changes, update the tenant to allow legacy user migration.
+                    </Grid2>
+                }
+                {allowLegacyUserMigration &&
+                    <React.Fragment>
+                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                            
+                            <TextField name="authenticationUri" id="authenticationUri"
+                                disabled={readOnly || allowLegacyUserMigration !== true}
+                                value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.authenticationUri : ""}
+                                onChange={(evt) => { tenantLegacyUserMigrationConfigInput.authenticationUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
+                                fullWidth={true} 
+                                label="Authentication URI"
+                            />
+                        </Grid2>
+                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                            
+                            <TextField name="userProfileUri" id="userProfileUri"
+                                disabled={readOnly || allowLegacyUserMigration !== true}
+                                value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.userProfileUri : ""}
+                                onChange={(evt) => { tenantLegacyUserMigrationConfigInput.userProfileUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
+                                fullWidth={true} 
+                                label="User Profile URI"
+                            />
+                        </Grid2>
+                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                            
+                            <TextField name="namecheckUri" id="namecheckUri"
+                                disabled={readOnly || allowLegacyUserMigration !== true}
+                                value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.usernameCheckUri : ""}
+                                onChange={(evt) => { tenantLegacyUserMigrationConfigInput.usernameCheckUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
+                                fullWidth={true} 
+                                label="User Name-Check URI"
+                            />
+                        </Grid2>
+
+                        
+                    </React.Fragment>
+                }
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
-                <Button
-                    disabled={!allowLegacyUserMigration || !markDirty}
-                    onClick={() => { onUpdateStart(); mutateUserMigrationConfiguration() }}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
-                </Button>
-                {/* {showReset &&
-                    <Button 
-                        sx={{marginRight: "8px"}}
-                        onClick={() => {
-                            setTenantLegacyUserMigrationConfigInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setRevertToInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setShowReset(false);
-                        }}
-                    >Revert Changes</Button>
-                } */}
-            </Stack>
+            {allowLegacyUserMigration &&
+                <DetailSectionActionHandler
+                    onDiscardClickedHandler={() => {
+                        setTenantLegacyUserMigrationConfigInput({ ...initInput });
+                        setMarkDirty(false);
+                    }}
+                    onUpdateClickedHandler={() => {
+                        onUpdateStart();
+                        mutateUserMigrationConfiguration();
+                    }}
+                    disableSubmit={!allowLegacyUserMigration || !markDirty}
+                    markDirty={markDirty}
+                />
+            }
         </>
-
     )
-
 }
 
 export default LegacyUserMigrationConfiguration

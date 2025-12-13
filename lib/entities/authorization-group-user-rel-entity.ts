@@ -1,25 +1,26 @@
-import type { AuthorizationGroupUserRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { EntitySchema } from 'typeorm';
 
-@Entity({
-    tableName: "authorization_group_user_rel"
-})
-class AuthorizationGroupUserRelEntity implements AuthorizationGroupUserRel {
+const AuthorizationGroupUserRelEntity = new EntitySchema({
 
-    constructor(userAuthorizationGroupRel?: AuthorizationGroupUserRel){
-        if(userAuthorizationGroupRel){
-            Object.assign(this, userAuthorizationGroupRel);
+
+    columns: {
+        groupId: {
+            type: String,
+            primary: true,
+            name: "groupid"
+        },
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
         }
-    }
+    },
 
-    __typename?: "AuthorizationGroupUserRel" | undefined;
-    
-    @PrimaryKey({fieldName: "groupid"})
-    groupId: string;
+    tableName: "authorization_group_user_rel",
+    name: "authorizationGroupUserRel",
 
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
-    
-}
+});
+
+
 
 export default AuthorizationGroupUserRelEntity;
