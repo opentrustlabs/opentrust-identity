@@ -39,6 +39,7 @@
     "cassandra-driver": "^4.8.0",
     "cron": "^4.3.2",
     "dayjs": "^1.11.13",
+    "fast-crc32c": "^2.0.0",
     "graphql": "^16.9.0",
     "graphql-tag": "^2.12.6",
     "intl-format-cache": "^4.3.1",
