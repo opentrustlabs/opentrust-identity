@@ -69,6 +69,7 @@
     "react-google-recaptcha-v3": "^1.11.0",
     "react-intl": "^7.1.11",
     "rotating-file-stream": "^3.2.6",
+    "tencentcloud-sdk-nodejs": "^4.1.156",
     "typeorm": "^0.3.27"
   },
   "devDependencies": {

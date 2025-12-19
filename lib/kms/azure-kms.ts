@@ -11,7 +11,6 @@ import { logWithDetails } from "../logging/logger";
 // else, to the returned cipher text. So we will have to keep track outselves.
 // This will be serialized as json.toString() => based64 encoded.
 interface CryptoEnvelope {
-  version: string | null,        // In case the getKey() service returns sufficient metadata with the version included
   keyId: string,                 // Full Key Vault key ID (includes version) from the getKey() service.
   keyWrapAlg: string,            // This will be A256KW 
   iv: string,
@@ -126,8 +125,7 @@ class AzureKms extends Kms {
             encryptedDek: Buffer.from(wrappedDek.result).toString("base64"),
             iv: keyWrappedEncryptedData.iv.toString("base64"),
             keyId: key.id,
-            keyWrapAlg: "A256KW",
-            version: version || ""
+            keyWrapAlg: "A256KW"
         };
 
         const b: Buffer = Buffer.from(JSON.stringify(cryptoEnvelope), "utf-8");
@@ -136,9 +134,8 @@ class AzureKms extends Kms {
 
     public async decryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null> {
         
-        const s: string = buffer.toString("base64");
-        const b: Buffer = Buffer.from(s, "utf-8");
-        const cryptoEnvelope: CryptoEnvelope = JSON.parse(b.toString("utf-8"));
+        const s: string = buffer.toString("utf-8");        
+        const cryptoEnvelope: CryptoEnvelope = JSON.parse(s);
 
         // Since we saved the key id previously, we need it to construct this
         // CryptographyClient rather than relying on the call to keyClient.getKey()
