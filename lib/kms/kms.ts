@@ -2,6 +2,13 @@ import { AES_GCM_CIPHER, AES_KEY_LENGTH, AUTH_TAG_LENGTH, IV_LENGTH_IN_BYTES } f
 import { generateKeySync, createCipheriv, randomBytes, KeyObject, CipherGCM, createDecipheriv, DecipherGCM } from "node:crypto";
 import { logWithDetails } from "../logging/logger";
 
+export interface KeyWrappedEncryptedData {
+    aesKey: KeyObject,
+    iv: Buffer,
+    aad: string | null,
+    authTag: Buffer,
+    cipherText: Buffer
+}
 abstract class Kms {
 
     abstract encrypt(data: string, aad?: string): Promise<string | null>;
@@ -12,14 +19,8 @@ abstract class Kms {
 
     abstract decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null>;
 
-    /**
-     * 
-     * @param buffer 
-     * @param aad 
-     * @returns 
-     */
-    public async encryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null>{
-
+    public generateKeyWrappedData(buffer: Buffer, aad?: string): KeyWrappedEncryptedData {
+        
         const aesKey: KeyObject = generateKeySync("aes", {length: AES_KEY_LENGTH});
         const iv: Buffer = randomBytes(IV_LENGTH_IN_BYTES);
         const cipher: CipherGCM = createCipheriv(AES_GCM_CIPHER, aesKey, iv, {authTagLength: AUTH_TAG_LENGTH});
@@ -32,8 +33,43 @@ abstract class Kms {
         encrypted = Buffer.concat([encrypted, cipher.final()]);
         const authTag: Buffer = cipher.getAuthTag();
 
+        return {
+            aesKey: aesKey,
+            iv: iv,
+            aad: aad || null,
+            authTag: authTag,
+            cipherText: encrypted
+        };
+    }
+
+    /**
+     * 
+     * @param data UTF-8 encoded string
+     * @param aad 
+     * @returns 
+     */
+    public async encryptWithKeyWrapping(data: string, aad?: string): Promise<string | null>{
+
+        const encryptedData: Buffer | null = await this.encryptBufferWithKeyWrapping(Buffer.from(data, "utf-8"), aad);
+        if(!encryptedData){
+            return Promise.resolve(null);
+        }
+        const ret: string = encryptedData.toString("base64")
+        return Promise.resolve(ret);
+    }
+
+    /**
+     * 
+     * @param buffer 
+     * @param aad 
+     * @returns 
+     */
+    public async encryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null>{
+
+        const keyWrappedEncryptedData: KeyWrappedEncryptedData = this.generateKeyWrappedData(buffer, aad);
+
         // Encrypt the key using the implementation-dependent encryption routine or service.        
-        const encryptedKeyBuffer: Buffer | null = await this.encryptBuffer(aesKey.export(), aad);
+        const encryptedKeyBuffer: Buffer | null = await this.encryptBuffer(keyWrappedEncryptedData.aesKey.export(), aad);
         if(!encryptedKeyBuffer){
             return Promise.resolve(null);
         }
@@ -64,38 +100,39 @@ abstract class Kms {
         buffer3.writeUint16BE(encryptedKeyBuffer.length);
 
         const buffer4: Buffer = Buffer.alloc(2);
-        buffer4.writeUint16BE(authTag.length);
+        buffer4.writeUint16BE(keyWrappedEncryptedData.authTag.length);
 
         const encryptedData = Buffer.concat([
             buffer1,
-            iv,
+            keyWrappedEncryptedData.iv,
             buffer2,
             cipherAlgBuffer,
             buffer3,
             encryptedKeyBuffer,
             buffer4,
-            authTag,
-            encrypted
+            keyWrappedEncryptedData.authTag,
+            keyWrappedEncryptedData.cipherText
         ]);
         
         return Promise.resolve(encryptedData);
     }
 
+
     /**
      * 
-     * @param data UTF-8 encoded string
+     * @param data Base64 encoded data previously encrypted by the method encryptWithKeyWrapping method
      * @param aad 
-     * @returns 
+     * @returns UTF-8 encoded string
      */
-    public async encryptWithKeyWrapping(data: string, aad?: string): Promise<string | null>{
+    public async decryptWithKeyWrapping(data: string, aad?: string): Promise<string | null>{
 
-        const encryptedData: Buffer | null = await this.encryptBufferWithKeyWrapping(Buffer.from(data, "utf-8"), aad);
-        if(!encryptedData){
+        const decryptedBuffer: Buffer | null = await this.decryptBufferWithKeyWrapping(Buffer.from(data, "base64"), aad);
+        if(!decryptedBuffer){
             return Promise.resolve(null);
         }
-        const ret: string = encryptedData.toString("base64")
-        return Promise.resolve(ret);
+        return Promise.resolve(decryptedBuffer.toString("utf-8"));
     }
+
 
     public async decryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null>{
 
@@ -145,19 +182,8 @@ abstract class Kms {
                 return Promise.resolve(null);
             }
 
-            const deCipher: DecipherGCM = createDecipheriv(AES_GCM_CIPHER, key, iv, {authTagLength: AUTH_TAG_LENGTH});
-            if(aad){
-                deCipher.setAAD(Buffer.from(aad));
-            }
-            deCipher.setAuthTag(authTag);
+            const outputBuffer = this.decryptKeyWrappedData(encryptedData, key, iv, authTag, aad);
 
-            let outputBuffer: Buffer = deCipher.update(encryptedData);
-            outputBuffer = Buffer.concat([
-                outputBuffer,
-                deCipher.final()
-            ]);
-
-            //const ret: string = outputBuffer.toString("utf-8");
             return Promise.resolve(outputBuffer);
         }
         catch(error: unknown){
@@ -166,20 +192,25 @@ abstract class Kms {
             return Promise.resolve(null);
         }
     }
-    /**
-     * 
-     * @param data Base64 encoded data previously encrypted by the method encryptWithKeyWrapping method
-     * @param aad 
-     * @returns UTF-8 encoded string
-     */
-    public async decryptWithKeyWrapping(data: string, aad?: string): Promise<string | null>{
 
-        const decryptedBuffer: Buffer | null = await this.decryptBufferWithKeyWrapping(Buffer.from(data, "base64"), aad);
-        if(!decryptedBuffer){
-            return Promise.resolve(null);
+    public decryptKeyWrappedData(encryptedData: Buffer, key: Buffer, iv: Buffer, authTag: Buffer, aad?: string): Buffer {
+
+        const deCipher: DecipherGCM = createDecipheriv(AES_GCM_CIPHER, key, iv, {authTagLength: AUTH_TAG_LENGTH});
+        if(aad){
+            deCipher.setAAD(Buffer.from(aad));
         }
-        return Promise.resolve(decryptedBuffer.toString("utf-8"));
+        deCipher.setAuthTag(authTag);
+
+        let outputBuffer: Buffer = deCipher.update(encryptedData);
+        outputBuffer = Buffer.concat([
+            outputBuffer,
+            deCipher.final()
+        ]);
+
+        return outputBuffer;
     }
+
+    
 
 }
 
