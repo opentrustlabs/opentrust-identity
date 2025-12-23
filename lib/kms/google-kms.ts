@@ -16,7 +16,7 @@ const client = new KeyManagementServiceClient();
 const keyName = client.cryptoKeyPath(GOOGLE_KMS_PROJECT_ID || "", GOOGLE_KMS_LOCATION_ID || "", GOOGLE_KMS_KEY_RING_ID || "", GOOGLE_KMS_KEY_ID || "");
 const maxLength = MAX_PLAIN_TEXT_LENGTH ? parseInt(MAX_PLAIN_TEXT_LENGTH) : MAX_ENCRYPTION_LENGTH;
 const crc32c = require("fast-crc32c");
-class GoogleKMS extends Kms {
+class GoogleKms extends Kms {
 
     public async encrypt(data: string, aad?: string): Promise<string | null> {
         if(data.length > maxLength){
@@ -108,4 +108,4 @@ class GoogleKMS extends Kms {
 
 }
 
-export default GoogleKMS;
+export default GoogleKms;
