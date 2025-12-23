@@ -160,11 +160,12 @@ as Oracle with TDE).
 Use `filesystem` for local development ONLY. Using it in any other environment is absolutely NOT recommended. See the file
 at `/lib/kms/fs-based-kms.ts` for details about what the contents of the key file should be.
 
-Use `custom` if you have some kind of vault for secret values or HSM (and you do not have any other KMS such as Google or AWS).
-This tool does not support specific vaults such as HashiCorp or any specific HSM. For the custom implementation, 
-you will need to create 2 HTTP endpoints which will be used to encrypt and decrypt the data. These endpoints will essentially
-be wrappers around whatever vault or HSM you are using. The details on the payload and responses for encryption 
-and decryption are in the file `/lib/kms/custom-kms.ts`. 
+Use `custom` if you have some kind of vault for secret values, an existing KMS which is not currently
+supported by this tool, or an HSM. This tool does not support specific vaults such as HashiCorp or any specific HSM. 
+
+For the custom implementation, you will need to create 2 HTTP endpoints which will be used to encrypt 
+and decrypt the data. These endpoints will essentially be wrappers around whatever vault, KMS, or HSM you are 
+using. The details on the payload and responses for encryption and decryption are in the file `/lib/kms/custom-kms.ts`. 
 
 Briefly:
 

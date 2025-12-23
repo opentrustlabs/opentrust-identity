@@ -9,7 +9,7 @@ const {
     AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY,
     AWS_SESSION_TOKEN,
-    AWSK_KMS_USE_FIPS_ENDPOINT,
+    AWS_KMS_USE_FIPS_ENDPOINT,
     MAX_PLAIN_TEXT_LENGTH
 } = process.env;
 
@@ -28,7 +28,7 @@ const kmsClient = new KMSClient({
     region: AWS_KMS_REGION,
     credentials: credentials,
     maxAttempts: 3,
-    useFipsEndpoint: AWSK_KMS_USE_FIPS_ENDPOINT && AWSK_KMS_USE_FIPS_ENDPOINT === "true" ? true : false
+    useFipsEndpoint: AWS_KMS_USE_FIPS_ENDPOINT && AWS_KMS_USE_FIPS_ENDPOINT === "true" ? true : false
 });
 
 
@@ -46,22 +46,29 @@ class AWSKms extends Kms {
     }
     
     public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
-        const encryptCommand: EncryptCommand = new EncryptCommand({
-            KeyId: AWS_KMS_KEY_ID,
-            Plaintext: data,
-            EncryptionContext: aad ? {"aad": aad} : undefined
-        });
+        try {
+            const encryptCommand: EncryptCommand = new EncryptCommand({
+                KeyId: AWS_KMS_KEY_ID,
+                Plaintext: data,
+                EncryptionContext: aad ? {"aad": aad} : undefined
+            });
 
-        const encryptResponse: EncryptCommandOutput = await kmsClient.send(encryptCommand);
-        if(encryptResponse.$metadata.httpStatusCode && encryptResponse.$metadata.httpStatusCode !== 200){            
-            logWithDetails("error", "Error encrypting with AWS KMS: HTTP error response.", {...encryptResponse.$metadata});
-            return null;
+            const encryptResponse: EncryptCommandOutput = await kmsClient.send(encryptCommand);
+            if(encryptResponse.$metadata.httpStatusCode && encryptResponse.$metadata.httpStatusCode !== 200){
+                logWithDetails("error", "Error encrypting with AWS KMS: HTTP error response.", {...encryptResponse.$metadata});
+                return null;
+            }
+            if(encryptResponse.CiphertextBlob){
+                return Buffer.from(encryptResponse.CiphertextBlob);
+            }
+            else{
+                logWithDetails("error", "Error encrypting with AWS KMS: No cipher text returned");
+                return null;
+            }
         }
-        if(encryptResponse.CiphertextBlob){
-            return Buffer.from(encryptResponse.CiphertextBlob);
-        }
-        else{
-            logWithDetails("error", "Error encrypting with AWS KMS: No cipher text returned");
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error encrypting with AWS KMS: ${e.message}`, {e});
             return null;
         }
     }
@@ -75,22 +82,29 @@ class AWSKms extends Kms {
     }
 
     public async decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
-        const decryptCommand: DecryptCommand = new DecryptCommand({
-            KeyId: AWS_KMS_KEY_ID,
-            CiphertextBlob: data,
-            EncryptionContext: aad ? {"aad": aad} : undefined
-        });
+        try {
+            const decryptCommand: DecryptCommand = new DecryptCommand({
+                KeyId: AWS_KMS_KEY_ID,
+                CiphertextBlob: data,
+                EncryptionContext: aad ? {"aad": aad} : undefined
+            });
 
-        const decryptResponse: DecryptCommandOutput = await kmsClient.send(decryptCommand);
-        if(decryptResponse.$metadata.httpStatusCode && decryptResponse.$metadata.httpStatusCode !== 200){
-            logWithDetails("error", "Error decrypting with AWS KMS: HTTP error response.", {...decryptResponse.$metadata});
-            return null;
+            const decryptResponse: DecryptCommandOutput = await kmsClient.send(decryptCommand);
+            if(decryptResponse.$metadata.httpStatusCode && decryptResponse.$metadata.httpStatusCode !== 200){
+                logWithDetails("error", "Error decrypting with AWS KMS: HTTP error response.", {...decryptResponse.$metadata});
+                return null;
+            }
+            if(decryptResponse.Plaintext){
+                return Buffer.from(decryptResponse.Plaintext);
+            }
+            else{
+                logWithDetails("error", "Error decrypting with AWS KMS: No plain text returned");
+                return null;
+            }
         }
-        if(decryptResponse.Plaintext){
-            return Buffer.from(decryptResponse.Plaintext);
-        }
-        else{
-            logWithDetails("error", "Error decrypting with AWS KMS: No plain text returned");
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error decrypting with AWS KMS: ${e.message}`, {e});
             return null;
         }
     }

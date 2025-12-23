@@ -47,7 +47,8 @@ class GoogleKMS extends Kms {
             });
 
             if(!encryptResponse.verifiedPlaintextCrc32c){
-                logWithDetails("error", "Error encrypting with Google KMS: CRC checked failed.");
+                logWithDetails("error", "Error encrypting with Google KMS: CRC check failed.");
+                return null;
             }
             if(encryptResponse.ciphertext){
                 return Buffer.from(encryptResponse.ciphertext);

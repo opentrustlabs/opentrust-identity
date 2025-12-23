@@ -133,33 +133,46 @@ class AzureKms extends Kms {
     }
 
     public async decryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null> {
-        
-        const s: string = buffer.toString("utf-8");        
-        const cryptoEnvelope: CryptoEnvelope = JSON.parse(s);
 
-        // Since we saved the key id previously, we need it to construct this
-        // CryptographyClient rather than relying on the call to keyClient.getKey()
-        const cryptoClient: CryptographyClient = new CryptographyClient(cryptoEnvelope.keyId, defaultCredential);
-        let unwrappedDek: UnwrapResult | null = null;
-        try{
-            unwrappedDek = await cryptoClient.unwrapKey(
-                "A256KW",
-                Buffer.from(cryptoEnvelope.encryptedDek, "base64")
+        try {
+            const s: string = buffer.toString("utf-8");
+            const cryptoEnvelope: CryptoEnvelope = JSON.parse(s);
+
+            // Validate AAD matches what was used during encryption
+            if(cryptoEnvelope.aad !== (aad || null)){
+                logWithDetails("error", "Error decrypting with Azure KMS: AAD mismatch. Expected AAD does not match the AAD used during encryption.");
+                return null;
+            }
+
+            // Since we saved the key id previously, we need it to construct this
+            // CryptographyClient rather than relying on the call to keyClient.getKey()
+            const cryptoClient: CryptographyClient = new CryptographyClient(cryptoEnvelope.keyId, defaultCredential);
+            let unwrappedDek: UnwrapResult | null = null;
+            try{
+                unwrappedDek = await cryptoClient.unwrapKey(
+                    "A256KW",
+                    Buffer.from(cryptoEnvelope.encryptedDek, "base64")
+                );
+            }
+            catch(error: unknown){
+                let err: Error = error as Error;
+                logWithDetails("error", `Cannot decrypt key for Azure KMS: ${err.message}`, {err});
+                return null;
+            }
+            const decryptedBuffer: Buffer = this.decryptKeyWrappedData(
+                Buffer.from(cryptoEnvelope.cipherText, "base64"),
+                Buffer.from(unwrappedDek.result),
+                Buffer.from(cryptoEnvelope.iv, "base64"),
+                Buffer.from(cryptoEnvelope.authTag, "base64"),
+                aad ? aad : undefined
             );
+            return decryptedBuffer;
         }
         catch(error: unknown){
-            let err: Error = error as Error;
-            logWithDetails("error", `Cannot decrypt key for Azure KMS: ${err.message}`, {err});
+            const err: Error = error as Error;
+            logWithDetails("error", `Error decrypting with Azure KMS: ${err.message}`, {err});
             return null;
         }
-        const decryptedBuffer: Buffer = this.decryptKeyWrappedData(
-            Buffer.from(cryptoEnvelope.cipherText, "base64"),
-            Buffer.from(unwrappedDek.result),
-            Buffer.from(cryptoEnvelope.iv, "base64"),
-            Buffer.from(cryptoEnvelope.authTag, "base64"),
-            aad ? aad : undefined
-        );
-        return decryptedBuffer;
     }
 
 }

@@ -8,6 +8,7 @@ import type {
   DecryptResponse,
 } from
   "tencentcloud-sdk-nodejs/tencentcloud/services/kms/v20190118/kms_models";
+import { logWithDetails } from "../logging/logger";
 
 
 
@@ -51,22 +52,35 @@ class TencentKms extends Kms {
 
     public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
 
-        const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
-        const encryptRequest: EncryptRequest = {
-            KeyId: TENCENT_KMS_KEY_ID || "",
-            Plaintext: data.toString("base64"),
-            EncryptionContext: encryptionContext
-        }
-        const response: EncryptResponse = await kmsClient.Encrypt(
-            encryptRequest, 
-            (error: string, resp: EncryptResponse) => {
-
+        try {
+            const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
+            const encryptRequest: EncryptRequest = {
+                KeyId: TENCENT_KMS_KEY_ID || "",
+                Plaintext: data.toString("base64"),
+                EncryptionContext: encryptionContext
             }
-        );
-        if(response.CiphertextBlob){
-            return Buffer.from(response.CiphertextBlob, "base64");
+
+            const response: EncryptResponse = await new Promise<EncryptResponse>((resolve, reject) => {
+                kmsClient.Encrypt(encryptRequest, (error: string, resp: EncryptResponse) => {
+                    if (error) {
+                        reject(new Error(error));
+                    } else {
+                        resolve(resp);
+                    }
+                });
+            });
+
+            if(response.CiphertextBlob){
+                return Buffer.from(response.CiphertextBlob, "base64");
+            }
+            else{
+                logWithDetails("error", "Error encrypting with Tencent KMS: No cipher text returned");
+                return null;
+            }
         }
-        else{
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error encrypting with Tencent KMS: ${e.message}`, {e});
             return null;
         }
 
@@ -81,16 +95,34 @@ class TencentKms extends Kms {
     }
 
     public async decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
-        const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
-        const decryptRequest: DecryptRequest = {
-            CiphertextBlob: data.toString("base64"),
-            EncryptionContext: encryptionContext
+        try {
+            const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
+            const decryptRequest: DecryptRequest = {
+                CiphertextBlob: data.toString("base64"),
+                EncryptionContext: encryptionContext
+            }
+
+            const resp: DecryptResponse = await new Promise<DecryptResponse>((resolve, reject) => {
+                kmsClient.Decrypt(decryptRequest, (error: string, resp: DecryptResponse) => {
+                    if (error) {
+                        reject(new Error(error));
+                    } else {
+                        resolve(resp);
+                    }
+                });
+            });
+
+            if(resp.Plaintext){
+                return Buffer.from(resp.Plaintext, "base64");
+            }
+            else{
+                logWithDetails("error", "Error decrypting with Tencent KMS: No plain text returned");
+                return null;
+            }
         }
-        const resp: DecryptResponse = await kmsClient.Decrypt(decryptRequest);
-        if(resp.Plaintext){
-            return Buffer.from(resp.Plaintext, "base64");
-        }
-        else{
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error decrypting with Tencent KMS: ${e.message}`, {e});
             return null;
         }
 
