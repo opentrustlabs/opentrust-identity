@@ -5,7 +5,7 @@ import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -342,10 +342,25 @@ class ClientService {
     }
     
     public async setClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration | null>{
+
+        // We are ONLY support one type of identifier type for the client certificate, and that is SAN:URI, which
+        // is the most common one. Once a identifier type is selected, it must be used universally throughout the
+        // application - that is, every client must have exactly one entry of that type in their list of SAN values.
+        // We cannot mix and match SAN types based on client, so that one client could use SAN:DNS and other could use
+        // SAN:URI, another could use otherName, and another could use a thumbprint. But future work may include 
+        // support for a system-wide setting of identifier type, so keep this configurable for now, but also
+        // hard-code it to the value that the system supports
+        fapiConfigurationInput.identifierType = FAPI_ID_TYPE_SAN_URI;
+
         const client: Client | null = await clientDao.getClientById(fapiConfigurationInput.clientId);
         if(!client){
             return null;
         }
+        // At the moment, we are only implementing baseline FAPI (client_credentials grant, limited to service accounts)
+        if(client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT){
+            throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
+        }
+
         const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});

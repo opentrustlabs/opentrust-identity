@@ -1176,6 +1176,11 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00230",
         errorKey: "ERROR_CLIENT_CERTIFICATE_IDENTIFIER_ALREADY_ASSIGNED_TO_CLIENT",
         errorMessage: "The client certificate identifier is already assigned to a client."
+    },
+    EC00231: {
+        errorCode: "EC00231",
+        errorKey: "ERROR_FAPI_CONFIGURATION_ONLY_ALLOWED_FOR_SERVICE_CLIENTS",
+        errorMessage: "FAPI Configuration is only allowed for service clients."
     }
 }
 
