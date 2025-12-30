@@ -2,7 +2,7 @@
 import { ClientFapiConfigurationInput } from "@/graphql/generated/graphql-types";
 import { DELETE_CLIENT_FAPI_CONFIGURATION_MUTATION, SET_CLIENT_FAPI_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { CLIENT_FAPI_CONFIGURATION_QUERY } from "@/graphql/queries/oidc-queries";
-import { FAPI_ID_TYPES } from "@/utils/consts";
+import { FAPI_ID_TYPE_SAN_URI, FAPI_ID_TYPES } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -39,7 +39,7 @@ const ClientFapiConfigurationComponent: React.FC<ClientFapiConfigurationProps> =
     // STATE VARIABLES
     const initInput: ClientFapiConfigurationInput = {
         clientId: clientId,
-        identifierType: "",
+        identifierType: FAPI_ID_TYPE_SAN_URI,
         identifierValue: ""
     }
     const [fapiConfigurationInput, setFapiConfigurationInput] = React.useState<ClientFapiConfigurationInput>(initInput);
@@ -50,7 +50,7 @@ const ClientFapiConfigurationComponent: React.FC<ClientFapiConfigurationProps> =
 
 
     // GRAPHQL FUNCTIONS
-    const { data, error, loading } = useQuery(
+    const {  } = useQuery(
         CLIENT_FAPI_CONFIGURATION_QUERY,
         {
             variables: {
@@ -64,7 +64,7 @@ const ClientFapiConfigurationComponent: React.FC<ClientFapiConfigurationProps> =
                         identifierValue: data.getClientFapiConfiguration.identifierValue
                     }
                     setFapiConfigurationInput(input);
-                    setRevertToInput(input);
+                    setRevertToInput({...input});
                 }
             },
             onError(error) {
@@ -87,7 +87,7 @@ const ClientFapiConfigurationComponent: React.FC<ClientFapiConfigurationProps> =
                     identifierValue: data.setClientFapiConfiguration.identifierValue
                 };
                 setFapiConfigurationInput(input);
-                setRevertToInput(input);
+                setRevertToInput({...input});
             }
         },
         onError(error) {
@@ -103,7 +103,6 @@ const ClientFapiConfigurationComponent: React.FC<ClientFapiConfigurationProps> =
         onCompleted() {
             onUpdateEnd(true);
             setMarkDirty(false);
-
             setFapiConfigurationInput({ ...initInput });
             setRevertToInput({ ...initInput });
         },
@@ -147,7 +146,7 @@ const ClientFapiConfigurationComponent: React.FC<ClientFapiConfigurationProps> =
                 </Dialog>
             }
 
-            <Grid2 marginTop={"8px"} container size={12} spacing={2}>
+            <Grid2 marginTop={"16px"} marginBottom={"8px"} container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
@@ -156,24 +155,12 @@ const ClientFapiConfigurationComponent: React.FC<ClientFapiConfigurationProps> =
                 <React.Fragment>
                     <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                         <TextField
-                            disabled={readOnly}
-                            select
+                            disabled={true}                            
                             label="FAPI ID Type"
                             fullWidth
                             value={fapiConfigurationInput.identifierType}
-                            name="identifierType"
-                            onChange={(evt) => {
-                                fapiConfigurationInput.identifierType = evt.target.value;
-                                setFapiConfigurationInput({ ...fapiConfigurationInput });
-                                setMarkDirty(true);
-                            }}
-                        >
-                            {FAPI_ID_TYPES.map((val: string) => (
-                                <MenuItem key={val} value={val}>
-                                    {val}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            name="identifierType"                            
+                        />                        
                     </Grid2>
                     <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
 
