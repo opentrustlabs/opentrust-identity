@@ -646,7 +646,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 }
                             </Box>
                         }
-                        {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT &&
+                        {/* 
+                            Only show this configuration section for service types of clients (baseline FAPI) and 
+                            only to members of the root tenant - for now. 
+                            There is more work to be done in general for an advanced FAPI-compliant server.
+                        */}
+                        {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <Box>
                                 {!isMarkedForDelete &&
                                     <Accordion>
