@@ -70,7 +70,7 @@ export default async function handler(
                 "fragment"
             ],
             token_endpoint_auth_signing_alg_values_supported: [
-                "RS256"
+                "PS256"
             ],
             claims_supported: [
                 "sub",
@@ -103,7 +103,7 @@ export default async function handler(
                 "public"
             ],
             id_token_signing_alg_values_supported: [
-                "RS256"
+                "PS256"
             ],
             request_object_signing_alg_values_supported: [
                 "none"

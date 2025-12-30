@@ -705,7 +705,7 @@ class JwtServiceUtils {
             if(!keyId){
                 return Promise.resolve(null);
             }
-            if(!protectedHeader.alg || protectedHeader.alg !== "RS256"){
+            if(!protectedHeader.alg || protectedHeader.alg !== "PS256"){
                 return Promise.resolve(null);
             }
             const payload: JWTPayload = decodeJwt(jwt);
@@ -758,7 +758,7 @@ class JwtServiceUtils {
     public async signJwtWithKey(principal: JWTPayload, privateKeyObject: KeyObject, keyId: string): Promise<string> {
         const s: string = await new SignJWT(principal)
             .setProtectedHeader({
-                alg: "RS256",
+                alg: "PS256",
                 kid: keyId
             })
             .sign(privateKeyObject);

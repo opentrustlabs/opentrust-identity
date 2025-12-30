@@ -732,3 +732,12 @@ create TABLE federated_auth_test (
     clientauthtype        VARCHAR(32) NOT NULL,
 	expiresatms           BIGINT NOT NULL
 );
+
+-- MIGRATIONS BELOW FOR VERSION 0.9.1 to 0.9.2
+-- ADDING BASIC FAPI SUPPORT FOR 
+CREATE TABLE client_fapi_configuration (
+    identifiervalue VARCHAR(256) PRIMARY KEY,
+    clientid VARCHAR(64) NOT NULL,
+    identifiertype VARCHAR(32) NOT NULL,
+    FOREIGN KEY (clientid) REFERENCES client(clientid)
+);

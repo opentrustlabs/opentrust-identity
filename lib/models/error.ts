@@ -1171,6 +1171,11 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00229",
         errorKey: "ERROR_INVALID_FEDDERATED_OIDC_PROVIDER_SUBJECT_TYPE",
         errorMessage: "The federated OIDC provider subject type is invalid."        
+    },
+    EC00230: {
+        errorCode: "EC00230",
+        errorKey: "ERROR_CLIENT_CERTIFICATE_IDENTIFIER_ALREADY_ASSIGNED_TO_CLIENT",
+        errorMessage: "The client certificate identifier is already assigned to a client."
     }
 }
 

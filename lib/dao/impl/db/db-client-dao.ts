@@ -1,11 +1,12 @@
-import { Client, ClientAuthHistory, RefreshData } from "@/graphql/generated/graphql-types";
-import ClientDao from "@/lib/dao/client-dao";
+import { Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput, RefreshData } from "@/graphql/generated/graphql-types";
+import ClientDao, { ClientFapiConfigurationLookupType } from "@/lib/dao/client-dao";
 import { ClientRedirectUriRel } from "@/lib/entities/client-redirect-uri-rel-entity";
 import RDBDriver from "@/lib/data-sources/rdb";
 import { In, LessThan } from "typeorm";
 
 class DBClientDao extends ClientDao {
 
+   
     public async getClients(tenantId?: string): Promise<Array<Client>> {
         const clientRepo = await RDBDriver.getInstance().getClientRepository();
         const whereClause = tenantId ? {tenantId: tenantId} : {}
@@ -24,6 +25,19 @@ class DBClientDao extends ClientDao {
             }
         });
         return result;
+    }
+
+    public async getClientByFapiIdentifier(identifierValue: string): Promise<Client | null> {
+        const clientFapiConfigRepo = await RDBDriver.getInstance().getClientFapiConfigurationRepository();
+        const result: ClientFapiConfiguration | null = await clientFapiConfigRepo.findOne({
+            where: {
+                identifierValue: identifierValue
+            }
+        });
+        if(!result){
+            return null;
+        }
+        return this.getClientById(result.clientId);
     }
 
     public async createClient(client: Client): Promise<Client> {
@@ -102,6 +116,11 @@ class DBClientDao extends ClientDao {
         await contactRepo.delete({
             objectid: clientId
         });
+
+        const clientFapiConfigRepo = await RDBDriver.getInstance().getClientFapiConfigurationRepository();
+        await clientFapiConfigRepo.delete({
+            clientId: clientId
+        });
         
         const clientRepo = await RDBDriver.getInstance().getClientRepository();
         await clientRepo.delete({
@@ -153,7 +172,6 @@ class DBClientDao extends ClientDao {
         if(resultList.length > 0){
             resultList.forEach(
                 (e: ClientRedirectUriRel) => {
-
                     retList.push(e.redirectUri)
                 }
             )
@@ -178,6 +196,62 @@ class DBClientDao extends ClientDao {
             redirectUri: uri
         });
         return Promise.resolve();
+    }
+   
+
+    public async getClientFapiConfigurationBy(clientFapiConfigurationLookupType: ClientFapiConfigurationLookupType, value: string): Promise<ClientFapiConfiguration | null>{
+        const clientFapiConfigRepo = await RDBDriver.getInstance().getClientFapiConfigurationRepository();
+        if(clientFapiConfigurationLookupType === "clientid"){
+            const result = await clientFapiConfigRepo.findOne({
+                where: {
+                    clientId: value
+                }
+            });
+            return result;
+        }
+        else if(clientFapiConfigurationLookupType === "identifiervalue"){
+            const result = await clientFapiConfigRepo.findOne({
+                where: {
+                    identifierValue: value
+                }
+            });
+            return result;
+        }
+        return null;
+    }
+
+    public async createClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
+        const clientFapiConfigRepo = await RDBDriver.getInstance().getClientFapiConfigurationRepository();
+        const fapiConfig: ClientFapiConfiguration = {
+            clientId: fapiConfigurationInput.clientId,
+            identifierValue: fapiConfigurationInput.identifierValue,
+            identifierType: fapiConfigurationInput.identifierType
+        }
+        await clientFapiConfigRepo.insert(fapiConfig);
+        return fapiConfig;
+    }
+
+    public async updateClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
+        const clientFapiConfigRepo = await RDBDriver.getInstance().getClientFapiConfigurationRepository();
+        const fapiConfig: ClientFapiConfiguration = {
+            clientId: fapiConfigurationInput.clientId,
+            identifierValue: fapiConfigurationInput.identifierValue,
+            identifierType: fapiConfigurationInput.identifierType
+        }
+        
+        await clientFapiConfigRepo.update(
+            {
+                identifierValue: fapiConfigurationInput.identifierValue
+            },
+            fapiConfig
+        );
+        return fapiConfig;
+    }
+    public async deleteClientFapiConfiguration(clientId: string): Promise<void> {
+        const clientFapiConfigRepo = await RDBDriver.getInstance().getClientFapiConfigurationRepository();
+        await clientFapiConfigRepo.delete({
+            clientId: clientId
+        })
     }
 
 }

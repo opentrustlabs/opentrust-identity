@@ -1,4 +1,4 @@
-import { AuthorizationScopeApprovalData, Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
@@ -324,6 +324,65 @@ class ClientService {
         approvalData.requestedScope = scopes;
         approvalData.requiresUserApproval = client.clientType === CLIENT_TYPE_DEVICE || client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS
         return approvalData;
+    }
+
+    public async getClientFapiConfiguration(clientId: string): Promise<ClientFapiConfiguration | null>{
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(!client){
+            return null;
+        }
+
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+
+        const config = await clientDao.getClientFapiConfigurationBy("clientid", clientId);
+        return config;
+    }
+    
+    public async setClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration | null>{
+        const client: Client | null = await clientDao.getClientById(fapiConfigurationInput.clientId);
+        if(!client){
+            return null;
+        }
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }        
+        
+        const configByIdentifierValue = await clientDao.getClientFapiConfigurationBy("identifiervalue", fapiConfigurationInput.identifierValue);
+        // The user can only update the identifier value, so if a record already exists with that identifier value
+        // we need to return an error.
+        if(configByIdentifierValue){
+            throw new GraphQLError(ERROR_CODES.EC00230.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00230}});
+        }
+        
+        const configByClientId = await clientDao.getClientFapiConfigurationBy("clientid", fapiConfigurationInput.clientId);
+        // If we cannot find a value by either client id or identifier value, then it is safe to insert a new record
+        if(!configByClientId){
+            const config = await clientDao.createClientFapiConfiguration(fapiConfigurationInput);
+            return config;
+        }
+        else{
+            // We need to delete the old record and insert a new one
+            await clientDao.deleteClientFapiConfiguration(client.clientId);
+            const config = await clientDao.createClientFapiConfiguration(fapiConfigurationInput);
+            return config;
+        }        
+    }
+
+    
+    public async deleteClientFapiConfiguration(clientId: string): Promise<void>{
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(!client){
+            return;
+        }
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+        await clientDao.deleteClientFapiConfiguration(clientId);
     }
     
 }

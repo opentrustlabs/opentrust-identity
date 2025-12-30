@@ -1,10 +1,30 @@
-import { AuthenticationGroupClientRel, Client, ClientAuthHistory, ClientScopeRel, Contact } from "@/graphql/generated/graphql-types";
-import ClientDao from "../../client-dao";
+import { AuthenticationGroupClientRel, Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, Contact } from "@/graphql/generated/graphql-types";
+import ClientDao, { ClientFapiConfigurationLookupType } from "../../client-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
 import { types } from "cassandra-driver";
 
 class CassandraClientDao extends ClientDao {
+
+    public async getClientByFapiIdentifier(identifierValue: string): Promise<Client | null> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async getClientFapiConfigurationBy(clientFapiConfigurationLookupType: ClientFapiConfigurationLookupType, value: string): Promise<ClientFapiConfiguration | null> {
+        throw new Error("Method not implemented.");
+    }
+    
+    public async createClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async updateClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async deleteClientFapiConfiguration(clientId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
     
     public async getClients(tenantId?: string, clientIds?: Array<string>): Promise<Array<Client>> {
         
