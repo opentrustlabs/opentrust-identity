@@ -35,7 +35,8 @@ const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 
 const {
-    AUTH_DOMAIN
+    AUTH_DOMAIN,
+    JWT_DEFAULT_AUDIENCE
 } = process.env;
 
 class JwtServiceUtils {
@@ -465,10 +466,11 @@ class JwtServiceUtils {
         if(idToken === null){
             return Promise.resolve(null);
         }
-        let accessToken: string | null = null;
-        if(client.audience !== null && client.audience !== ""){
-            principal.aud = client.audience;
-            accessToken = await this.signJwt(principal);
+        
+        principal.aud = client.audience || JWT_DEFAULT_AUDIENCE;
+        const accessToken = await this.signJwt(principal);
+        if(accessToken === null){
+            return Promise.resolve(null);
         }
         
         let generateRefreshToken: boolean = false;
@@ -480,7 +482,7 @@ class JwtServiceUtils {
         }
 
         const oidcTokenResponse: OIDCTokenResponse = {
-            access_token: accessToken !== null ? accessToken : idToken,
+            access_token: accessToken,
             token_type: "Bearer",
             refresh_token: generateRefreshToken ? generateRandomToken(32) : null,
             expires_in: client.userTokenTTLSeconds ? Math.floor( now / 1000 ) + client.userTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
@@ -527,7 +529,7 @@ class JwtServiceUtils {
         const principal: JWTPayload = {
             sub: client.clientId,
             iss: `${AUTH_DOMAIN}/api/${tenant.tenantId}`,
-            aud: client.clientId,
+            aud: client.audience || JWT_DEFAULT_AUDIENCE,
             iat: Math.floor(now / 1000),
             exp: client.clientTokenTTLSeconds ? Math.floor( now / 1000 ) + client.clientTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
             at_hash: "",
