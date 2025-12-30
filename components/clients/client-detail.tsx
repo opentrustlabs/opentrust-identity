@@ -330,7 +330,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         <TextField
                                             disabled={disableInputs}
                                             label="Audience for Access Tokens"
-                                            helperText="If left blank, defaults to client ID"
+                                            helperText="If left blank, will use system-defined default value"
                                             name="audience"
                                             id="audience"
                                             value={clientUpdateInput.audience || ""}
