@@ -224,6 +224,10 @@ const resolvers: Resolvers = {
         getAnonymousUserConfiguration: (_: any, { tenantId }, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.getAnonymousUserConfiguration(tenantId);
+        },
+        getClientFapiConfiguration: (_: any, { clientId }, oidcContext) => {
+            const service: ClientService = new ClientService(oidcContext);
+            return service.getClientFapiConfiguration(clientId);
         }
     },
     Mutation: {        
@@ -1044,7 +1048,17 @@ const resolvers: Resolvers = {
         createFederatedAuthTest: async(_: any, { clientAuthType, clientId, scope, usePkce, wellKnownUri, clientSecret, responseType}, oidcContext) => {
             const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.createFederatedAuthTest(clientId, clientSecret || null, usePkce, scope, wellKnownUri, clientAuthType, responseType);
+        },
+        setClientFapiConfiguration: async(_: any, { fapiConfigurationInput }, oidcContext) => {
+            const service: ClientService = new ClientService(oidcContext);
+            return service.setClientFapiConfiguration(fapiConfigurationInput);
+        },
+        deleteClientFapiConfiguration: async(_: any, { clientId }, oidcContext) => {
+            const service: ClientService = new ClientService(oidcContext);
+            await service.deleteClientFapiConfiguration(clientId);
+            return clientId;
         }
+
     },
     PortalUserProfile: {
         recoveryEmail: async(profile: PortalUserProfile, _: any, oidcContext: OIDCContext) => {

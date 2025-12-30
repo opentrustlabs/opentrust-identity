@@ -53,10 +53,10 @@ import CassandraChangeEventDao from "../dao/impl/cassandra/cassandra-change-even
 import CassandraSchedulerDao from "../dao/impl/cassandra/cassandra-scheduler-dao";
 import NoOpKms from "../kms/no-op-kms";
 import CustomKms from "../kms/custom-kms";
-import GoogleKms from "../kms/google-kms";
-import AWSKms from "../kms/aws-kms";
-import AzureKms from "../kms/azure-kms";
-import TencentKms from "../kms/tencent-kms";
+// import GoogleKms from "../kms/google-kms";
+// import AWSKms from "../kms/aws-kms";
+// import AzureKms from "../kms/azure-kms";
+// import TencentKms from "../kms/tencent-kms";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const kmsStrategy = process.env.KMS_STRATEGY;
@@ -142,10 +142,10 @@ class DaoFactory {
             DaoFactory.instance.kms = new FSBasedKms();
             return DaoFactory.instance.kms;
         }
-        else if(kmsStrategy === "custom"){
-            DaoFactory.instance.kms = new CustomKms();
-            return DaoFactory.instance.kms;
-        }
+        // else if(kmsStrategy === "custom"){
+        //     DaoFactory.instance.kms = new CustomKms();
+        //     return DaoFactory.instance.kms;
+        // }
         // else if(kmsStrategy === "googlekms"){
         //     DaoFactory.instance.kms = new GoogleKms();
         //     return DaoFactory.instance.kms;

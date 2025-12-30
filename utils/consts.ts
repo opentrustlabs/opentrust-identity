@@ -1163,6 +1163,12 @@ export const RDB_SUPPORTED_DIALECTS: Array<string> = ["mysql", "postgres", "mssq
 // ************************************************************************** //
 export const FAPI_ID_TYPE_SAN_DNS="SAN:DNS";
 export const FAPI_ID_TYPE_SAN_URI="SAN:URI";
-export const FAPI_ID_TYPE_SAN_OTHER="SAN:otherName";
+export const FAPI_ID_TYPE_SAN_OTHER_NAME="SAN:otherName";
+export const FAPI_ID_TYPES=[
+    FAPI_ID_TYPE_SAN_DNS,
+    FAPI_ID_TYPE_SAN_URI,
+    FAPI_ID_TYPE_SAN_OTHER_NAME
+];
+
 export const FAPI_CLIENT_CERTIFICATE_HEADER="x-client-certificate";
 export const FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER="x-client-certificate-verify";

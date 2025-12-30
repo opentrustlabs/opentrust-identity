@@ -1223,3 +1223,19 @@ export const HANDLE_FEDERATED_OIDC_PROVIDER_RETURN_MUTATION = gql(`
         }
     }
 `);
+
+export const SET_CLIENT_FAPI_CONFIGURATION_MUTATION = gql(`
+    mutation setClientFapiConfiguration($fapiConfigurationInput: ClientFapiConfigurationInput!) {
+        setClientFapiConfiguration(fapiConfigurationInput: $fapiConfigurationInput){
+            clientId,
+            identifierValue
+            identifierType
+        }
+    }
+`);
+
+export const DELETE_CLIENT_FAPI_CONFIGURATION_MUTATION = gql(`
+    mutation deleteClientFapiConfiguration($clientId: String!) {
+        deleteClientFapiConfiguration(clientId: $clientId)
+    }
+`);

@@ -140,7 +140,7 @@ type Mutation {
     assignAuthenticationGroupToClient(authenticationGroupId: String!, clientId: String!): AuthenticationGroupClientRel
     removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
     setClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput!): ClientFapiConfiguration
-    deleteClientFapiConfiguration(clientId: String): String!
+    deleteClientFapiConfiguration(clientId: String!): String
 
     ## Users
     createUser(tenantId: String!, userInput: UserCreateInput!): User!    

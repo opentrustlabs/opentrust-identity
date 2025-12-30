@@ -795,3 +795,13 @@ export const SYSTEM_INITIALIZATION_READY_QUERY = gql(`
         }
     }
 `);
+
+export const CLIENT_FAPI_CONFIGURATION_QUERY = gql(`
+    query getClientFapiConfiguration($clientId: String!) {
+        getClientFapiConfiguration(clientId: $clientId) {
+            clientId
+            identifierValue
+            identifierType
+        }
+    }
+`)

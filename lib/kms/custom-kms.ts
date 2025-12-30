@@ -3,8 +3,23 @@ import Kms from "./kms";
 import OIDCServiceUtils from "../service/oidc-service-utils";
 import JwtServiceUtils from "../service/jwt-service-utils";
 
-const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
-const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+// Lazy initialization to avoid circular dependency with jwt-service-utils
+let oidcServiceUtils: OIDCServiceUtils | null = null;
+let jwtServiceUtils: JwtServiceUtils | null = null;
+
+function getOidcServiceUtils(): OIDCServiceUtils {
+    if (!oidcServiceUtils) {
+        oidcServiceUtils = new OIDCServiceUtils();
+    }
+    return oidcServiceUtils;
+}
+
+function getJwtServiceUtils(): JwtServiceUtils {
+    if (!jwtServiceUtils) {
+        jwtServiceUtils = new JwtServiceUtils();
+    }
+    return jwtServiceUtils;
+}
 
 
 /**
@@ -78,6 +93,10 @@ export interface CustomKmsDecryptionResponseBody {
     decrypted: string
 }
 
+// TODO
+// NEEDS REFACTORING (SEE ALSO DaoFactory) DUE TO CIRCULAR DEPENDENCY
+// OF THIS CLASS AND JwtServiceUtils. NEED A WAY TO SIGN THE JWTs
+// FOR THE ROOT CLIENT.
 class CustomKms extends Kms {
 
 
@@ -93,8 +112,10 @@ class CustomKms extends Kms {
             return Promise.resolve(null);
         }
 
-        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
-        const encryptedValue = await oidcServiceUtils.customEncrypt(
+        const jwtService = getJwtServiceUtils();
+        const oidcService = getOidcServiceUtils();
+        const authToken = await jwtService.getAuthTokenForOutboundCalls();
+        const encryptedValue = await oidcService.customEncrypt(
             CUSTOM_KMS_ENCRYPTION_ENDPOINT || "",
             data.toString("base64"),
             authToken || "",
@@ -137,8 +158,10 @@ class CustomKms extends Kms {
      */
     public async decryptBuffer(buffer: Buffer, aad?: string): Promise<Buffer | null> {
 
-        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
-        const decryptedValue = await oidcServiceUtils.customDecrypt(
+        const jwtService = getJwtServiceUtils();
+        const oidcService = getOidcServiceUtils();
+        const authToken = await jwtService.getAuthTokenForOutboundCalls();
+        const decryptedValue = await oidcService.customDecrypt(
             CUSTOM_KMS_DECRYPTION_ENDPOINT || "",
             buffer.toString("base64"),
             authToken || "",
