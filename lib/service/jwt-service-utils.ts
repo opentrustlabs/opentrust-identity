@@ -1,5 +1,5 @@
 import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData } from "@/graphql/generated/graphql-types";
-import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
+import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
@@ -523,7 +523,7 @@ class JwtServiceUtils {
      * @param clientId  
      * @param tenantId 
      */
-    public async signClientJwt(client: Client, tenant: Tenant): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
+    public async signClientJwt(client: Client, tenant: Tenant, pemEncodedClientCert?: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
 
         const now = Date.now();
         const principal: JWTPayload = {
@@ -555,6 +555,15 @@ class JwtServiceUtils {
             client_type: client.clientType,
             principal_type: PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN
         };
+
+        if(pemEncodedClientCert){
+            const derEncoded: Buffer = Buffer.from(
+                pemEncodedClientCert.replace(/-----BEGIN CERTIFICATE-----/, "").replace(/-----END CERTIFICATE-----/, "").replace(/\s+/g, ""),
+                "base64"
+            );
+            const thumbPrint = generateHash(derEncoded, "sha256", "base64url");
+            principal["cnf"] = {"x5t#S256": thumbPrint}
+        }
         
         const s: string | null = await this.signJwt(principal);
         if(s === null){
@@ -566,7 +575,7 @@ class JwtServiceUtils {
             token_type: "Bearer",
             refresh_token: null,
             expires_in: client.clientTokenTTLSeconds ? Math.floor( now / 1000 ) + client.clientTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
-            id_token: s
+            id_token: ""
         }
         
         return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});

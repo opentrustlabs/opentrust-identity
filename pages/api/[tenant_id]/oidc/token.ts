@@ -10,6 +10,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID, X509Certificate } from 'crypto';
 import JwtService from '@/lib/service/jwt-service-utils';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
+import { OIDCTokenResponse } from '@/lib/models/token-response';
 
 
 // TODO 
@@ -590,6 +591,19 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
 
+    // For FAPI clients, their client is derived from the subject alternate names field in the client certificate
+    // and must not be present in the request body or auth header or anywhere else.
+    if(client.fapiEnabled === true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000734",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_TYPE_FOR_CLIENT_CREDENTIALS_GRANT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
 
     if(tokenData.clientAssertion === null && tokenData.clientSecret === null){
         const error: OIDCErrorResponseBody = {
@@ -707,7 +721,7 @@ async function handleFapiClientCredentialsGrant(clientCertificate: string, clien
                 }
                 return res.status(400).json(error);
             }
-            if(client.enabled !== true || client.markForDelete === true){
+            if(client.enabled !== true || client.markForDelete === true || client.fapiEnabled !== true){
                 const error: OIDCErrorResponseBody = {
                     error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
                     error_code: "0000733",
@@ -719,6 +733,33 @@ async function handleFapiClientCredentialsGrant(clientCertificate: string, clien
                 return res.status(400).json(error);
             }
 
+            const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
+            if(!tenant || tenant.enabled !== true || tenant.markForDelete === true){
+                const error: OIDCErrorResponseBody = {
+                    error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+                    error_code: "0000732",
+                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT",
+                    error_uri: "",
+                    timestamp: Date.now(),
+                    trace_id: traceId
+                }
+                return res.status(400).json(error);
+            }
+            
+            const response = await jwtService.signClientJwt(client, tenant, certPem);
+            if(!response){
+                const error: OIDCErrorResponseBody = {
+                    error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+                    error_code: "0000721",
+                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_FAILED_SIGNATURE",
+                    error_uri: "",
+                    timestamp: Date.now(),
+                    trace_id: traceId
+                }
+                return res.status(400).json(error);
+            }
+
+            return res.status(200).json(response.oidcTokenResponse);
 
         } catch(error: unknown) {
             const e = error as Error;

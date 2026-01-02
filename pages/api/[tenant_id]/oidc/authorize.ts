@@ -85,7 +85,7 @@ export default async function handler(
 		res.end();
 		return;
 	}
-	if (!tenant?.enabled) {
+	if (tenant.enabled !== true || tenant.markForDelete === true) {
 		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_description=ERROR_TENANT_NOT_ENABLED&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
 		res.end();
 		return;
@@ -103,12 +103,20 @@ export default async function handler(
 		res.end();
 		return;
 	}
-	if (!client.enabled) {
+	if (client.enabled !== true || client.markForDelete === true) {
         res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_description=ERROR_CLIENT_NOT_ENABLED&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
         res.end();
         return;
 	}
     if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT){
+        res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_description=ERROR_CLIENT_NOT_ENABLED_FOR_SSO&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
+        res.end();
+        return;
+    }
+    // For the moment, we are only allowing FAPI clients to be service clients and therefore not eligible
+    // for SSO. The FAPI clients can ONLY use the client_credentials grant, which does not require this
+    // authorization step
+    if(client.fapiEnabled === true){
         res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_description=ERROR_CLIENT_NOT_ENABLED_FOR_SSO&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
         res.end();
         return;
