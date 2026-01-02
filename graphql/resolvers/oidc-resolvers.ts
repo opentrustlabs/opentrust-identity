@@ -327,31 +327,15 @@ const resolvers: Resolvers = {
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
                 clienttypeid: "",
                 markForDelete: false,
-                audience: clientInput.audience
+                audience: clientInput.audience,
+                fapiEnabled: clientInput.fapiEnabled
             }
             await clientService.createClient(client);            
             return client;
         },
         updateClient: async (_: any, { clientInput }, oidcContext) => {
-            const clientService: ClientService = new ClientService(oidcContext);
-            let client: Client = {
-                clientId: clientInput.clientId,
-                clientSecret: "",
-                clientName: clientInput.clientName,
-                clientDescription: clientInput.clientDescription,
-                tenantId: clientInput.tenantId,
-                enabled: clientInput.enabled,
-                oidcEnabled: clientInput.oidcEnabled ?? true,
-                pkceEnabled: clientInput.pkceEnabled ?? true,
-                clientType: clientInput.clientType,
-                userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
-                maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
-                clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
-                clienttypeid: "",
-                markForDelete: false,
-                audience: clientInput.audience
-            }
-            await clientService.updateClient(client);
+            const clientService: ClientService = new ClientService(oidcContext);            
+            const client = await clientService.updateClient(clientInput);
             return client;
         },
         createSigningKey: async(_: any, { keyInput }, oidcContext) => {

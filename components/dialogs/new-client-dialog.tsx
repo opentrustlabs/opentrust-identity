@@ -3,7 +3,7 @@ import { Client, ClientCreateInput } from "@/graphql/generated/graphql-types";
 import { CLIENT_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { CLIENT_TYPE_IDENTITY, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
-import { Alert, Button, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid2, MenuItem, Select, Stack, Switch, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
@@ -45,7 +45,8 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
         oidcEnabled: false,
         pkceEnabled: false,
         userTokenTTLSeconds: DEFAULT_END_USER_TOKEN_TTL_SECONDS,
-        audience: null
+        audience: null,
+        fapiEnabled: false
     }
 
     // HOOKS
@@ -161,7 +162,8 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                         name="clientType"
                                         onChange={(evt) => { 
                                             clientInput.clientType = evt.target.value;
-                                            clientInput.oidcEnabled = evt.target.value !== CLIENT_TYPE_SERVICE_ACCOUNT;                                            
+                                            clientInput.oidcEnabled = evt.target.value !== CLIENT_TYPE_SERVICE_ACCOUNT;
+                                            clientInput.fapiEnabled = false;
                                             setClientInput({ ...clientInput }); 
                                         }}
                                     >
@@ -182,6 +184,28 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                         name="clientDescription" id="clientDescription"
                                         value={clientInput.clientDescription} fullWidth={true} size="small" multiline={true} rows={2}
                                         onChange={(evt) => { clientInput.clientDescription = evt?.target.value; setClientInput({ ...clientInput }) }}
+                                    />
+                                </Grid2>
+                                <Grid2 marginBottom={"16px"}>
+                                    
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                disabled={clientInput.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT}
+                                                checked={clientInput.fapiEnabled}
+                                                onChange={(_, checked: boolean) => {
+                                                    clientInput.fapiEnabled = checked;
+                                                    if (checked === false) {
+                                                        clientInput.pkceEnabled = false; 
+                                                        clientInput.oidcEnabled = false;
+                                                    }
+                                                    setClientInput({ ...clientInput }); 
+                                                }}
+                                            />
+                                        }
+                                        sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                        label={"Enable FAPI Security Profile (only available for service accounts)"}
+                                        labelPlacement="start"
                                     />
                                 </Grid2>
                                 

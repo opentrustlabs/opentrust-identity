@@ -1,5 +1,5 @@
 import { EntitySchema } from 'typeorm';
-import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+import { BooleanTransformer, getBigIntTypeForDriver, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
 const {
     RDB_DIALECT
@@ -96,6 +96,20 @@ const ClientEntity = new EntitySchema({
             primary: false,
             nullable: true,
             name: "audience"
+        },
+        fapiEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "fapienabled",
+            transformer: BooleanTransformer
+        },
+        fapiEnabledAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "fapienabledatms",
+
         }
     },
 

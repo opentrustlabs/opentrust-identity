@@ -142,6 +142,8 @@ create TABLE client (
     maxrefreshtokencount INT,
     markfordelete BOOLEAN,
     audience TEXT,
+    fapienabled BOOLEAN,
+    fapienabledatms BIGINT,
     PRIMARY KEY (clientid, tenantid)
 );
 
@@ -996,3 +998,17 @@ create TABLE federated_auth_test (
 	expiresatms           BIGINT 
 );
 
+
+create TABLE client_fapi_configuration (
+    identifiervalue    TEXT,    
+    clientid    UUID,
+    identifiertype     TEXT,
+    PRIMARY KEY (identifiervalue, clientid)
+);
+
+create TABLE client_fapi_configuration_by_client_id (
+    clientid           UUID,
+    identifiervalue    TEXT,
+    identifiertype     TEXT,
+    PRIMARY KEY (clientid, identifiervalue)
+);

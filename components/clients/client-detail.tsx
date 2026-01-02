@@ -165,6 +165,15 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 color={client.enabled ? "success" : "default"}
                                                 sx={{ fontWeight: 500 }}
                                             />
+                                            {client.fapiEnabled &&
+                                                <Chip
+                                                    icon={<CheckCircleIcon />}
+                                                    label={"FAPI Enabled"}
+                                                    size="small"
+                                                    color={"warning"}
+                                                    sx={{ fontWeight: 500 }}
+                                                />
+                                            }
                                         </Stack>
                                     </Box>
                                 </Stack>
@@ -246,7 +255,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         />
 
                                         <TextField
-                                            disabled={disableInputs}
+                                            disabled={disableInputs || client.fapiEnabled === true}
                                             select
                                             label="Client Type"
                                             fullWidth
@@ -381,7 +390,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <FormControlLabel
                                                 control={
                                                     <Switch
-                                                        disabled={disableInputs || clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT}
+                                                        disabled={disableInputs || clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT || client.fapiEnabled === true}
                                                         checked={clientUpdateInput.oidcEnabled}
                                                         onChange={(_, checked: boolean) => {
                                                             clientUpdateInput.oidcEnabled = checked;
@@ -409,7 +418,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 control={
                                                     <Switch
                                                         checked={clientUpdateInput.pkceEnabled}
-                                                        disabled={clientUpdateInput.oidcEnabled === false || disableInputs}
+                                                        disabled={clientUpdateInput.oidcEnabled === false || disableInputs || client.fapiEnabled === true}
                                                         onChange={(_, checked: boolean) => {
                                                             clientUpdateInput.pkceEnabled = checked;
                                                             setClientUpdateInput({ ...clientUpdateInput });
@@ -651,7 +660,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                             only to members of the root tenant - for now. 
                             There is more work to be done in general for an advanced FAPI-compliant server.
                         */}
-                        {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                        {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && client.fapiEnabled === true && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
                             <Box>
                                 {!isMarkedForDelete &&
                                     <Accordion>

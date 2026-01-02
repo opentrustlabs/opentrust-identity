@@ -109,6 +109,8 @@ create TABLE client (
     clienttokenttlseconds INT,
     maxrefreshtokencount INT,
     markfordelete BOOLEAN NOT NULL,
+    fapienabled BOOLEAN NOT NULL,
+    fapienabledatms BIGINT,
     audience VARCHAR(256),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
@@ -733,8 +735,7 @@ create TABLE federated_auth_test (
 	expiresatms           BIGINT NOT NULL
 );
 
--- MIGRATIONS BELOW FOR VERSION 0.9.1 to 0.9.2
--- ADDING BASIC FAPI SUPPORT FOR 
+
 CREATE TABLE client_fapi_configuration (
     identifiervalue VARCHAR(256) PRIMARY KEY,
     clientid VARCHAR(64) NOT NULL,

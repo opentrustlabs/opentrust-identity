@@ -63,7 +63,8 @@ import {
     USER_TERMS_AND_CONDITIONS_ACCEPTED_MODEL,
     USER_VERIFICATION_TOKEN_MODEL,
     USERS_BY_FEDERATED_OIDC_ID_MODEL,
-    USERS_BY_EMAIL_MODEL
+    USERS_BY_EMAIL_MODEL,
+    CLIENT_FAPI_CONFIGURATION_MODEL
 } from "../cassandra-mappings/mappings";
 import { logWithDetails } from "../logging/logger";
 
@@ -175,7 +176,8 @@ class CassandraDriver {
                         ...USER_SCOPE_REL_MODEL,
                         ...USER_TENANT_REL_MODEL,
                         ...USER_TERMS_AND_CONDITIONS_ACCEPTED_MODEL,
-                        ...USER_VERIFICATION_TOKEN_MODEL
+                        ...USER_VERIFICATION_TOKEN_MODEL,
+                        ...CLIENT_FAPI_CONFIGURATION_MODEL
                     }
                 }
             );

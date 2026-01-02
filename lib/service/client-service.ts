@@ -1,4 +1,4 @@
-import { AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ClientUpdateInput, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
@@ -112,6 +112,15 @@ class ClientService {
         if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)){
             throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
         }
+        if(client.fapiEnabled === true && (client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT)){
+            throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
+        }
+
+        if(client.fapiEnabled === true){
+            client.oidcEnabled = false;
+            client.pkceEnabled = false;
+            client.fapiEnabledAtMs = Date.now();
+        }
 
         client.clientId = randomUUID().toString();
         const clientSecret = generateRandomToken(24, "hex");
@@ -139,8 +148,9 @@ class ClientService {
         return Promise.resolve(client);
     }
 
-    public async updateClient(client: Client): Promise<Client> {
-        const clientToUpdate: Client | null = await clientDao.getClientById(client.clientId);
+    public async updateClient(clientUpdateInput: ClientUpdateInput): Promise<Client> {
+    //public async updateClient(client: Client): Promise<Client> {
+        const clientToUpdate: Client | null = await clientDao.getClientById(clientUpdateInput.clientId);
         
         if(!clientToUpdate){
             throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
@@ -151,42 +161,49 @@ class ClientService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
-        if(!CLIENT_TYPES.includes(client.clientType)){
+        if(!CLIENT_TYPES.includes(clientUpdateInput.clientType)){
             throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }
-        if(client.oidcEnabled === false && client.pkceEnabled === true){
+        if(clientUpdateInput.oidcEnabled === false && clientUpdateInput.pkceEnabled === true){
             throw new GraphQLError(ERROR_CODES.EC00188.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00188}});
         }
-        if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)){
+        if(clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (clientUpdateInput.oidcEnabled === true || clientUpdateInput.pkceEnabled === true)){
             throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
+        }
+        if(clientToUpdate.fapiEnabled === true && (clientUpdateInput.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT)){
+            throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
         }
 
         // If the client type has changed, then delete the scope values assigned to the client
-        if(clientToUpdate.clientType !== client.clientType){
-            const rels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
+        if(clientToUpdate.clientType !== clientUpdateInput.clientType){
+            const rels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientUpdateInput.clientId);
             for(let i = 0; i < rels.length; i++){
                 scopeDao.removeScopeFromClient(rels[i].tenantId, rels[i].clientId, rels[i].scopeId);
             }
         }
         
-        // tenantId is a write-only-read-only property, no updates regardless of what the client has sent
-        // same for client secret
-        clientToUpdate.clientDescription = client.clientDescription;
-        clientToUpdate.clientName = client.clientName;
-        clientToUpdate.enabled = client.enabled;
-        clientToUpdate.oidcEnabled = client.oidcEnabled;
-        // Only allow the pkce entension when oidc (i.e. SSO) is enabled.
-        clientToUpdate.pkceEnabled = client.oidcEnabled === false ? false : client.pkceEnabled;
-        clientToUpdate.clientTokenTTLSeconds = client.clientTokenTTLSeconds;
-        clientToUpdate.clientType = client.clientType;
-        clientToUpdate.maxRefreshTokenCount = client.maxRefreshTokenCount;
-        clientToUpdate.userTokenTTLSeconds = client.userTokenTTLSeconds;
-        clientToUpdate.audience = client.audience;
+        // tenantId is a write-only-read-only property, no updates regardless of what the client has sent,
+        // same for client secret, fapiEnabled, and fapiEnabledAtMs
+        clientToUpdate.clientDescription = clientUpdateInput.clientDescription;
+        clientToUpdate.clientName = clientUpdateInput.clientName;
+        clientToUpdate.enabled = clientUpdateInput.enabled;
+        clientToUpdate.clientTokenTTLSeconds = clientUpdateInput.clientTokenTTLSeconds;
+        clientToUpdate.maxRefreshTokenCount = clientUpdateInput.maxRefreshTokenCount;
+        clientToUpdate.userTokenTTLSeconds = clientUpdateInput.userTokenTTLSeconds;
+        clientToUpdate.audience = clientUpdateInput.audience;
+
+        // Only allow these updates to the client when the FAPI flag is not true
+        if(clientToUpdate.fapiEnabled !== true){
+            clientToUpdate.oidcEnabled = clientUpdateInput.oidcEnabled;
+            // Only allow the pkce entension when oidc (i.e. SSO) is enabled.
+            clientToUpdate.pkceEnabled = clientUpdateInput.oidcEnabled === false ? false : clientUpdateInput.pkceEnabled;            
+            clientToUpdate.clientType = clientUpdateInput.clientType;
+        }
 
         await clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
         changeEventDao.addChangeEvent({
-            objectId: client.clientId,
+            objectId: clientUpdateInput.clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
             changeEventId: randomUUID().toString(),

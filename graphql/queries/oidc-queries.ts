@@ -205,6 +205,8 @@ export const CLIENT_DETAIL_QUERY = gql(`
             maxRefreshTokenCount
             markForDelete
             audience
+            fapiEnabled
+            fapiEnabledAtMs
         }
     }
 `);

@@ -447,6 +447,8 @@ type Client {
     maxRefreshTokenCount: Int
     markForDelete: Boolean!
     audience: String
+    fapiEnabled: Boolean!
+    fapiEnabledAtMs: Float
 }
 
 
@@ -1459,6 +1461,7 @@ input ClientCreateInput {
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
     audience: String
+    fapiEnabled: Boolean!
 }
 
 input ClientUpdateInput {
