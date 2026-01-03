@@ -63,7 +63,8 @@ export default async function handler(
             token_endpoint_auth_methods_supported: [
                 "client_secret_basic",
                 "client_secret_post",
-                "client_secret_jwt"                
+                "client_secret_jwt",
+                "tls_client_auth"
             ],
             response_modes_supported: [
                 "query",
@@ -87,7 +88,8 @@ export default async function handler(
                 "updated_at",
                 "email",
                 "email_verified",
-                "country_code"
+                "country_code",
+                "cnf"
             ],
             claims_parameter_supported: false,
             scopes_supported: [

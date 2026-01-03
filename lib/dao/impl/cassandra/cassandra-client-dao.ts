@@ -6,25 +6,6 @@ import { types } from "cassandra-driver";
 
 class CassandraClientDao extends ClientDao {
 
-    public async getClientByFapiIdentifier(identifierValue: string): Promise<Client | null> {
-        throw new Error("Method not implemented.");
-    }
-
-    public async getClientFapiConfigurationBy(clientFapiConfigurationLookupType: ClientFapiConfigurationLookupType, value: string): Promise<ClientFapiConfiguration | null> {
-        throw new Error("Method not implemented.");
-    }
-    
-    public async createClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
-        throw new Error("Method not implemented.");
-    }
-
-    public async updateClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
-        throw new Error("Method not implemented.");
-    }
-
-    public async deleteClientFapiConfiguration(clientId: string): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
     
     public async getClients(tenantId?: string, clientIds?: Array<string>): Promise<Array<Client>> {
         
@@ -121,6 +102,8 @@ class CassandraClientDao extends ClientDao {
             });
         }
 
+        await this.deleteClientFapiConfiguration(clientId);
+
         const mapper = await CassandraDriver.getInstance().getModelMapper("client");
         await mapper.remove({
             clientId: clientUuid,
@@ -177,6 +160,73 @@ class CassandraClientDao extends ClientDao {
         // NO OP
         // The only data with an expiration time on it is the ClientAuthHistory object,
         // which is inserted with a TTL
+    }
+
+    public async getClientByFapiIdentifier(identifierValue: string): Promise<Client | null> {
+        const clientFapiMapper = await CassandraDriver.getInstance().getModelMapper("client_fapi_configuration");
+        const clientFapiConfigurations = await clientFapiMapper.find({
+            identifierValue: identifierValue
+        });
+        if(clientFapiConfigurations){
+            const arr = clientFapiConfigurations.toArray();
+            if(arr.length === 1){
+                const config: ClientFapiConfiguration = arr[0];
+                return this.getClientById(config.clientId);
+            }
+        }
+        return null;
+    }
+
+    public async getClientFapiConfigurationBy(clientFapiConfigurationLookupType: ClientFapiConfigurationLookupType, value: string): Promise<ClientFapiConfiguration | null> {
+        const clientFapiMapper = await CassandraDriver.getInstance().getModelMapper("client_fapi_configuration");
+        if(clientFapiConfigurationLookupType === "clientid"){
+            const arr = await clientFapiMapper.find({
+                clientId: value
+            });            
+            return arr.first();            
+        }
+        else if(clientFapiConfigurationLookupType === "identifiervalue"){
+            const arr = await clientFapiMapper.find({
+                identifierValue: value
+            });
+            return arr.first();            
+        }
+        else{
+            return null;
+        }
+    }
+    
+    public async createClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
+        const clientFapiMapper = await CassandraDriver.getInstance().getModelMapper("client_fapi_configuration");
+        const clientFapiConfiguration: ClientFapiConfiguration = {
+            clientId: fapiConfigurationInput.clientId,
+            identifierType: fapiConfigurationInput.identifierType,
+            identifierValue: fapiConfigurationInput.identifierValue
+        }
+        await clientFapiMapper.insert(clientFapiConfiguration);
+        return clientFapiConfiguration;
+    }
+
+    public async updateClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration> {
+        const clientFapiMapper = await CassandraDriver.getInstance().getModelMapper("client_fapi_configuration");
+        const clientFapiConfiguration: ClientFapiConfiguration = {
+            clientId: fapiConfigurationInput.clientId,
+            identifierType: fapiConfigurationInput.identifierType,
+            identifierValue: fapiConfigurationInput.identifierValue
+        }
+        await clientFapiMapper.update(clientFapiConfiguration);
+        return clientFapiConfiguration;
+    }
+
+    public async deleteClientFapiConfiguration(clientId: string): Promise<void> {
+        const config = await this.getClientFapiConfigurationBy("clientid", clientId);
+        if(config){
+            const fapiClientMapper = await CassandraDriver.getInstance().getModelMapper("client_fapi_configuration");
+            await fapiClientMapper.remove({
+                clientId: types.Uuid.fromString(clientId),
+                identifierValue: config.identifierValue
+            });
+        }
     }
 
 }
