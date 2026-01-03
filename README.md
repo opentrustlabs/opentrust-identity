@@ -817,6 +817,7 @@ the web server and finally to the NodeJS server. Regardless of the location of t
 client mTLS connection, there are 2 HTTP headers which need to be sent to the token endpoint:
 
 `x-client-certificate            $ssl_client_escaped_cert;`
+
 `x-client-certificate-verify     $ssl_client_verify;`
 
 The value of the `$ssl_client_escaped_cert` will look something like:
