@@ -7,7 +7,10 @@ for managing tenants, clients, asymmetric keys, authorization groups, authentica
 rate limits (aka throttling), federating with 3rd party OIDC providers such as Azure AD (or Entra ID 
 as it is now known) or Okta, and access control. It supports multi-factor authentication using 
 time-based one-time-passwords and hardware security keys such as Yubikey or Titan
-or any key which supports the FIDO2 standard.
+or any key which supports the FIDO2 standard. 
+
+In addition, the tool support baseline FAPI (Financial-grade API Security Profile). See the 
+section below for more details on the implementation and future development work.
 
 This tool is designed to support a variety of backend data stores, both SQL and NoSQL. At the moment, those include:
 
@@ -796,6 +799,38 @@ with your development.
 The service clients that you use for programmatic access to the GraphQL API will need the same scope
 assigned to them as a normal user would for each of the functions you want to invoke. The same
 tenant-restriction rules (described above) apply to these clients as they do for normal users.
+
+### FAPI (Financial-grade API Security Profile)
+
+This tool has a baseline FAPI implementation for the `/token` endpoint only with the 
+`client_credentials` grant with using mTLS. It does not support advanced FAPI, but 
+that implementation is on the roadmap.
+
+For mTLS, the web server needs to be configured with either an additional domain or a
+different port on the same domain. Typically, implementations will use a different domain
+(often a subdomain) rather than a different port on the same domain. See the 
+`example.nginx.conf` file for an example configuration where Nginx terminates the TLS
+connection.
+
+For mTLS, the client certificate needs to carried through from the WAF (if available) to
+the web server and finally to the NodeJS server. Regardless of the location of termination of the
+client mTLS connection, there are 2 HTTP headers which need to be sent to the token endpoint:
+
+`x-client-certificate            $ssl_client_escaped_cert;`
+`x-client-certificate-verify     $ssl_client_verify;`
+
+The value of the `$ssl_client_escaped_cert` will look something like:
+
+```bash
+---BEGIN CERTIFICATE----%0AMIIDTjCCAj...%0ABQAwFjEUMBI...%0A...-----END CERTIFICATE-----
+```
+
+Where the newline characters are URL-escaped with `%0A`
+
+The value of `$ssl_client_verify` will either be `SUCCESS` or will start with `FAILURE`
+
+You will also need to set the value of the `FAPI_MTLS_AUTH_DOMAIN` in the `.env` file (see
+the `env.example` for more details on this environment setting.)
 
 
 ### License
