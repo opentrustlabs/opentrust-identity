@@ -11,6 +11,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import PaymentOutlinedIcon from '@mui/icons-material/PaymentOutlined';
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TimerIcon from '@mui/icons-material/Timer';
@@ -34,6 +35,7 @@ import { AuthContext, AuthContextProps } from "@/components/contexts/auth-contex
 import { containsScope } from "@/utils/authz-utils";
 import { ERROR_CODES } from "@/lib/models/error";
 import { useIntl } from 'react-intl';
+import ClientFapiConfigurationComponent from "./client-fapi-configuration";
 
 
 export interface ClientDetailProps {
@@ -87,7 +89,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             setShowMutationSnackbar(true);
         },
         onError(error) {
-            setErrorMessage(intl.formatMessage({id: error.message}));
+            setErrorMessage(intl.formatMessage({ id: error.message }));
             setShowMutationBackdrop(false);
         },
         refetchQueries: [CLIENT_DETAIL_QUERY]
@@ -162,9 +164,18 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 size="small"
                                                 color={client.enabled ? "success" : "default"}
                                                 sx={{ fontWeight: 500 }}
-                                            />                                            
+                                            />
+                                            {client.fapiEnabled &&
+                                                <Chip
+                                                    icon={<CheckCircleIcon />}
+                                                    label={"FAPI Enabled"}
+                                                    size="small"
+                                                    color={"warning"}
+                                                    sx={{ fontWeight: 500 }}
+                                                />
+                                            }
                                         </Stack>
-                                    </Box>                                    
+                                    </Box>
                                 </Stack>
                                 {isMarkedForDelete !== true && canDeleteClient &&
                                     <SubmitMarkForDelete
@@ -178,17 +189,17 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 setIsMarkedForDelete(true);
                                             }
                                             else {
-                                                if(errorMessage){
-                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));
+                                                if (errorMessage) {
+                                                    setErrorMessage(intl.formatMessage({ id: errorMessage }));
                                                 }
-                                                else{
-                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                else {
+                                                    setErrorMessage(intl.formatMessage({ id: ERROR_CODES.DEFAULT.errorKey }));
                                                 }
                                             }
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
                                     />
-                                }                                
+                                }
                             </Stack>
                         </Paper>
 
@@ -244,7 +255,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         />
 
                                         <TextField
-                                            disabled={disableInputs}
+                                            disabled={disableInputs || client.fapiEnabled === true}
                                             select
                                             label="Client Type"
                                             fullWidth
@@ -252,7 +263,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             name="clientType"
                                             onChange={(evt) => {
                                                 clientUpdateInput.clientType = evt.target.value;
-                                                if(clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT){
+                                                if (clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT) {
                                                     clientUpdateInput.oidcEnabled = false;
                                                     clientUpdateInput.pkceEnabled = false;
                                                 }
@@ -328,7 +339,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         <TextField
                                             disabled={disableInputs}
                                             label="Audience for Access Tokens"
-                                            helperText="If left blank, defaults to client ID"
+                                            helperText="If left blank, will use system-defined default value"
                                             name="audience"
                                             id="audience"
                                             value={clientUpdateInput.audience || ""}
@@ -370,7 +381,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
                                                 label={
                                                     <Stack>
-                                                        <Typography variant="body2" fontWeight={500}>Enabled</Typography>                                                        
+                                                        <Typography variant="body2" fontWeight={500}>Enabled</Typography>
                                                     </Stack>
                                                 }
                                                 labelPlacement="start"
@@ -379,7 +390,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <FormControlLabel
                                                 control={
                                                     <Switch
-                                                        disabled={disableInputs || clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT}
+                                                        disabled={disableInputs || clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT || client.fapiEnabled === true}
                                                         checked={clientUpdateInput.oidcEnabled}
                                                         onChange={(_, checked: boolean) => {
                                                             clientUpdateInput.oidcEnabled = checked;
@@ -407,7 +418,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 control={
                                                     <Switch
                                                         checked={clientUpdateInput.pkceEnabled}
-                                                        disabled={clientUpdateInput.oidcEnabled === false || disableInputs}
+                                                        disabled={clientUpdateInput.oidcEnabled === false || disableInputs || client.fapiEnabled === true}
                                                         onChange={(_, checked: boolean) => {
                                                             clientUpdateInput.pkceEnabled = checked;
                                                             setClientUpdateInput({ ...clientUpdateInput });
@@ -612,18 +623,18 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             expandIcon={<ExpandMoreIcon />}
                                             id={"redirect-uri-configuration"}
                                             sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>
-                                                {(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE )&&
-                                                    <span>Delegated Access Control</span>
-                                                }
-                                                {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT &&
-                                                    <span>Service Account Access Control</span>
-                                                }                                              
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <PolicyIcon /><div style={{ marginLeft: "8px" }}>
+                                                    {(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE) &&
+                                                        <span>Delegated Access Control</span>
+                                                    }
+                                                    {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT &&
+                                                        <span>Service Account Access Control</span>
+                                                    }
+                                                </div>
                                             </div>
-                                        </div>
-                                    </AccordionSummary>
+                                        </AccordionSummary>
                                         <AccordionDetails>
                                             <ScopeRelConfiguration
                                                 tenantId={client.tenantId}
@@ -638,6 +649,46 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 onUpdateStart={() => {
                                                     setShowMutationBackdrop(true);
                                                 }}
+                                            />
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Box>
+                        }
+                        {/* 
+                            Only show this configuration section for service types of clients (baseline FAPI) and 
+                            only to members of the root tenant - for now. 
+                            There is more work to be done in general for an advanced FAPI-compliant server.
+                        */}
+                        {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && client.fapiEnabled === true && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
+                            <Box>
+                                {!isMarkedForDelete &&
+                                    <Accordion>
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id="client-fapi-configuration"
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <PaymentOutlinedIcon />
+                                                <div style={{ marginLeft: "8px" }}>
+                                                    Financial-grade API (FAPI) Security Profile
+                                                </div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <ClientFapiConfigurationComponent 
+                                                clientId={client.clientId}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if (success) {
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);
+                                                }}
+                                                readOnly={false}
                                             />
                                         </AccordionDetails>
                                     </Accordion>

@@ -375,7 +375,17 @@ export const CLIENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 			"pkceenabled": "pkceEnabled",
 			"usertokenttlseconds": "userTokenTTLSeconds",
 			"markfordelete": "markForDelete",
-			"audience": "audience"
+			"audience": "audience",
+            "fapienabled": {
+                name: "fapiEnabled",
+                toModel(columnValue) {
+                    return columnValue || false;
+                },
+                fromModel(modelValue) {
+                    return modelValue || false;
+                },
+            },
+            "fapienabledatms": "fapiEnabledAtMs"
         }
     }
 };
@@ -1449,4 +1459,20 @@ export const USER_VERIFICATION_TOKEN_MODEL:  {[key: string]: cassandra.mapping.M
     }
 };
 
+export const CLIENT_FAPI_CONFIGURATION_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
+    "client_fapi_configuration": {
+        tables: ["client_fapi_configuration", "client_fapi_configuration_by_client_id"],
+        columns: {
+            "clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+            "identifiervalue": "identifierValue",
+            "identifiertype": "identifierType"
+        }
+    }
+    
+}
 

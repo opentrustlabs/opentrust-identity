@@ -57,9 +57,11 @@ import SecretShareEntity from "../entities/secret-share-entity";
 import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-change-state-entity";
 import UserAuthenticationHistoryEntity, { UserAuthenticationHistory } from "../entities/user-authentication-history-entity";
 import FederatedAuthTestEntity from "../entities/federated-auth-test-entity";
+import ClientFapiConfigurationEntity from "../entities/client-fapi-configuration-entity";
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
+
 import { DataSource, DefaultNamingStrategy, NamingStrategyInterface, Repository } from "typeorm";
-import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientScopeRel, Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 
 class OracleUpperNamingStrategy
     extends DefaultNamingStrategy
@@ -122,6 +124,7 @@ const entities = [
     ClientEntity,
     ClientAuthHistoryEntity,
     ClientRedirectUriRelEntity,
+    ClientFapiConfigurationEntity,
     FederatedOIDCProviderTenantRelEntity,
     FederatedOIDCProviderEntity,
     FederatedOIDCProviderDomainRelEntity,
@@ -186,6 +189,7 @@ class RDBDriver {
     changeEventRepository: Repository<ChangeEvent>;
     clientRepository: Repository<Client>;
     clientAuthHistoryRepository: Repository<ClientAuthHistory>;
+    clientFapiConfigurationRepository: Repository<ClientFapiConfiguration>;
     clientRedirectUriRelRepository: Repository<ClientRedirectUriRel>;
     federatedOIDCProviderTenantRelRepository: Repository<FederatedOidcProviderTenantRel>;
     federatedOIDCProviderRepository: Repository<FederatedOidcProvider>;
@@ -787,7 +791,13 @@ class RDBDriver {
         }
         return RDBDriver.instance.federatedAuthTestRepository;
     }
-
+    public async getClientFapiConfigurationRepository(): Promise<Repository<ClientFapiConfiguration>> {
+        if (!RDBDriver.instance.clientFapiConfigurationRepository) {
+            const driver = await RDBDriver.getConnection();
+            RDBDriver.instance.clientFapiConfigurationRepository = driver.getRepository("clientFapiConfiguration");
+        }
+        return RDBDriver.instance.clientFapiConfigurationRepository;
+    }
     
 
 }

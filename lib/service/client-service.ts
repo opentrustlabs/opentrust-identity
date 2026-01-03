@@ -1,11 +1,11 @@
-import { AuthorizationScopeApprovalData, Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ClientUpdateInput, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -112,6 +112,15 @@ class ClientService {
         if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)){
             throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
         }
+        if(client.fapiEnabled === true && (client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT)){
+            throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
+        }
+
+        if(client.fapiEnabled === true){
+            client.oidcEnabled = false;
+            client.pkceEnabled = false;
+            client.fapiEnabledAtMs = Date.now();
+        }
 
         client.clientId = randomUUID().toString();
         const clientSecret = generateRandomToken(24, "hex");
@@ -139,8 +148,9 @@ class ClientService {
         return Promise.resolve(client);
     }
 
-    public async updateClient(client: Client): Promise<Client> {
-        const clientToUpdate: Client | null = await clientDao.getClientById(client.clientId);
+    public async updateClient(clientUpdateInput: ClientUpdateInput): Promise<Client> {
+    //public async updateClient(client: Client): Promise<Client> {
+        const clientToUpdate: Client | null = await clientDao.getClientById(clientUpdateInput.clientId);
         
         if(!clientToUpdate){
             throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
@@ -151,42 +161,49 @@ class ClientService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
-        if(!CLIENT_TYPES.includes(client.clientType)){
+        if(!CLIENT_TYPES.includes(clientUpdateInput.clientType)){
             throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }
-        if(client.oidcEnabled === false && client.pkceEnabled === true){
+        if(clientUpdateInput.oidcEnabled === false && clientUpdateInput.pkceEnabled === true){
             throw new GraphQLError(ERROR_CODES.EC00188.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00188}});
         }
-        if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)){
+        if(clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (clientUpdateInput.oidcEnabled === true || clientUpdateInput.pkceEnabled === true)){
             throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
+        }
+        if(clientToUpdate.fapiEnabled === true && (clientUpdateInput.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT)){
+            throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
         }
 
         // If the client type has changed, then delete the scope values assigned to the client
-        if(clientToUpdate.clientType !== client.clientType){
-            const rels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
+        if(clientToUpdate.clientType !== clientUpdateInput.clientType){
+            const rels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientUpdateInput.clientId);
             for(let i = 0; i < rels.length; i++){
                 scopeDao.removeScopeFromClient(rels[i].tenantId, rels[i].clientId, rels[i].scopeId);
             }
         }
         
-        // tenantId is a write-only-read-only property, no updates regardless of what the client has sent
-        // same for client secret
-        clientToUpdate.clientDescription = client.clientDescription;
-        clientToUpdate.clientName = client.clientName;
-        clientToUpdate.enabled = client.enabled;
-        clientToUpdate.oidcEnabled = client.oidcEnabled;
-        // Only allow the pkce entension when oidc (i.e. SSO) is enabled.
-        clientToUpdate.pkceEnabled = client.oidcEnabled === false ? false : client.pkceEnabled;
-        clientToUpdate.clientTokenTTLSeconds = client.clientTokenTTLSeconds;
-        clientToUpdate.clientType = client.clientType;
-        clientToUpdate.maxRefreshTokenCount = client.maxRefreshTokenCount;
-        clientToUpdate.userTokenTTLSeconds = client.userTokenTTLSeconds;
-        clientToUpdate.audience = client.audience;
+        // tenantId is a write-only-read-only property, no updates regardless of what the client has sent,
+        // same for client secret, fapiEnabled, and fapiEnabledAtMs
+        clientToUpdate.clientDescription = clientUpdateInput.clientDescription;
+        clientToUpdate.clientName = clientUpdateInput.clientName;
+        clientToUpdate.enabled = clientUpdateInput.enabled;
+        clientToUpdate.clientTokenTTLSeconds = clientUpdateInput.clientTokenTTLSeconds;
+        clientToUpdate.maxRefreshTokenCount = clientUpdateInput.maxRefreshTokenCount;
+        clientToUpdate.userTokenTTLSeconds = clientUpdateInput.userTokenTTLSeconds;
+        clientToUpdate.audience = clientUpdateInput.audience;
+
+        // Only allow these updates to the client when the FAPI flag is not true
+        if(clientToUpdate.fapiEnabled !== true){
+            clientToUpdate.oidcEnabled = clientUpdateInput.oidcEnabled;
+            // Only allow the pkce entension when oidc (i.e. SSO) is enabled.
+            clientToUpdate.pkceEnabled = clientUpdateInput.oidcEnabled === false ? false : clientUpdateInput.pkceEnabled;            
+            clientToUpdate.clientType = clientUpdateInput.clientType;
+        }
 
         await clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
         changeEventDao.addChangeEvent({
-            objectId: client.clientId,
+            objectId: clientUpdateInput.clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
             changeEventId: randomUUID().toString(),
@@ -324,6 +341,80 @@ class ClientService {
         approvalData.requestedScope = scopes;
         approvalData.requiresUserApproval = client.clientType === CLIENT_TYPE_DEVICE || client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS
         return approvalData;
+    }
+
+    public async getClientFapiConfiguration(clientId: string): Promise<ClientFapiConfiguration | null>{
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(!client){
+            return null;
+        }
+
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+
+        const config = await clientDao.getClientFapiConfigurationBy("clientid", clientId);
+        return config;
+    }
+    
+    public async setClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration | null>{
+
+        // We are ONLY support one type of identifier type for the client certificate, and that is SAN:URI, which
+        // is the most common one. Once a identifier type is selected, it must be used universally throughout the
+        // application - that is, every client must have exactly one entry of that type in their list of SAN values.
+        // We cannot mix and match SAN types based on client, so that one client could use SAN:DNS and other could use
+        // SAN:URI, another could use otherName, and another could use a thumbprint. But future work may include 
+        // support for a system-wide setting of identifier type, so keep this configurable for now, but also
+        // hard-code it to the value that the system supports
+        fapiConfigurationInput.identifierType = FAPI_ID_TYPE_SAN_URI;
+
+        const client: Client | null = await clientDao.getClientById(fapiConfigurationInput.clientId);
+        if(!client){
+            return null;
+        }
+        // At the moment, we are only implementing baseline FAPI (client_credentials grant, limited to service accounts)
+        if(client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT){
+            throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
+        }
+
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }        
+        
+        const configByIdentifierValue = await clientDao.getClientFapiConfigurationBy("identifiervalue", fapiConfigurationInput.identifierValue);
+        // The user can only update the identifier value, so if a record already exists with that identifier value
+        // we need to return an error.
+        if(configByIdentifierValue){
+            throw new GraphQLError(ERROR_CODES.EC00230.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00230}});
+        }
+        
+        const configByClientId = await clientDao.getClientFapiConfigurationBy("clientid", fapiConfigurationInput.clientId);
+        // If we cannot find a value by either client id or identifier value, then it is safe to insert a new record
+        if(!configByClientId){
+            const config = await clientDao.createClientFapiConfiguration(fapiConfigurationInput);
+            return config;
+        }
+        else{
+            // We need to delete the old record and insert a new one
+            await clientDao.deleteClientFapiConfiguration(client.clientId);
+            const config = await clientDao.createClientFapiConfiguration(fapiConfigurationInput);
+            return config;
+        }        
+    }
+
+    
+    public async deleteClientFapiConfiguration(clientId: string): Promise<void>{
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(!client){
+            return;
+        }
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+        await clientDao.deleteClientFapiConfiguration(clientId);
     }
     
 }

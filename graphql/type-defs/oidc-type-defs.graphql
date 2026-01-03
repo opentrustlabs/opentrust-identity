@@ -24,6 +24,7 @@ type Query {
     ## Clients
     getClientById(clientId: String!): Client
     getRedirectURIs(clientId: String!): [String!]!
+    getClientFapiConfiguration(clientId: String!): ClientFapiConfiguration
 
     ## Users
     getUsers(tenantId: String): [User!]!
@@ -138,6 +139,8 @@ type Mutation {
     removeRedirectURI(clientId: String!, uri: String!): String
     assignAuthenticationGroupToClient(authenticationGroupId: String!, clientId: String!): AuthenticationGroupClientRel
     removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
+    setClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput!): ClientFapiConfiguration
+    deleteClientFapiConfiguration(clientId: String!): String
 
     ## Users
     createUser(tenantId: String!, userInput: UserCreateInput!): User!    
@@ -444,6 +447,8 @@ type Client {
     maxRefreshTokenCount: Int
     markForDelete: Boolean!
     audience: String
+    fapiEnabled: Boolean!
+    fapiEnabledAtMs: Float
 }
 
 
@@ -1249,6 +1254,11 @@ type FederatedAuthTest {
     expiresAtMs: Float!
 }
 
+type ClientFapiConfiguration {
+    clientId: String!
+    identifierValue: String!
+    identifierType: String!
+}
 
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
@@ -1451,6 +1461,7 @@ input ClientCreateInput {
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
     audience: String
+    fapiEnabled: Boolean!
 }
 
 input ClientUpdateInput {
@@ -1710,4 +1721,10 @@ input SystemInitializationInput {
     systemSettingsInput: SystemSettingsUpdateInput!
     captchaConfigInput: CaptchaConfigInput
     rootFederatedOIDCProviderInput: FederatedOIDCProviderCreateInput
+}
+
+input ClientFapiConfigurationInput {
+    clientId: String!
+    identifierValue: String!
+    identifierType: String!
 }

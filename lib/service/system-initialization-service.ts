@@ -234,7 +234,8 @@ class SystemInitializationService {
             clientDescription: systemInitializationInput.rootClientInput.clientDescription,
             clientTokenTTLSeconds: systemInitializationInput.rootClientInput.clientTokenTTLSeconds,
             maxRefreshTokenCount: systemInitializationInput.rootClientInput.maxRefreshTokenCount,
-            userTokenTTLSeconds: systemInitializationInput.rootClientInput.userTokenTTLSeconds
+            userTokenTTLSeconds: systemInitializationInput.rootClientInput.userTokenTTLSeconds,
+            fapiEnabled: false
         };
         const clientSecret = generateRandomToken(24, "hex");
         const encryptedClientSecret = await kms.encrypt(clientSecret);

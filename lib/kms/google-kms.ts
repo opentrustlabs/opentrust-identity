@@ -15,6 +15,11 @@ const {
 const client = new KeyManagementServiceClient();
 const keyName = client.cryptoKeyPath(GOOGLE_KMS_PROJECT_ID || "", GOOGLE_KMS_LOCATION_ID || "", GOOGLE_KMS_KEY_RING_ID || "", GOOGLE_KMS_KEY_ID || "");
 const maxLength = MAX_PLAIN_TEXT_LENGTH ? parseInt(MAX_PLAIN_TEXT_LENGTH) : MAX_ENCRYPTION_LENGTH;
+
+// TODO
+// Replace the fast-crc32c library with one that is compatable with modern ES modules
+// Just disable lint checks for now.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const crc32c = require("fast-crc32c");
 class GoogleKms extends Kms {
 

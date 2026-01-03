@@ -165,16 +165,18 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
                             Optional - Configure your enterprise OIDC provider if you want to use SSO to access the IAM tool. 
                             This will require a test to make sure SSO works. Make sure that the federated OIDC provider supports 
                             the following (which can be found from their discovery URI)
-                        </div>                                                             
-                        <pre>
-                            <ol>
-                                <li>userinfo_endpoint</li>
-                                <li>response_type=code</li>
-                                <li>response_mode=query</li> 
-                                <li>scopes_supported of openid, profile, email</li>                                           
-                                <li>claims_supported of email, family_name, given_name</li>
-                            </ol>
-                        </pre>                          
+                        </div>
+                        <div style={{marginLeft: "24px"}}>
+                            <pre>
+                                <ol>
+                                    <li>userinfo_endpoint</li>
+                                    <li>response_type=code</li>
+                                    <li>response_mode=query</li> 
+                                    <li>scopes_supported of openid, profile, email</li>                                           
+                                    <li>claims_supported of email, family_name, given_name</li>
+                                </ol>
+                            </pre>
+                        </div>
                     </Grid2>
                 </Grid2>
                 <Grid2 marginBottom={"8px"}>

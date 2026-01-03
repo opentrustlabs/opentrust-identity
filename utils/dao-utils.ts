@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
-import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync, createHmac } from "node:crypto";
+import { randomBytes, hash, pbkdf2Sync, scryptSync, createHmac } from "node:crypto";
 import bcrypt from "bcrypt";
 import { UserCredential } from "@/graphql/generated/graphql-types";
 import { PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS } from "./consts";
@@ -67,7 +67,7 @@ export function generateCodeVerifierAndChallenge(): {verifier: string, challenge
  * @param encoding optional defaults to base64url
  * @returns 
  */
-export function generateHash(data: string, hashAlgorithm?: HashAlgorithm, encoding?: TokenEncodingType): string {
+export function generateHash(data: string | Buffer, hashAlgorithm?: HashAlgorithm, encoding?: TokenEncodingType): string {
     if(!encoding){
         encoding = "base64url";
     }

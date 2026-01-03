@@ -1,5 +1,5 @@
 import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData } from "@/graphql/generated/graphql-types";
-import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
+import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
@@ -35,7 +35,8 @@ const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 
 const {
-    AUTH_DOMAIN
+    AUTH_DOMAIN,
+    JWT_DEFAULT_AUDIENCE
 } = process.env;
 
 class JwtServiceUtils {
@@ -465,10 +466,11 @@ class JwtServiceUtils {
         if(idToken === null){
             return Promise.resolve(null);
         }
-        let accessToken: string | null = null;
-        if(client.audience !== null && client.audience !== ""){
-            principal.aud = client.audience;
-            accessToken = await this.signJwt(principal);
+        
+        principal.aud = client.audience || JWT_DEFAULT_AUDIENCE;
+        const accessToken = await this.signJwt(principal);
+        if(accessToken === null){
+            return Promise.resolve(null);
         }
         
         let generateRefreshToken: boolean = false;
@@ -480,7 +482,7 @@ class JwtServiceUtils {
         }
 
         const oidcTokenResponse: OIDCTokenResponse = {
-            access_token: accessToken !== null ? accessToken : idToken,
+            access_token: accessToken,
             token_type: "Bearer",
             refresh_token: generateRefreshToken ? generateRandomToken(32) : null,
             expires_in: client.userTokenTTLSeconds ? Math.floor( now / 1000 ) + client.userTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
@@ -521,13 +523,13 @@ class JwtServiceUtils {
      * @param clientId  
      * @param tenantId 
      */
-    public async signClientJwt(client: Client, tenant: Tenant): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
+    public async signClientJwt(client: Client, tenant: Tenant, pemEncodedClientCert?: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
 
         const now = Date.now();
         const principal: JWTPayload = {
             sub: client.clientId,
             iss: `${AUTH_DOMAIN}/api/${tenant.tenantId}`,
-            aud: client.clientId,
+            aud: client.audience || JWT_DEFAULT_AUDIENCE,
             iat: Math.floor(now / 1000),
             exp: client.clientTokenTTLSeconds ? Math.floor( now / 1000 ) + client.clientTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
             at_hash: "",
@@ -553,6 +555,15 @@ class JwtServiceUtils {
             client_type: client.clientType,
             principal_type: PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN
         };
+
+        if(pemEncodedClientCert){
+            const derEncoded: Buffer = Buffer.from(
+                pemEncodedClientCert.replace(/-----BEGIN CERTIFICATE-----/, "").replace(/-----END CERTIFICATE-----/, "").replace(/\s+/g, ""),
+                "base64"
+            );
+            const thumbPrint = generateHash(derEncoded, "sha256", "base64url");
+            principal["cnf"] = {"x5t#S256": thumbPrint}
+        }
         
         const s: string | null = await this.signJwt(principal);
         if(s === null){
@@ -564,7 +575,7 @@ class JwtServiceUtils {
             token_type: "Bearer",
             refresh_token: null,
             expires_in: client.clientTokenTTLSeconds ? Math.floor( now / 1000 ) + client.clientTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
-            id_token: s
+            id_token: ""
         }
         
         return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
@@ -705,7 +716,7 @@ class JwtServiceUtils {
             if(!keyId){
                 return Promise.resolve(null);
             }
-            if(!protectedHeader.alg || protectedHeader.alg !== "RS256"){
+            if(!protectedHeader.alg || protectedHeader.alg !== "PS256"){
                 return Promise.resolve(null);
             }
             const payload: JWTPayload = decodeJwt(jwt);
@@ -758,7 +769,7 @@ class JwtServiceUtils {
     public async signJwtWithKey(principal: JWTPayload, privateKeyObject: KeyObject, keyId: string): Promise<string> {
         const s: string = await new SignJWT(principal)
             .setProtectedHeader({
-                alg: "RS256",
+                alg: "PS256",
                 kid: keyId
             })
             .sign(privateKeyObject);

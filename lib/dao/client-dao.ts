@@ -1,11 +1,13 @@
-import { Client, ClientAuthHistory } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput } from "@/graphql/generated/graphql-types";
 
-
+export type ClientFapiConfigurationLookupType = "clientid" | "identifiervalue";
 abstract class ClientDao {
 
         abstract getClients(tenantId?: string, clientIds?: Array<string>): Promise<Array<Client>>;
     
         abstract getClientById(clientId: string): Promise<Client | null>;
+
+        abstract getClientByFapiIdentifier(identifierValue: string): Promise<Client | null>;
     
         abstract createClient(client: Client): Promise<Client>;
     
@@ -26,6 +28,14 @@ abstract class ClientDao {
         abstract deleteClientAuthHistory(jti: string): Promise<void>;
 
         abstract deleteExpiredData(): Promise<void>;
+
+        abstract getClientFapiConfigurationBy(clientFapiConfigurationLookupType: ClientFapiConfigurationLookupType, value: string): Promise<ClientFapiConfiguration | null>;
+
+        abstract createClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration>;
+
+        abstract updateClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration>;
+
+        abstract deleteClientFapiConfiguration(clientId: string): Promise<void>;
         
 }
 

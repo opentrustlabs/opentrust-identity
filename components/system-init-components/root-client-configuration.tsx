@@ -30,7 +30,8 @@ const RootClientConfiguration: React.FC<SystemInitializationConfigProps> = ({
         oidcEnabled: false,
         pkceEnabled: false,
         userTokenTTLSeconds: DEFAULT_END_USER_TOKEN_TTL_SECONDS,
-        audience: null
+        audience: null,
+        fapiEnabled: false
     };
     const [clientInput, setClientInput] = React.useState<ClientCreateInput>(initInput);
     

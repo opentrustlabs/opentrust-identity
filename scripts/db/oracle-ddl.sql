@@ -105,6 +105,8 @@ create TABLE client (
     maxrefreshtokencount INT,
     markfordelete NUMBER(1) NOT NULL,
     audience VARCHAR2(256),
+    fapienabled NUMBER(1) NOT NULL,
+    fapienabledatms NUMBER,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -725,4 +727,12 @@ create TABLE federated_auth_test (
 	redirecturi           VARCHAR2(128) NOT NULL,
     clientauthtype        VARCHAR2(32) NOT NULL,
 	expiresatms           NUMBER NOT NULL
+);
+
+
+CREATE TABLE client_fapi_configuration (
+    identifiervalue    VARCHAR2(256) PRIMARY KEY,
+    clientid           VARCHAR2(64) NOT NULL,
+    identifiertype     VARCHAR2(32) NOT NULL,
+    FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
