@@ -1,7 +1,7 @@
 "use client";
 import { SYSTEM_INITIALIZATION_READY_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
-import { Alert, Button, Grid2, Stack, Typography } from "@mui/material";
+import { Alert, Button, Grid2, Paper, Stack, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import ErrorComponent from "../error/error-component";
 import DataLoading from "../layout/data-loading";
@@ -76,7 +76,8 @@ const SystemInit: React.FC = () => {
             oidcEnabled: false,
             pkceEnabled: false,
             tenantId: "",
-            userTokenTTLSeconds: undefined
+            userTokenTTLSeconds: undefined,
+            fapiEnabled: false
         },
         rootTenantInput: {
             allowAnonymousUsers: false,
@@ -175,74 +176,76 @@ const SystemInit: React.FC = () => {
                 }
             </Grid2>
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_SYSTEM_READY_CHECK &&
-                <Typography component="div">
-                    {data && data.systemInitializationReady && data.systemInitializationReady.systemInitializationReadyErrors && data.systemInitializationReady.systemInitializationReadyErrors.length > 0 &&
-                        <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
-                            <Alert sx={{width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="error">
-                                <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
-                                    The following errors were encountered during the check for initialization readiness:
-                                </Grid2>
-                                {data.systemInitializationReady.systemInitializationReadyErrors.map(
-                                    (errorDetail: ErrorDetail, idx: number) => (
-                                        <Grid2 size={12} container marginBottom={"8px"} key={errorDetail.errorCode}>
-                                            <Grid2 fontWeight={"bold"} size={0.7}>{idx + 1}.</Grid2>
-                                            <Grid2 size={11.3}> {errorDetail.errorMessage}</Grid2>
-                                        </Grid2>
-                                    )
-                                )}
-                                <Grid2 fontWeight={"bold"} size={12}>
-                                    Be advised that system initialization cannot proceed until the errors are corrected.
-                                </Grid2>
-                            </Alert>
-                        </Grid2>
-                    }
+                <Paper elevation={1} sx={{padding: "8px"}}>
+                    <Typography component="div">
+                        {data && data.systemInitializationReady && data.systemInitializationReady.systemInitializationReadyErrors && data.systemInitializationReady.systemInitializationReadyErrors.length > 0 &&
+                            <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                                <Alert sx={{width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="error">
+                                    <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
+                                        The following errors were encountered during the check for initialization readiness:
+                                    </Grid2>
+                                    {data.systemInitializationReady.systemInitializationReadyErrors.map(
+                                        (errorDetail: ErrorDetail, idx: number) => (
+                                            <Grid2 size={12} container marginBottom={"8px"} key={errorDetail.errorCode}>
+                                                <Grid2 fontWeight={"bold"} size={0.7}>{idx + 1}.</Grid2>
+                                                <Grid2 size={11.3}> {errorDetail.errorMessage}</Grid2>
+                                            </Grid2>
+                                        )
+                                    )}
+                                    <Grid2 fontWeight={"bold"} size={12}>
+                                        Be advised that system initialization cannot proceed until the errors are corrected.
+                                    </Grid2>
+                                </Alert>
+                            </Grid2>
+                        }
 
-                    {data && data.systemInitializationReady && data.systemInitializationReady.systemInitializationWarnings && data.systemInitializationReady.systemInitializationWarnings.length > 0 &&
-                        <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
-                            <Alert sx={{ width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="warning">
-                                <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
-                                    The following warnings were encountered during the check for initialization readiness:
-                                </Grid2>
-                                {data.systemInitializationReady.systemInitializationWarnings.map(
-                                    (errorDetail: ErrorDetail, idx: number) => (
-                                        <Grid2 size={12} container marginBottom={"8px"} key={errorDetail.errorCode}>
-                                            <Grid2 fontWeight={"bold"} size={0.7}>{idx + 1}.</Grid2>
-                                            <Grid2 size={11.3}> {errorDetail.errorMessage}</Grid2>
-                                        </Grid2>
-                                    )
-                                )}
-                                <Grid2 fontWeight={"bold"} size={12}>
-                                    Be advised that certain parts of the application may have limited functionality.
-                                </Grid2>
-                            </Alert>
-                        </Grid2>
-                    }
+                        {data && data.systemInitializationReady && data.systemInitializationReady.systemInitializationWarnings && data.systemInitializationReady.systemInitializationWarnings.length > 0 &&
+                            <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                                <Alert sx={{ width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="warning">
+                                    <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
+                                        The following warnings were encountered during the check for initialization readiness:
+                                    </Grid2>
+                                    {data.systemInitializationReady.systemInitializationWarnings.map(
+                                        (errorDetail: ErrorDetail, idx: number) => (
+                                            <Grid2 size={12} container marginBottom={"8px"} key={errorDetail.errorCode}>
+                                                <Grid2 fontWeight={"bold"} size={0.7}>{idx + 1}.</Grid2>
+                                                <Grid2 size={11.3}> {errorDetail.errorMessage}</Grid2>
+                                            </Grid2>
+                                        )
+                                    )}
+                                    <Grid2 fontWeight={"bold"} size={12}>
+                                        Be advised that certain parts of the application may have limited functionality.
+                                    </Grid2>
+                                </Alert>
+                            </Grid2>
+                        }
 
-                    {!hasReadinessError && !hasReadinessWarning &&
-                        <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
-                            <Alert sx={{ width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="success">
-                                <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
-                                    All system initialization checks passed.
-                                </Grid2>
+                        {!hasReadinessError && !hasReadinessWarning &&
+                            <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                                <Alert sx={{ width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="success">
+                                    <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
+                                        All system initialization checks passed.
+                                    </Grid2>
 
-                            </Alert>
-                        </Grid2>
-                    }
-                    {!hasReadinessError &&
-                        <Stack
-                            direction={"row-reverse"}
-                            sx={{ width: "100%" }}
-                        >
-                            <Button
-                                onClick={() => {
-                                    setInitializationStateIndex(initializationStateIndex + 1);
-                                }}
+                                </Alert>
+                            </Grid2>
+                        }
+                        {!hasReadinessError &&
+                            <Stack
+                                direction={"row-reverse"}
+                                sx={{ width: "100%" }}
                             >
-                                Next
-                            </Button>
-                        </Stack>
-                    }
-                </Typography>
+                                <Button
+                                    onClick={() => {
+                                        setInitializationStateIndex(initializationStateIndex + 1);
+                                    }}
+                                >
+                                    Next
+                                </Button>
+                            </Stack>
+                        }
+                    </Typography>
+                </Paper>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_AUTHENTICATION &&
                 <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
