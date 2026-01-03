@@ -6,12 +6,64 @@ import { GRANT_TYPES_SUPPORTED } from "../../../../utils/consts";
 import { DaoFactory } from "../../../../lib/data-sources/dao-factory";
 
 const {
-    AUTH_DOMAIN
+    AUTH_DOMAIN,
+    FAPI_MTLS_AUTH_DOMAIN
 } = process.env;
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 
+const TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED = FAPI_MTLS_AUTH_DOMAIN ?
+    [
+        "client_secret_basic",
+        "client_secret_post",
+        "client_secret_jwt",
+        "tls_client_auth"
+    ] 
+        :
+    [
+        "client_secret_basic",
+        "client_secret_post",
+        "client_secret_jwt"    
+    ];
+
+const CLAIMS_SUPPORTED = FAPI_MTLS_AUTH_DOMAIN ?
+    [
+        "sub",
+        "iss",
+        "aud",
+        "iat",
+        "exp",
+        "name",
+        "given_name",
+        "family_name",
+        "middle_name",
+        "phone_number",
+        "address",
+        "updated_at",
+        "email",
+        "email_verified",
+        "country_code",
+        "cnf"
+    ] 
+        :
+    [
+        "sub",
+        "iss",
+        "aud",
+        "iat",
+        "exp",
+        "name",
+        "given_name",
+        "family_name",
+        "middle_name",
+        "phone_number",
+        "address",
+        "updated_at",
+        "email",
+        "email_verified",
+        "country_code"
+    ];
 
 export default async function handler(
   req: NextApiRequest,
@@ -53,6 +105,8 @@ export default async function handler(
     }
     else {
         
+        
+
         res.status(200).json({
             issuer: `${AUTH_DOMAIN}/api/${tenantId}`,
             authorization_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/authorize`,
@@ -60,12 +114,7 @@ export default async function handler(
             revocation_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/revoke`,
             userinfo_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`,
             jwks_uri: `${AUTH_DOMAIN}/api/${tenantId}/oidc/keys`,
-            token_endpoint_auth_methods_supported: [
-                "client_secret_basic",
-                "client_secret_post",
-                "client_secret_jwt",
-                "tls_client_auth"
-            ],
+            token_endpoint_auth_methods_supported: TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED,
             response_modes_supported: [
                 "query",
                 "fragment"
@@ -73,24 +122,7 @@ export default async function handler(
             token_endpoint_auth_signing_alg_values_supported: [
                 "PS256"
             ],
-            claims_supported: [
-                "sub",
-                "iss",
-                "aud",
-                "iat",
-                "exp",
-                "name",
-                "given_name",
-                "family_name",
-                "middle_name",
-                "phone_number",
-                "address",
-                "updated_at",
-                "email",
-                "email_verified",
-                "country_code",
-                "cnf"
-            ],
+            claims_supported: CLAIMS_SUPPORTED,
             claims_parameter_supported: false,
             scopes_supported: [
                 "openid",
@@ -116,7 +148,13 @@ export default async function handler(
             grant_types_supported: GRANT_TYPES_SUPPORTED,
             code_challenge_methods_supported: [
                 "S256"
-            ]
+            ],
+            tls_client_certificate_bound_access_tokens: FAPI_MTLS_AUTH_DOMAIN ? true : undefined,
+            mtls_endpoint_aliases: FAPI_MTLS_AUTH_DOMAIN ? {
+                token_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/token`,
+                // revocation_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/revoke`,
+                // userinfo_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`
+            } : undefined
 
         });
     }
