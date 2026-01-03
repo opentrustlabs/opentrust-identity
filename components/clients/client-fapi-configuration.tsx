@@ -2,7 +2,7 @@
 import { ClientFapiConfigurationInput } from "@/graphql/generated/graphql-types";
 import { DELETE_CLIENT_FAPI_CONFIGURATION_MUTATION, SET_CLIENT_FAPI_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { CLIENT_FAPI_CONFIGURATION_QUERY } from "@/graphql/queries/oidc-queries";
-import { FAPI_ID_TYPE_SAN_URI, FAPI_ID_TYPES } from "@/utils/consts";
+import { FAPI_ID_TYPE_SAN_URI } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -10,7 +10,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Grid2 from "@mui/material/Grid2";
-import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";

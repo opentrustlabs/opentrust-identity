@@ -155,7 +155,7 @@ class AzureKms extends Kms {
                 );
             }
             catch(error: unknown){
-                let err: Error = error as Error;
+                const err: Error = error as Error;
                 logWithDetails("error", `Cannot decrypt key for Azure KMS: ${err.message}`, {err});
                 return null;
             }

@@ -52,7 +52,7 @@ import CassandraTenantDao from "../dao/impl/cassandra/cassandra-tenant-dao";
 import CassandraChangeEventDao from "../dao/impl/cassandra/cassandra-change-event.dao";
 import CassandraSchedulerDao from "../dao/impl/cassandra/cassandra-scheduler-dao";
 import NoOpKms from "../kms/no-op-kms";
-import CustomKms from "../kms/custom-kms";
+// import CustomKms from "../kms/custom-kms";
 // import GoogleKms from "../kms/google-kms";
 // import AWSKms from "../kms/aws-kms";
 // import AzureKms from "../kms/azure-kms";
