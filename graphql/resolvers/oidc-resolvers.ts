@@ -393,7 +393,7 @@ const resolvers: Resolvers = {
                 scopeId: "",
                 scopeName: scopeInput.scopeName,
                 scopeDescription: scopeInput.scopeDescription,
-                scopeUse: scopeInput.scopeUse, //SCOPE_USE_APPLICATION_MANAGEMENT,
+                scopeUse: scopeInput.scopeUse,
                 markForDelete: false
             };
             await scopeService.createScope(scope);

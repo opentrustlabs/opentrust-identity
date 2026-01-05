@@ -261,6 +261,8 @@ class OpenSearchDao implements SearchDao {
             sortObj[`${relSearchInput.sortField}.raw`] = { order: relSearchInput.sortDirection };
         }
 
+        
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             from: (relSearchInput.page - 1) * relSearchInput.perPage,
