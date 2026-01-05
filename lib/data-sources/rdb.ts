@@ -46,6 +46,7 @@ import UserAuthenticationStateEntity from "../entities/user-authentication-state
 import UserRegistrationStateEntity from "../entities/user-registration-state-entity";
 import TenantLoginFailurePolicyEntity from "../entities/tenant-login-failure-policy-entity";
 import UserFailedLoginEntity from "../entities/user-failed-login-entity";
+import UserFailedPasswordResetAttemptsEntity from "../entities/user-failed-password-reset-attempts-entity";
 import SchedulerLockEntity from "../entities/scheduler-lock-entity";
 import CaptchaConfigEntity from "../entities/captcha-config-entity";
 import UserTermsAndConditionsAcceptedEntity from "../entities/user-terms-and-conditions-accepted-entity";
@@ -61,7 +62,7 @@ import ClientFapiConfigurationEntity from "../entities/client-fapi-configuration
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
 
 import { DataSource, DefaultNamingStrategy, NamingStrategyInterface, Repository } from "typeorm";
-import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 
 class OracleUpperNamingStrategy
     extends DefaultNamingStrategy
@@ -132,6 +133,7 @@ const entities = [
     UserCredentialEntity,
     UserFido2ChallengeEntity,
     UserFailedLoginEntity,
+    UserFailedPasswordResetAttemptsEntity,
     UserVerificationTokenEntity,
     ProhibitedPasswordEntity,
     UserTenantRelEntity,
@@ -198,6 +200,7 @@ class RDBDriver {
     userCredentialRepository: Repository<UserCredential>;
     userFido2ChallengeRepository: Repository<UserFido2Challenge>;
     userFailedLoginRepository: Repository<UserFailedLogin>;
+    userFailedPasswordAttemptsRepository: Repository<UserFailedPasswordResetAttempts>;
     userVerificationTokenRepository: Repository<UserVerificationToken>;
     prohibitedPasswordRepository: Repository<ProhibitedPassword>;
     userTenantRelRepository: Repository<UserTenantRel>;
@@ -580,6 +583,13 @@ class RDBDriver {
             RDBDriver.instance.userFailedLoginRepository = driver.getRepository("userFailedLogin");
         }
         return RDBDriver.instance.userFailedLoginRepository;
+    }
+    public async getUserFailedPasswordAttemptsRepository(): Promise<Repository<UserFailedPasswordResetAttempts>> {
+        if(!RDBDriver.instance.userFailedPasswordAttemptsRepository){
+            const driver = await RDBDriver.getConnection();
+            RDBDriver.instance.userFailedPasswordAttemptsRepository = driver.getRepository("userFailedPasswordResetAttempts")
+        }
+        return RDBDriver.instance.userFailedPasswordAttemptsRepository;
     }
     public async getUserVerificationTokenRepository(): Promise<Repository<UserVerificationToken>> {
         if (!RDBDriver.instance.userVerificationTokenRepository) {

@@ -64,7 +64,8 @@ import {
     USER_VERIFICATION_TOKEN_MODEL,
     USERS_BY_FEDERATED_OIDC_ID_MODEL,
     USERS_BY_EMAIL_MODEL,
-    CLIENT_FAPI_CONFIGURATION_MODEL
+    CLIENT_FAPI_CONFIGURATION_MODEL,
+    USER_FAILED_PASSWORD_RESET_ATTEMPTS_MODEL
 } from "../cassandra-mappings/mappings";
 import { logWithDetails } from "../logging/logger";
 
@@ -168,6 +169,7 @@ class CassandraDriver {
                         ...USERS_BY_FEDERATED_OIDC_ID_MODEL,
                         ...USERS_BY_PHONE_NUMBER_MODEL,
                         ...USER_FAILED_LOGIN_MODEL,
+                        ...USER_FAILED_PASSWORD_RESET_ATTEMPTS_MODEL,
                         ...USER_FIDO2_CHALLENGE_MODEL,
                         ...USER_FIDO2_COUNTER_REL_MODEL,
                         ...USER_MFA_REL_MODEL,

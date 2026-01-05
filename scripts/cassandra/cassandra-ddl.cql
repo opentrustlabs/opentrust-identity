@@ -800,6 +800,12 @@ create TABLE user_failed_login (
 )
 WITH CLUSTERING ORDER BY (failureatms DESC);
 
+create TABLE user_failed_password_reset_attempts (
+    userid UUID,
+    failurecount INT,
+    PRIMARY KEY (userid)
+);
+
 
 create TABLE user_verification_token (
     uvtoken TEXT PRIMARY KEY,

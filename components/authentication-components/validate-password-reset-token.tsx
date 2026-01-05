@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import { useMutation } from "@apollo/client";
 import { AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN } from "@/graphql/mutations/oidc-mutations";
 import { AuthenticationComponentsProps } from "./login";
-import { UserAuthenticationStateResponse } from "@/graphql/generated/graphql-types";
+import { AuthenticationState, UserAuthenticationStateResponse } from "@/graphql/generated/graphql-types";
 import { useIntl } from 'react-intl';
 
 
@@ -23,11 +23,15 @@ const ValidatePasswordResetToken: React.FC<AuthenticationComponentsProps> = ({
 
     // STATE VARIABLES
     const [verificationCode, setVerificationCode] = React.useState<string>("");
+    const [verificationCodeExpired, setVerificationCodeExpired] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
     const [verifyPasswordResetToken] = useMutation(AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN, {
         onCompleted(data) {
             const response: UserAuthenticationStateResponse = data.authenticateValidatePasswordResetToken as UserAuthenticationStateResponse;
+            if(response.userAuthenticationState.authenticationState === AuthenticationState.Expired){
+                setVerificationCodeExpired(true);
+            }
             onUpdateEnd(response, null)
         },
         onError(error) {
@@ -67,7 +71,7 @@ const ValidatePasswordResetToken: React.FC<AuthenticationComponentsProps> = ({
                             }
                         });
                     }}
-                    disabled={verificationCode === null || verificationCode === ""}
+                    disabled={verificationCodeExpired === true || verificationCode === null || verificationCode === ""}
                 >
                     {intl.formatMessage({id: "CONFIRM"})}
                 </Button>

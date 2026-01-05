@@ -197,7 +197,11 @@ const Login: React.FC<LoginProps>= ({
             }
         }
         else {
-            if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error) {
+
+            if (
+                authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error || 
+                authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Expired
+            ) {
                 const id: string = authnStateResponse.authenticationError ? authnStateResponse.authenticationError.errorKey : ERROR_CODES.DEFAULT.errorKey;
                 setErrorMessage(
                     intl.formatMessage(
@@ -245,7 +249,7 @@ const Login: React.FC<LoginProps>= ({
                 }
                 if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterEmail){                    
                     if(authnStateResponse.userAuthenticationState.tenantId.length > 0 && authnStateResponse && selectedTenant === null){
-                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);                        
+                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);
                     }
                 }
                 if (
@@ -262,7 +266,8 @@ const Login: React.FC<LoginProps>= ({
                 }
                 else{
                     if(selectedTenant === null && authnStateResponse.userAuthenticationState.tenantId){
-                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);                        
+                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);
+                        //router.push(`${location.href}&${QUERY_PARAM_TENANT_ID}=${authnStateResponse.userAuthenticationState.tenantId}`);
                     }
                 }
             }
