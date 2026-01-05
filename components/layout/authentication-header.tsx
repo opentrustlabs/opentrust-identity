@@ -41,7 +41,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                     justifyItems={"center"}
                     alignItems={"center"}                    
                 >
-                    {tenantMetaData.tenantLookAndFeel?.authenticationlogo &&
+                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.authenticationlogo &&
                         <div style={{verticalAlign: "center"}}>
                             <img 
                                 alt="tenant logo"
@@ -51,7 +51,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                             </img>
                         </div>
                     }
-                    {tenantMetaData.tenantLookAndFeel?.authenticationlogouri &&
+                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.authenticationlogouri &&
                         <div style={{verticalAlign: "center"}}>
                             <img 
                                 alt="tenant logo"
@@ -61,10 +61,10 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                             </img>
                         </div>
                     }
-                    {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
+                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
                     }
-                    {!tenantMetaData.tenantLookAndFeel?.authenticationheadertext && isAuthenticateToPortal &&
+                    {isAuthenticateToPortal &&
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>OpenTrust Identity</div>                        
                     }
                 </Stack>

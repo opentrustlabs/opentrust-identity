@@ -5,7 +5,7 @@ import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogConten
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
-import { useMutation, useQuery } from "@apollo/client";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, Scope } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
@@ -28,7 +28,7 @@ import UserCodeInput from "./user-code";
 import { ERROR_CODES } from "@/lib/models/error";
 import { useInternationalizationContext } from "../contexts/internationalization-context";
 import SelectLanguage from "./select-language";
-import { GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY } from "@/graphql/queries/oidc-queries";
+import { GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY, TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import LanguageIcon from '@mui/icons-material/Language';
 import { useIntl } from 'react-intl';
 import { ValidateEmailOnAuthentication } from "./validate-email";
@@ -112,6 +112,14 @@ const Login: React.FC<LoginProps>= ({
     const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
     // GRAPHQL FUNCTIONS
+    const [ tenantMetadataLazyQuery ] = useLazyQuery(TENANT_META_DATA_QUERY, {               
+        onCompleted(data) {            
+            if(data.getTenantMetaData !== null){             
+                tenantBean.setTenantMetaData(data.getTenantMetaData);             
+            }    
+        }
+    });
+
     const {} = useQuery(GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY, {
         variables: {
             preAuthToken: preAuthToken
@@ -187,7 +195,7 @@ const Login: React.FC<LoginProps>= ({
     });
 
     // HANDLER FUNCTIONS
-    const handleUserAuthenticationResponse = (authnStateResponse: UserAuthenticationStateResponse | null, errorMessage: string | null) => {
+    const handleUserAuthenticationResponse = async (authnStateResponse: UserAuthenticationStateResponse | null, errorMessage: string | null) => {
         if (authnStateResponse === null) {
             if (errorMessage === null) {
                 setErrorMessage(intl.formatMessage({id: "ERROR_DEFAULT_ERROR_MESSAGE"}));
@@ -267,6 +275,11 @@ const Login: React.FC<LoginProps>= ({
                 else{
                     if(selectedTenant === null && authnStateResponse.userAuthenticationState.tenantId){
                         setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);
+                        await tenantMetadataLazyQuery({
+                            variables: {
+                                tenantId: authnStateResponse.userAuthenticationState.tenantId
+                            }
+                        });                        
                         //router.push(`${location.href}&${QUERY_PARAM_TENANT_ID}=${authnStateResponse.userAuthenticationState.tenantId}`);
                     }
                 }
