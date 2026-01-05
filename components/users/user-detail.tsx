@@ -3,7 +3,7 @@ import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTen
 import React, { useContext, useRef } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { DEFAULT_BACKGROUND_COLOR, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_RESET_SCOPE, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -686,7 +686,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                                                 }
                                                                             </Grid2>
                                                                             <Grid2 size={1}>
-                                                                                {!disableInputs &&
+                                                                                {!user.markForDelete && (containsScope(MFA_RESET_SCOPE, profile?.scope) || profile?.userId === user.userId) &&
                                                                                     <DeleteForeverOutlinedIcon
                                                                                         sx={{ cursor: "pointer" }}
                                                                                         onClick={() => {
