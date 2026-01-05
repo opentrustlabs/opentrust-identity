@@ -472,6 +472,8 @@ class IdentityService {
         if(user){
             user.locked = false;
             await identityDao.updateUser(user);
+            await identityDao.resetFailedLoginAttempts(user.userId);
+            await identityDao.removeFailedPasswordResetAttempt(user.userId);
             
             const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
             oidcServiceUtils.fireSecurityEvent("account_unlocked", this.oidcContext, user, null, authToken);

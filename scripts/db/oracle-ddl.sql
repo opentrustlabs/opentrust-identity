@@ -545,6 +545,13 @@ create TABLE user_failed_login (
     FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
+create TABLE user_failed_password_reset_attempts (
+    userid VARCHAR2(64) NOT NULL,
+    failurecount INT NOT NULL,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES users(userid)
+);
+
 create TABLE user_verification_token (
     token VARCHAR2(256) PRIMARY KEY,
     userid VARCHAR2(64) NOT NULL,

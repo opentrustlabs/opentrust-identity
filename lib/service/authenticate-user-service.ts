@@ -1,10 +1,10 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS } from "@/utils/consts";
 import { generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -173,21 +173,41 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError = ERROR_CODES.EC00095;
             return Promise.resolve(response);
         }
-
-        // TODO
+        
         // If an attacker is trying to guess the password reset token, which has been sent to
         // an email address that they cannot access, then we still need to limit the number
         // of guesses that a user can try in order to prevent account theft.
-       
-        
+        let userFailedPasswordResetAttempt: UserFailedPasswordResetAttempts | null = await identityDao.getFailedPasswordResetAttempts(arrUserAuthenticationStates[index].userId);
+        if(userFailedPasswordResetAttempt && userFailedPasswordResetAttempt.failureCount > DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS){
+            // Just return a same "INVALID" message and set a flag indicating no more attempts should be made
+            response.authenticationError = ERROR_CODES.EC00099;
+            response.userAuthenticationState.authenticationState = AuthenticationState.Expired;
+            return Promise.resolve(response);
+        }
+
         const hashedToken = generateHash(token);
         const user = await identityDao.getUserByPasswordResetToken(hashedToken);
         if(user === null){
+            // If we already have some failed attempts, then increment the count
+            if(userFailedPasswordResetAttempt){
+                userFailedPasswordResetAttempt.failureCount = userFailedPasswordResetAttempt.failureCount + 1;
+                await identityDao.updateFailedPasswordResetAttempt(userFailedPasswordResetAttempt)
+            }
+            // Otherwise insert a new record
+            else{
+                userFailedPasswordResetAttempt = {
+                    userId: arrUserAuthenticationStates[index].userId,
+                    failureCount: 1
+                }
+                await identityDao.addFailedPasswordResetAttempt(userFailedPasswordResetAttempt)
+            }            
+
             response.authenticationError = ERROR_CODES.EC00099;
             return Promise.resolve(response);
         }
-        // Make sure we delete the reset token before continuing...
+        // Make sure we delete the reset token and failed password reset attempts before continuing...
         await identityDao.deletePasswordResetToken(hashedToken);
+        await identityDao.removeFailedPasswordResetAttempt(arrUserAuthenticationStates[index].userId)
         if(user.markForDelete || user.enabled === false){
             response.authenticationError = ERROR_CODES.EC00097;
             return Promise.resolve(response);

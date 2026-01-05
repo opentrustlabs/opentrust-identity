@@ -878,6 +878,11 @@ type UserFailedLogin {
     failureCount: Float!
 }
 
+type UserFailedPasswordResetAttempts {
+    userId: String!
+    failureCount: Int!
+}
+
 
 type TenantSelectorData {
     tenantId: String!

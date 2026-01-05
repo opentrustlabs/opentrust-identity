@@ -1,4 +1,4 @@
-import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
+import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
 import { UserFido2CounterRel } from "@/lib/entities/user-fido2-counter-rel-entity";
@@ -9,7 +9,7 @@ import { UserDuressCredential } from "@/lib/entities/user-duress-credential";
 import { UserAuthenticationHistory } from "@/lib/entities/user-authentication-history-entity";
 
 class DBIdentityDao extends IdentityDao {
-
+    
     
     public async saveFIDOKey(userMfaRel: UserMfaRel): Promise<void> {
         const userMfaRelRepo = await RDBDriver.getInstance().getUserMfaRelRepository();
@@ -448,6 +448,7 @@ class DBIdentityDao extends IdentityDao {
         });
 
         await this.resetFailedLoginAttempts(userId);
+        await this.removeFailedPasswordResetAttempt(userId);
         
         const userVerificationRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
         await userVerificationRepo.delete({
@@ -813,6 +814,39 @@ class DBIdentityDao extends IdentityDao {
         }
         await userAuthHistoryRepo.insert(userAuthHistory);
         return Promise.resolve();        
+    }
+
+    public async getFailedPasswordResetAttempts(userId: string): Promise<UserFailedPasswordResetAttempts | null> {
+        const passwordResetRepo = await RDBDriver.getInstance().getUserFailedPasswordAttemptsRepository();
+        const result = await passwordResetRepo.findOne({
+            where: {
+                userId: userId
+            }
+        });
+        return result;
+    }
+
+    public async addFailedPasswordResetAttempt(userFailedPasswordResetAttempt: UserFailedPasswordResetAttempts): Promise<void> {
+        const passwordResetRepo = await RDBDriver.getInstance().getUserFailedPasswordAttemptsRepository();
+        await passwordResetRepo.insert(userFailedPasswordResetAttempt);
+        return;
+    }
+
+    public async updateFailedPasswordResetAttempt(userFailedPasswordResetAttempt: UserFailedPasswordResetAttempts): Promise<void> {
+        const passwordResetRepo = await RDBDriver.getInstance().getUserFailedPasswordAttemptsRepository();
+        await passwordResetRepo.update(
+            {
+                userId: userFailedPasswordResetAttempt.userId
+            },
+            userFailedPasswordResetAttempt
+        );
+    }
+
+    public async removeFailedPasswordResetAttempt(userId: string): Promise<void> {
+        const passwordResetRepo = await RDBDriver.getInstance().getUserFailedPasswordAttemptsRepository();
+        await passwordResetRepo.delete({
+            userId: userId
+        });
     }
 
 }

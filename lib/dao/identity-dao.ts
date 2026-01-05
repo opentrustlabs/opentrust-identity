@@ -1,4 +1,4 @@
-import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
+import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone" | "federatedoidcproviderid";
 abstract class IdentityDao {
@@ -10,6 +10,14 @@ abstract class IdentityDao {
     abstract removeFailedLogin(userId: string, failureAtMs: number): Promise<void>;
 
     abstract resetFailedLoginAttempts(userId: string): Promise<void>;
+
+    abstract getFailedPasswordResetAttempts(userId: string): Promise<UserFailedPasswordResetAttempts | null>;
+
+    abstract addFailedPasswordResetAttempt(userFailedPasswordResetAttempt: UserFailedPasswordResetAttempts): Promise<void>;
+
+    abstract updateFailedPasswordResetAttempt(userFailedPasswordResetAttempt: UserFailedPasswordResetAttempts): Promise<void>;
+
+    abstract removeFailedPasswordResetAttempt(userId: string): Promise<void>;
 
     abstract saveTOTP(userMfaRel: UserMfaRel): Promise<void>;
 

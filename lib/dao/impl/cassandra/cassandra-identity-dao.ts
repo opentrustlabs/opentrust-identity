@@ -1,4 +1,4 @@
-import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail, AuthenticationGroupUserRel, AuthorizationGroupUserRel, UserScopeRel } from "@/graphql/generated/graphql-types";
+import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail, AuthenticationGroupUserRel, AuthorizationGroupUserRel, UserScopeRel, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import { types } from "cassandra-driver";
@@ -435,6 +435,7 @@ class CassandraIdentityDao extends IdentityDao {
         await this.deleteUserDuressCredential(userId);
         await this.resetFailedLoginAttempts(userId);
         await this.deleteRecoveryEmail(userId);
+        await this.removeFailedPasswordResetAttempt(userId);
 
         const userMapper = await CassandraDriver.getInstance().getModelMapper("users");
         await userMapper.remove({
@@ -730,7 +731,31 @@ class CassandraIdentityDao extends IdentityDao {
         return;
     }
 
+    public async getFailedPasswordResetAttempts(userId: string): Promise<UserFailedPasswordResetAttempts | null> {
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_failed_password_reset_attempts");
+        return mapper.get({
+            userId: types.Uuid.fromString(userId)
+        });
+    }
 
+    public async addFailedPasswordResetAttempt(userFailedPasswordResetAttempt: UserFailedPasswordResetAttempts): Promise<void> {
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_failed_password_reset_attempts");
+        await mapper.insert(userFailedPasswordResetAttempt);
+        return;
+    }
+
+    public async updateFailedPasswordResetAttempt(userFailedPasswordResetAttempt: UserFailedPasswordResetAttempts): Promise<void> {
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_failed_password_reset_attempts");
+        await mapper.update(userFailedPasswordResetAttempt);
+        return;
+    }
+
+    public async removeFailedPasswordResetAttempt(userId: string): Promise<void> {
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_failed_password_reset_attempts");
+        await mapper.remove({
+            userId: types.Uuid.fromString(userId)
+        })
+    }
 
     protected async saveUserVerificationToken(userId: string, token: string, verificationType: string, ttlMinutes: number): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_verification_token"); 

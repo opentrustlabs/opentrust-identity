@@ -1268,6 +1268,22 @@ export const USER_FAILED_LOGIN_MODEL:  {[key: string]: cassandra.mapping.ModelOp
 };
 
 
+export const USER_FAILED_PASSWORD_RESET_ATTEMPTS_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
+    "user_failed_password_reset_attempts": {
+        tables: ["user_failed_password_reset_attempts"],
+        columns: {
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"failurecount": "failureCount"
+        }
+    }
+}
+
+
 export const USER_FIDO2_CHALLENGE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "user_fido2_challenge": {
         tables: ["user_fido2_challenge"],

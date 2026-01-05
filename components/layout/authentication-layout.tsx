@@ -34,9 +34,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
         textColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
         backgroundColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
     }
-    
-    console.log("authenticateToPortal is: " + authenticateToPortal);
-
+   
+ 
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
         variables: {

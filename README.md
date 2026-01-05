@@ -802,9 +802,12 @@ tenant-restriction rules (described above) apply to these clients as they do for
 
 ### FAPI (Financial-grade API Security Profile)
 
-This tool has a baseline FAPI implementation for the `/token` endpoint only with the 
-`client_credentials` grant with using mTLS. It does not support advanced FAPI, but 
-that implementation is on the roadmap.
+This tool has a baseline FAPI implementation for the `/token` endpoint with the 
+`client_credentials` grant using mTLS. It does not support advanced FAPI, but 
+that implementation is on the roadmap. The implementation requires the use of the SAN:URI
+value in the list of subject-alternative-names in the certificate. A client certificate must
+have exactly one value of this type in its certificate and it must map to exactly
+one client. The FAPI flag is set on clients at client creation and cannot be changed.
 
 For mTLS, the web server needs to be configured with either an additional domain or a
 different port on the same domain. Typically, implementations will use a different domain
