@@ -5,7 +5,7 @@ import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CHANGE_EVENT_TYPE_UPDATE_REL, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -281,6 +281,8 @@ class ClientService {
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
+
+        const s = await clientDao.addRedirectURI(clientId, uri);
         changeEventDao.addChangeEvent({
             objectId: clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
@@ -290,9 +292,7 @@ class ClientService {
             changeTimestamp: Date.now(),
             data: JSON.stringify({clientId, uri})
         });
-        
-        
-        return clientDao.addRedirectURI(clientId, uri);
+        return s;
     }
 
     public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
@@ -304,6 +304,8 @@ class ClientService {
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
+        await clientDao.removeRedirectURI(clientId, uri);
+
         changeEventDao.addChangeEvent({
             objectId: clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
@@ -313,7 +315,9 @@ class ClientService {
             changeTimestamp: Date.now(),
             data: JSON.stringify({clientId, uri})
         });
-        return clientDao.removeRedirectURI(clientId, uri);
+
+        return;
+        
     }
 
     public async getAuthorizationScopeApprovalData(preAuthToken: string): Promise<AuthorizationScopeApprovalData>{        
@@ -394,12 +398,30 @@ class ClientService {
         // If we cannot find a value by either client id or identifier value, then it is safe to insert a new record
         if(!configByClientId){
             const config = await clientDao.createClientFapiConfiguration(fapiConfigurationInput);
+            changeEventDao.addChangeEvent({
+                objectId: client.clientId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE_REL,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify({clientId: client.clientId, fapiConfig: config})
+            });
             return config;
         }
         else{
             // We need to delete the old record and insert a new one
             await clientDao.deleteClientFapiConfiguration(client.clientId);
             const config = await clientDao.createClientFapiConfiguration(fapiConfigurationInput);
+            changeEventDao.addChangeEvent({
+                objectId: client.clientId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify({clientId: client.clientId, fapiConfig: config})
+            });
             return config;
         }        
     }
@@ -415,6 +437,15 @@ class ClientService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
         await clientDao.deleteClientFapiConfiguration(clientId);
+        changeEventDao.addChangeEvent({
+                objectId: client.clientId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify({clientId})
+            });
     }
     
 }
