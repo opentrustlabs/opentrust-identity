@@ -1,25 +1,11 @@
 import { MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
 import Kms from "./kms";
-import OIDCServiceUtils from "../service/oidc-service-utils";
-import JwtServiceUtils from "../service/jwt-service-utils";
+import { base64Encode } from "@/utils/dao-utils";
+import ServiceClientConfig from "../service/service-client-config";
+import { logWithDetails } from "../logging/logger";
+import { randomUUID } from "node:crypto";
 
-// Lazy initialization to avoid circular dependency with jwt-service-utils
-let oidcServiceUtils: OIDCServiceUtils | null = null;
-let jwtServiceUtils: JwtServiceUtils | null = null;
-
-function getOidcServiceUtils(): OIDCServiceUtils {
-    if (!oidcServiceUtils) {
-        oidcServiceUtils = new OIDCServiceUtils();
-    }
-    return oidcServiceUtils;
-}
-
-function getJwtServiceUtils(): JwtServiceUtils {
-    if (!jwtServiceUtils) {
-        jwtServiceUtils = new JwtServiceUtils();
-    }
-    return jwtServiceUtils;
-}
+const serviceClientConfig: ServiceClientConfig = new ServiceClientConfig();
 
 
 /**
@@ -76,7 +62,10 @@ function getJwtServiceUtils(): JwtServiceUtils {
 
 const {
     CUSTOM_KMS_ENCRYPTION_ENDPOINT,
-    CUSTOM_KMS_DECRYPTION_ENDPOINT
+    CUSTOM_KMS_DECRYPTION_ENDPOINT,
+    CUSTOM_KMS_USE_PKI_IDENTITY,
+    CUSTOM_KMS_USERNAME,
+    CUSTOM_KMS_PASSWORD
 } = process.env;
 
 
@@ -93,10 +82,9 @@ export interface CustomKmsDecryptionResponseBody {
     decrypted: string
 }
 
-// TODO
-// NEEDS REFACTORING (SEE ALSO DaoFactory) DUE TO CIRCULAR DEPENDENCY
-// OF THIS CLASS AND JwtServiceUtils. NEED A WAY TO SIGN THE JWTs
-// FOR THE ROOT CLIENT.
+const BASIC_AUTH_TOKEN = CUSTOM_KMS_USE_PKI_IDENTITY && CUSTOM_KMS_USE_PKI_IDENTITY === "true" ? base64Encode(`${CUSTOM_KMS_USERNAME}:${CUSTOM_KMS_PASSWORD}`) : "";
+
+
 class CustomKms extends Kms {
 
 
@@ -108,28 +96,26 @@ class CustomKms extends Kms {
      */
     public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
 
-        if(data.length > MAX_ENCRYPTION_LENGTH){
+        if (data.length > MAX_ENCRYPTION_LENGTH) {
             return Promise.resolve(null);
         }
 
-        const jwtService = getJwtServiceUtils();
-        const oidcService = getOidcServiceUtils();
-        const authToken = await jwtService.getAuthTokenForOutboundCalls();
-        const encryptedValue = await oidcService.customEncrypt(
+        const encryptedValue = await this.customEncrypt(
             CUSTOM_KMS_ENCRYPTION_ENDPOINT || "",
             data.toString("base64"),
-            authToken || "",
+            BASIC_AUTH_TOKEN || "",
+            CUSTOM_KMS_USE_PKI_IDENTITY && CUSTOM_KMS_USE_PKI_IDENTITY === "true" ? true : false,
             aad
         );
 
-        if(encryptedValue){
+        if (encryptedValue) {
             return Buffer.from(encryptedValue, "base64");
         }
-        else{
+        else {
             return null;
         }
     }
-    
+
 
     /**
      * 
@@ -137,17 +123,22 @@ class CustomKms extends Kms {
      * @param aad 
      * @returns 
      */
-    public async encrypt(data: string, aad?: string): Promise<string | null>{
+    public async encrypt(data: string, aad?: string): Promise<string | null> {
 
-        if(data.length > MAX_ENCRYPTION_LENGTH){
+        if (data.length > MAX_ENCRYPTION_LENGTH) {
             return Promise.resolve(null);
         }
-        const encryptedData: Buffer | null = await this.encryptBuffer(Buffer.from(data, "utf-8"), aad);
-        if(!encryptedData){
-            return Promise.resolve(null);
-        }
-        return Promise.resolve(encryptedData.toString("base64"));
-       
+
+        const encryptedValue = await this.customEncrypt(
+            CUSTOM_KMS_ENCRYPTION_ENDPOINT || "",
+            Buffer.from(data, "utf-8").toString("base64"),
+            BASIC_AUTH_TOKEN || "",
+            CUSTOM_KMS_USE_PKI_IDENTITY && CUSTOM_KMS_USE_PKI_IDENTITY === "true" ? true : false,
+            aad
+        );
+
+        return encryptedValue;
+
     }
 
     /**
@@ -158,23 +149,21 @@ class CustomKms extends Kms {
      */
     public async decryptBuffer(buffer: Buffer, aad?: string): Promise<Buffer | null> {
 
-        const jwtService = getJwtServiceUtils();
-        const oidcService = getOidcServiceUtils();
-        const authToken = await jwtService.getAuthTokenForOutboundCalls();
-        const decryptedValue = await oidcService.customDecrypt(
+        const decryptedValue = await this.customDecrypt(
             CUSTOM_KMS_DECRYPTION_ENDPOINT || "",
             buffer.toString("base64"),
-            authToken || "",
+            BASIC_AUTH_TOKEN || "",
+            CUSTOM_KMS_USE_PKI_IDENTITY && CUSTOM_KMS_USE_PKI_IDENTITY === "true" ? true : false,
             aad
         );
 
-        if(decryptedValue){
+        if (decryptedValue) {
             return Buffer.from(decryptedValue, "base64");
         }
-        else{
+        else {
             return null;
         }
-        
+
     }
 
     /**
@@ -185,12 +174,79 @@ class CustomKms extends Kms {
      */
     public async decrypt(data: string, aad?: string): Promise<string | null> {
 
-        const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
-        if(!decryptedData){
+        const decryptedValue = await this.customDecrypt(
+            CUSTOM_KMS_DECRYPTION_ENDPOINT || "",
+            data,
+            BASIC_AUTH_TOKEN || "",
+            CUSTOM_KMS_USE_PKI_IDENTITY && CUSTOM_KMS_USE_PKI_IDENTITY === "true" ? true : false,
+            aad
+        );
+
+        if (!decryptedValue) {
             return Promise.resolve(null);
         }
-        return Promise.resolve(decryptedData.toString("utf-8"));
+        return Promise.resolve(Buffer.from(decryptedValue, "base64").toString("utf-8"));
 
+    }
+
+    protected async customEncrypt(customEncryptUri: string, value: string, basicAuthToken: string, usePkiIdentity: boolean, aad?: string): Promise<string | null> {
+
+        const body: CustomKmsRequestBody = {
+            value: value,
+            aad: aad
+        }
+        const response = await serviceClientConfig.getAxiosInstance().post(
+            customEncryptUri,
+            body,
+            {
+                headers: {
+                    "Authorization": usePkiIdentity ? undefined : `Basic ${basicAuthToken}`,
+                    "Content-Type": "application/json"
+                },
+                responseType: "json"
+            }
+        );
+        if (response.status !== 200) {
+            logWithDetails("error", "Error: Encryption failed", {
+                responseBody: response.data ? JSON.stringify(response.data) : "No response body from server",
+                traceId: randomUUID().toString(),
+                statusTesnt: response.statusText,
+                status: response.status
+            });
+            return null;
+        }
+
+        const encryptionResponse: CustomKmsEncryptionResponseBody = response.data;
+        return encryptionResponse.encrypted;
+    }
+
+    protected async customDecrypt(customDecryptUri: string, value: string, basicAuthToken: string, usePkiIdentity: boolean, aad?: string): Promise<string | null> {
+        const body: CustomKmsRequestBody = {
+            value: value,
+            aad: aad
+        }
+        const response = await serviceClientConfig.getAxiosInstance().post(
+            customDecryptUri,
+            body,
+            {
+                headers: {
+                    "Authorization": usePkiIdentity ? undefined : `Basic ${basicAuthToken}`,
+                    "Content-Type": "application/json"
+                },
+                responseType: "json"
+            }
+        );
+        if (response.status !== 200) {
+            logWithDetails("error", "Error: Decryption failed", {
+                responseBody: response.data ? JSON.stringify(response.data) : "No response body from server",
+                traceId: randomUUID().toString(),
+                statusTesnt: response.statusText,
+                status: response.status
+            });
+            return null;
+        }
+        const decryptionResponse: CustomKmsDecryptionResponseBody = response.data;
+        return decryptionResponse.decrypted;
     }
 
 }

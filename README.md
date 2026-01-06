@@ -197,11 +197,27 @@ The response for the encryption endpoint is:
  }
 ```
 
-This service call will be invoked with a Bearer Authorization header for the client that is defined as the root
-client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
-a scope of `custom.encryptdecrypt`. Your implementation of this service can check for the presence of this scope using
-the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
-configured for it (see the env.example file for details). 
+This service will be invoked with either a Basic Authorization header with service account credentials 
+or will use a PKI Identity defined for the server. 
+
+The environment variables are:
+
+```bash
+CUSTOM_KMS_ENCRYPTION_ENDPOINT=https://domain/path
+CUSTOM_KMS_DECRYPTION_ENDPOINT=https://domain/path
+CUSTOM_KMS_USE_PKI_IDENTITY=false
+CUSTOM_KMS_USERNAME=customkmsusername
+CUSTOM_KMS_PASSWORD=customkmspassword
+```
+
+The variable `CUSTOM_KMS_USE_PKI_IDENTITY` is required and can be `true | false`. The `CUSTOM_KMS_USERNAME`
+and `CUSTOM_KMS_PASSWORD` are required only if `CUSTOM_KMS_USE_PKI_IDENTITY` is set to `false`.
+
+
+See the file `env.example` at the root of the project for more details. The provisioning of the 
+PKI Identity or the service account in system which implements the custom solution is 
+outside the scope of this tool.
+
 
 Future development of this tool will include support for the following KMSs
 - AWS

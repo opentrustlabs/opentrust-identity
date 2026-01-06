@@ -50,7 +50,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
 
     // STATE VARIABLES
     const [page, setPage] = React.useState<number>(1);
-    const [showRemoveDialog, setShowRemoveDialog] = React.useState(false);    
+    const [showRemoveDialog, setShowRemoveDialog] = React.useState(false);
     const [tenantToRemove, setTenantToRemove] = React.useState<Tenant | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
@@ -82,7 +82,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
             setErrorMessage(null);
         },
         onError(error) {
-            setErrorMessage(intl.formatMessage({id: error.message}));
+            setErrorMessage(intl.formatMessage({ id: error.message }));
         },
         refetchQueries: [TENANTS_QUERY]
     });
@@ -98,7 +98,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(true);
-            setErrorMessage(intl.formatMessage({id: error.message}));
+            setErrorMessage(intl.formatMessage({ id: error.message }));
         },
         refetchQueries: [TENANTS_QUERY]
     });
@@ -146,7 +146,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                 >
                     <TenantSelector
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(tenantId: string) => {                            
+                        onSelected={(tenantId: string) => {
                             setSelectDialogOpen(false);
                             assignTenantToScopeMutation({
                                 variables: {
@@ -211,44 +211,44 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                 </Grid2>
             }
             {!isExclusiveInternalScope &&
-            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <TextField
-                        value={filterTerm}
-                        name="filterTenants"
-                        id="filterTenants"
-                        onChange={(evt) => {
-                            setFilterTerm(evt.target.value);
-                            filterValues(evt.target.value);
+                <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <TextField
+                            value={filterTerm}
+                            name="filterTenants"
+                            id="filterTenants"
+                            onChange={(evt) => {
+                                setFilterTerm(evt.target.value);
+                                filterValues(evt.target.value);
 
-                        }}
-                        size="small"
-                        placeholder="Filter Tenants"
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <CloseOutlinedIcon
-                                            sx={{ cursor: "pointer" }}
-                                            onClick={() => {
-                                                setFilterTerm("");
-                                                setFilteredArr([...arr]);
-                                            }}
-                                        />
-                                    </InputAdornment>
-                                )
-                            }
-                        }}
-                    />
+                            }}
+                            size="small"
+                            placeholder="Filter Tenants"
+                            slotProps={{
+                                input: {
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <CloseOutlinedIcon
+                                                sx={{ cursor: "pointer" }}
+                                                onClick={() => {
+                                                    setFilterTerm("");
+                                                    setFilteredArr([...arr]);
+                                                }}
+                                            />
+                                        </InputAdornment>
+                                    )
+                                }
+                            }}
+                        />
+                    </Grid2>
                 </Grid2>
-            </Grid2>
             }
             <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
-                        <Grid2 size={6} >Tenant Name</Grid2>
-                        <Grid2 size={5} >Tenant Type</Grid2>
-                        <Grid2 size={1}></Grid2>
-                    </Grid2>
-                    <Divider />
+                <Grid2 size={6} >Tenant Name</Grid2>
+                <Grid2 size={5} >Tenant Type</Grid2>
+                <Grid2 size={1}></Grid2>
+            </Grid2>
+            <Divider />
 
             {loading &&
                 <Grid2 marginTop={"16px"} spacing={2} container size={12} textAlign={"center"} >
@@ -290,7 +290,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                                         {TENANT_TYPES_DISPLAY.get(item.tenantType)}
                                     </Grid2>
                                     <Grid2 minHeight={"26px"} size={1}>
-                                        {canRemoveRel && !(item.tenantType === TENANT_TYPE_ROOT_TENANT && scopeUse === SCOPE_USE_IAM_MANAGEMENT) && 
+                                        {canRemoveRel && !(item.tenantType === TENANT_TYPE_ROOT_TENANT && scopeUse === SCOPE_USE_IAM_MANAGEMENT) &&
                                             <RemoveCircleOutlineIcon
                                                 sx={{ cursor: "pointer" }}
                                                 onClick={() => {

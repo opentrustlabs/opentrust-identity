@@ -94,7 +94,7 @@ const {
     DB_USER_DOMAIN,
     DB_AUTH_SCHEME,
     DB_ORACLE_SERVICE_NAME,
-    // DB_ORACLE_USER_EXTERNAL_AUTH
+    DB_ORACLE_USER_EXTERNAL_AUTH
 } = process.env;
 
 
@@ -280,8 +280,6 @@ class RDBDriver {
             else if(RDB_DIALECT === "oracle"){
                 dataSource = new DataSource({                    
                     type: "oracle",
-                    // host: DB_HOST,
-                    // port: parseInt(DB_PORT || "0"),
                     // If using AD for authentication then do not
                     // specify username and password. Instead, specify
                     // externalAuth: true in the extras{} definition below.
@@ -294,9 +292,9 @@ class RDBDriver {
                     extra: {             
                         // ######## Oracle pool options
                         poolMax: 10,
-                        poolMin: 4
+                        poolMin: 4,
                         // ######## If using AD for authentication
-                        // externalAuth: true
+                        externalAuth: DB_ORACLE_USER_EXTERNAL_AUTH && DB_ORACLE_USER_EXTERNAL_AUTH === "true" ? true : false
                     },                    
                     logging: DB_ENABLE_QUERY_LOGGING === "true",
                     logger: "simple-console"
@@ -317,10 +315,7 @@ class RDBDriver {
                         // ######## MySQL pool options
                         connectionLimit: parseInt(DB_MAX_POOL_SIZE || "10"),
                         waitForConnections: true,
-                        queueLimit: 0 // Unlimited                
-                        // ######## Oracle pool options
-                        // poolMax: 10,
-                        // poolMin: 4                        
+                        queueLimit: 0 // Unlimited                      
                     },                    
                     logging: DB_ENABLE_QUERY_LOGGING === "true",
                     logger: "simple-console"
@@ -352,10 +347,6 @@ class RDBDriver {
                     extra: {                        
                         max: parseInt(DB_MAX_POOL_SIZE || "10"),
                         min: parseInt(DB_MIN_POOL_SIZE || "4"),
-                
-                        // ######## Oracle pool options
-                        // poolMax: 10,
-                        // poolMin: 4
                         authentication: authnOptions
                     },
                     // ######## Options for mssql connections
