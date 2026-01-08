@@ -14,6 +14,7 @@ export interface PushedAuthRequest {
 	codeChallengeMethod: string,
 	responseMode: string,
     certificateThumbprint: string,
+    state: string,
 	createdAtMs: number,
 	expiresAtMs: number
 }
@@ -83,6 +84,12 @@ const PushedAuthRequestEntity = new EntitySchema({
             primary: false,
             nullable: false,
             name: "responsemode"
+        },
+        state: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "state"
         },
         expiresAtMs: {
             type: getBigIntTypeForDriver(RDB_DIALECT || ""),

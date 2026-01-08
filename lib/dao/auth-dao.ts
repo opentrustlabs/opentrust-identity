@@ -1,4 +1,5 @@
 import { AuthorizationCodeData, AuthorizationDeviceCodeData, FederatedAuthTest, FederatedOidcAuthorizationRel, PreAuthenticationState, RefreshData } from "@/graphql/generated/graphql-types";
+import { PushedAuthRequest } from "../entities/pushed-auth-request.entity";
 
 export type AuthorizationCodeType = "devicecodeid" | "usercode" | "devicecode";
 abstract class AuthDao {
@@ -46,6 +47,12 @@ abstract class AuthDao {
     abstract getFederatedAuthTestByState(state: string): Promise<FederatedAuthTest | null>;
 
     abstract deleteFederatedAuthTestByState(state: string): Promise<void>;
+
+    abstract saveParData(pushedAuthRequest: PushedAuthRequest): Promise<PushedAuthRequest>;
+
+    abstract getParData(requestUri: string): Promise<PushedAuthRequest | null>;
+
+    abstract deleteParData(requestUri: string): Promise<void>;
 
 }
 

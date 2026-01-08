@@ -3,21 +3,27 @@ import { randomUUID, X509Certificate } from 'crypto';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import TenantDao from '@/lib/dao/tenant-dao';
 import ClientDao from '@/lib/dao/client-dao';
-import { Client, Tenant } from '@/graphql/generated/graphql-types';
+import { Client, ClientScopeRel, Scope, Tenant } from '@/graphql/generated/graphql-types';
 import {
+    ALL_OIDC_SUPPORTED_SCOPE_VALUES,
+    CLIENT_TYPE_DEVICE,
+    CLIENT_TYPE_USER_DELEGATED_PERMISSIONS,
     FAPI_CLIENT_CERTIFICATE_HEADER,
     FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER,
-    OIDC_AUTHORIZATION_ERROR_UNAUTHORIZED_CLIENT,
     OIDC_TOKEN_ERROR_INVALID_CLIENT
 } from '@/utils/consts';
-import { generateHash } from '@/utils/dao-utils';
+import { generateHash, hasValidLoopbackRedirectUri } from '@/utils/dao-utils';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
+import { PushedAuthRequest } from '@/lib/entities/pushed-auth-request.entity';
+import { logWithDetails } from '@/lib/logging/logger';
+import AuthDao from '@/lib/dao/auth-dao';
+import ScopeDao from '@/lib/dao/scope-dao';
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 
-// TODO: Add AuthDao or PARDao method for storing PAR requests
-// const parDao = DaoFactory.getInstance().getParDao();
 
 interface PARRequestBody {
     client_id?: string,
@@ -84,6 +90,15 @@ export default async function handler(
         response_mode
     }: PARRequestBody = req.body;
 
+    const clientId = client_id as string || null;
+    const responseType = response_type as string;
+    const redirectUri = redirect_uri as string;
+    const oidcScope = scope as string;
+    const oidcNonce = nonce as string;
+    const codeChallenge = code_challenge as string;
+    const codeChallengeMethod = code_challenge_method as string;
+    const responseMode = response_mode as string;
+
     // Extract FAPI client certificate headers for mTLS client authentication
     const clientCertificate = req.headers[FAPI_CLIENT_CERTIFICATE_HEADER]
         ? req.headers[FAPI_CLIENT_CERTIFICATE_HEADER] as string
@@ -95,99 +110,114 @@ export default async function handler(
     // Authenticate the client
     // FAPI supports two authentication methods for PAR:
     // 1. mTLS (tls_client_auth) - via certificate
-    // 2. private_key_jwt - via client_assertion (not implemented in this stub)
+    // 2. private_key_jwt - via client_assertion (not implemented)
 
     let client: Client | null = null;
-    let authenticatedClientId: string | null = null;
     let certificateThumbprint: string | null = null;
+    let clientCertificateSanUri: string | null = null;
 
     // Method 1: mTLS authentication
-    if (clientCertificate && clientCertificateVerify) {
-        if (clientCertificateVerify !== 'SUCCESS') {            
-            const error: OIDCErrorResponseBody = {
-                error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-                error_code: "0000802",
-                error_description: "Client certificate verification failed",
-                timestamp: Date.now(),
-                error_uri: "",
-                trace_id: traceId
-            }
-            return res.status(400).json(error);            
+    if(!clientCertificate || !clientCertificateVerify){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000802",
+            error_description: "Client certificate verification failed",
+            timestamp: Date.now(),
+            error_uri: "",
+            trace_id: traceId
         }
+        logWithDetails("error", "FAPI PAR: Invalid Client", {...error});
+        return res.status(400).json(error);   
+    }
+    
+    if (clientCertificateVerify !== 'SUCCESS') {            
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000802",
+            error_description: "Client certificate verification failed",
+            timestamp: Date.now(),
+            error_uri: "",
+            trace_id: traceId
+        }
+        logWithDetails("error", "FAPI PAR: Invalid Client", {...error});
+        return res.status(400).json(error);            
+    }
 
-        try {
-            const certPem: string = decodeURIComponent(clientCertificate);
-            const cert = new X509Certificate(certPem);
+    if(!clientId){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000812",
+            error_description: "Missing client_id",
+            timestamp: Date.now(),
+            error_uri: "",
+            trace_id: traceId
+        }
+        logWithDetails("error", "FAPI PAR: Missing Client ID", {...error});
+    }
+    
 
-            // Extract SAN:URI for FAPI client identification
-            const sanExtension = cert.subjectAltName;
-            if (!sanExtension) {
-                return res.status(400).json({
-                    error: 'invalid_client',
-                    error_description: 'Client certificate missing SAN extension',
-                    error_code: '0000803'
-                });
-            }
+    try {
+        const certPem: string = decodeURIComponent(clientCertificate);
+        const cert = new X509Certificate(certPem);
 
-            const sanEntries = sanExtension.split(', ');
-            const uriEntries = sanEntries.filter(entry => entry.startsWith('URI:'));
-
-            if (uriEntries.length !== 1) {
-                return res.status(400).json({
-                    error: 'invalid_client',
-                    error_description: 'Client certificate must have exactly one SAN:URI entry',
-                    error_code: '0000804'
-                });
-            }
-
-            const clientCertificateSanUri = uriEntries[0].substring(4);
-            client = await clientDao.getClientByFapiIdentifier(clientCertificateSanUri);
-
-            if (!client || client.enabled !== true || client.markForDelete === true) {
-                return res.status(400).json({
-                    error: 'invalid_client',
-                    error_description: 'Client not found for certificate SAN:URI',
-                    error_code: '0000805'
-                });
-            }
-
-            authenticatedClientId = client.clientId;
-
-            // Store certificate thumbprint for later validation during token request
-            const derEncoded: Buffer = Buffer.from(
-                certPem
-                    .replace(/-----BEGIN CERTIFICATE-----/, '')
-                    .replace(/-----END CERTIFICATE-----/, '')
-                    .replace(/\s+/g, ''),
-                'base64'
-            );
-            certificateThumbprint = generateHash(derEncoded, 'sha256', 'base64url');
-
-        } catch (error: unknown) {
-            const e = error as Error;
+        // Extract SAN:URI for FAPI client identification
+        const sanExtension = cert.subjectAltName;
+        if (!sanExtension) {
             return res.status(400).json({
                 error: 'invalid_client',
-                error_description: `Certificate parsing failed: ${e.message}`,
-                error_code: '0000806'
+                error_description: 'Client certificate missing SAN extension',
+                error_code: '0000803'
             });
         }
-    }
-    // Method 2: private_key_jwt authentication (not yet implemented)
-    // TODO: Implement private_key_jwt authentication via client_assertion parameter
-    else {
+
+        const sanEntries = sanExtension.split(', ');
+        const uriEntries = sanEntries.filter(entry => entry.startsWith('URI:'));
+
+        if (uriEntries.length !== 1) {
+            return res.status(400).json({
+                error: 'invalid_client',
+                error_description: 'Client certificate must have exactly one SAN:URI entry',
+                error_code: '0000804'
+            });
+        }
+
+        clientCertificateSanUri = uriEntries[0].substring(4);
+        // Store certificate thumbprint for later validation during token request
+        const derEncoded: Buffer = Buffer.from(
+            certPem
+                .replace(/-----BEGIN CERTIFICATE-----/, '')
+                .replace(/-----END CERTIFICATE-----/, '')
+                .replace(/\s+/g, ''),
+            'base64'
+        );
+        certificateThumbprint = generateHash(derEncoded, 'sha256', 'base64url');        
+
+    } 
+    catch (error: unknown) {
+        const e = error as Error;
         return res.status(400).json({
             error: 'invalid_client',
-            error_description: 'Client authentication required. Use mTLS.',
-            error_code: '0000807'
+            error_description: `Certificate parsing failed: ${e.message}`,
+            error_code: '0000806'
         });
     }
 
-    // Validate client is enabled and FAPI-enabled
-    if (!client || client.enabled !== true || client.markForDelete) {
+
+    if(!clientCertificateSanUri){
         return res.status(400).json({
             error: 'invalid_client',
-            error_description: 'Client is disabled or marked for deletion',
-            error_code: '0000808'
+            error_description: `Cannot identify the SAN:URI value.`,
+            error_code: '0000806'
+        });
+    }
+
+    client = await clientDao.getClientByFapiIdentifier(clientCertificateSanUri);
+
+    if (!client || client.enabled !== true || client.markForDelete === true) {
+        return res.status(400).json({
+            error: 'invalid_client',
+            error_description: 'Client not found for certificate SAN:URI',
+            error_code: '0000805'
         });
     }
 
@@ -209,17 +239,16 @@ export default async function handler(
     }
 
     // If client_id is provided in body, it must match the authenticated client
-    if (client_id && client_id !== authenticatedClientId) {
+    if (clientId !== client.clientId) {
         return res.status(400).json({
             error: 'invalid_request',
             error_description: 'client_id in request does not match authenticated client',
             error_code: '0000811'
         });
-    }
-   
+    }   
 
     // Validate required authorization parameters
-    if (!response_type) {
+    if (!responseType) {
         return res.status(400).json({
             error: 'invalid_request',
             error_description: 'response_type is required',
@@ -228,7 +257,7 @@ export default async function handler(
     }
 
     // FAPI Advanced requires response_type=code
-    if (response_type !== 'code') {
+    if (responseType !== 'code') {
         return res.status(400).json({
             error: 'unsupported_response_type',
             error_description: 'Only response_type=code is supported for FAPI',
@@ -236,7 +265,7 @@ export default async function handler(
         });
     }
 
-    if (!redirect_uri) {
+    if (!redirectUri) {
         return res.status(400).json({
             error: 'invalid_request',
             error_description: 'redirect_uri is required',
@@ -244,16 +273,16 @@ export default async function handler(
         });
     }
 
-    // TODO: Validate redirect_uri is registered for this client
-    // const registeredUris = await clientDao.getRedirectURIs(client.clientId);
-    // if (!registeredUris.includes(redirect_uri)) {
-    //     return res.status(400).json({
-    //         error: 'invalid_request',
-    //         error_description: 'redirect_uri not registered for this client',
-    //         error_code: '0000816'
-    //     });
-    // }
-
+    
+    const redirectUris = await clientDao.getRedirectURIs(client.clientId);
+    if (!( redirectUris.includes(redirectUri) || hasValidLoopbackRedirectUri(redirectUris, redirectUri)) ) {
+        return res.status(400).json({
+            error: 'invalid_request',
+            error_description: 'redirect_uri not registered for this client',
+            error_code: '0000816'
+        });
+    }
+    
     // FAPI requires state parameter
     if (!state) {
         return res.status(400).json({
@@ -264,7 +293,7 @@ export default async function handler(
     }
 
     // FAPI requires PKCE with S256
-    if (!code_challenge) {
+    if (!codeChallenge) {
         return res.status(400).json({
             error: 'invalid_request',
             error_description: 'code_challenge is required for FAPI',
@@ -272,7 +301,7 @@ export default async function handler(
         });
     }
 
-    if (code_challenge_method !== 'S256') {
+    if (codeChallengeMethod !== 'S256') {
         return res.status(400).json({
             error: 'invalid_request',
             error_description: 'code_challenge_method must be S256 for FAPI',
@@ -281,54 +310,84 @@ export default async function handler(
     }
 
     // FAPI requires nonce when requesting ID tokens (scope includes openid)
-    if (scope && scope.includes('openid') && !nonce) {
+    if (oidcScope && oidcScope.includes('openid') && !oidcNonce) {
         return res.status(400).json({
             error: 'invalid_request',
             error_description: 'nonce is required when requesting ID tokens',
             error_code: '0000820'
         });
     }
+    
+    // Although FAPI supports jwt, query.jwt, fragment.jwt, and form_post.jwt,
+    // we will only use form_post.jwt. This will need to be made known to
+    // any client that wants to use FAPI
+    if (!responseMode || responseMode !== "form_post.jwt") {
+        return res.status(400).json({
+            error: 'invalid_request',
+            error_description: 'Invalid response_mode for FAPI. Supported response_mode values are: form_post.jwt',
+            error_code: '0000821'
+        });
+    }
+    
+    // The client needs to explicitly specify the scope values it wants. If any scope value is
+    // not allowed based on what is configured with the client then error.
+    // For Identity client types, we only care about the basic 4 OIDC scope.
+    // For user-delegated-permission client types, these must be configured
+    const scopeValues: Array<string> = oidcScope.split(/\s+/);
+    const allSupportedScopeValues = [...ALL_OIDC_SUPPORTED_SCOPE_VALUES];
 
-    // TODO: Validate response_mode if provided
-    // FAPI supports: jwt, query.jwt, fragment.jwt, form_post.jwt
-    // if (response_mode && !['jwt', 'query.jwt', 'fragment.jwt', 'form_post.jwt'].includes(response_mode)) {
-    //     return res.status(400).json({
-    //         error: 'invalid_request',
-    //         error_description: 'Invalid response_mode for FAPI',
-    //         error_code: '0000821'
-    //     });
-    // }
+    // If this is a device client or a user delegated client, then add the delegated scope
+    // values to the list of requested scopes so that we can carry this over to the refresh
+    // data if this client allows refresh data
+    if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS){
+        const scopeRels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
+        const ids = scopeRels.map((rel: ClientScopeRel) => rel.scopeId);
+        const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);
+        scopes.forEach(
+            (s: Scope) => allSupportedScopeValues.push(s.scopeName)
+        );
+    }
 
-    // TODO: Validate scope against client's allowed scopes
-    // const clientScopes = await scopeDao.getClientScopeRels(client.clientId);
-    // Validate requested scopes are subset of client's allowed scopes
+    let invalidScopeFound: boolean = false;
+    for(let i = 0; i < scopeValues.length; i++){
+        if(!allSupportedScopeValues.includes(scopeValues[i])){
+            invalidScopeFound = true;
+            break;
+        }
+    }
+
+    if(invalidScopeFound){
+        return res.status(400).json({
+            error: 'invalid_request',
+            error_description: 'Invalid scope requested',
+            error_code: '0000821'
+        });
+    }
+    
 
     // Generate request_uri (URN format as per RFC 9126)
     const requestUri = `urn:ietf:params:oauth:request_uri:${randomUUID()}`;
-    const expiresAt = Date.now() + (PAR_EXPIRY_SECONDS * 1000);
+    const expiresAtMs = Date.now() + (PAR_EXPIRY_SECONDS * 1000);
 
     // Create PAR record to store
-    const parRecord = {
+    const parRecord: PushedAuthRequest = {
         requestUri,
-        clientId: authenticatedClientId,
+        clientId: client.clientId,
         tenantId,
-        responseType: response_type,
-        redirectUri: redirect_uri,
-        scope: scope || '',
-        state,
-        nonce: nonce || null,
-        codeChallenge: code_challenge,
-        codeChallengeMethod: code_challenge_method,
-        responseMode: response_mode || null,
+        responseType: responseType,
+        redirectUri: redirectUri,
+        scope: scope || "",
+        nonce: oidcNonce || "",
+        codeChallenge: codeChallenge,
+        codeChallengeMethod: codeChallengeMethod,
+        responseMode: responseMode,
         certificateThumbprint,
+        state: state,
         createdAtMs: Date.now(),
-        expiresAtMs: expiresAt
+        expiresAtMs: expiresAtMs
     };
 
-    // TODO: Store PAR record in database
-    // await parDao.createPAR(parRecord);
-    // For now, this is a placeholder - you'll need to implement storage
-    console.log('PAR Record (needs storage implementation):', parRecord);
+    await authDao.saveParData(parRecord);
 
     // Return success response
     return res.status(201).json({

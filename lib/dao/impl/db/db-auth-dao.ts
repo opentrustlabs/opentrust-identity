@@ -2,9 +2,10 @@ import { PreAuthenticationState, AuthorizationCodeData, RefreshData, FederatedOi
 import AuthDao, { AuthorizationCodeType } from "../../auth-dao";
 import RDBDriver from "@/lib/data-sources/rdb";
 import { LessThan } from "typeorm";
+import { PushedAuthRequest } from "@/lib/entities/pushed-auth-request.entity";
 
 class DBAuthDao extends AuthDao {
-
+    
     public async getRefreshDataByUserId(userId: string): Promise<Array<RefreshData>> {
         
         const refreshDataRepo = await RDBDriver.getInstance().getRefreshDataRepository();
@@ -202,6 +203,30 @@ class DBAuthDao extends AuthDao {
         return;
     }
 
+    public async saveParData(pushedAuthRequest: PushedAuthRequest): Promise<PushedAuthRequest> {
+        const parRepo = await RDBDriver.getInstance().getPushedAuthRequestRespository();
+        await parRepo.insert(pushedAuthRequest);
+        return pushedAuthRequest;
+    }
+    
+    public async getParData(requestUri: string): Promise<PushedAuthRequest | null> {
+        const parRepo = await RDBDriver.getInstance().getPushedAuthRequestRespository();
+        const result = await parRepo.findOne({
+            where: {
+                requestUri: requestUri
+            }            
+        });
+        return result;
+    }
+
+    public async deleteParData(requestUri: string): Promise<void> {
+        const parRepo = await RDBDriver.getInstance().getPushedAuthRequestRespository();
+        await parRepo.delete({
+            requestUri: requestUri
+        });
+    }
+
+
     public async deleteExpiredData(): Promise<void>{
 
         const oidcAuthRelRepo = await RDBDriver.getInstance().getFederatedOIDCAuthorizationRelRepository();
@@ -231,6 +256,11 @@ class DBAuthDao extends AuthDao {
         
         const federatedAuthTestRepo = await RDBDriver.getInstance().getFederatedAuthTestRepository();
         await federatedAuthTestRepo.delete({
+            expiresAtMs: LessThan(Date.now())
+        });
+
+        const parRepo = await RDBDriver.getInstance().getPushedAuthRequestRespository();
+        await parRepo.delete({
             expiresAtMs: LessThan(Date.now())
         });
 

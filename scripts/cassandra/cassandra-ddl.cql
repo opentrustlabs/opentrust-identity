@@ -584,6 +584,7 @@ create TABLE pushed_auth_request (
 	codechallengemethod TEXT,
 	responsemode TEXT,
     certificatethumbprint TEXT,
+    state TEXT,
 	createdatms BIGINT,
 	expiresatms BIGINT
 );

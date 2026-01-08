@@ -1517,6 +1517,7 @@ export const PUSHED_AUTH_REQUEST_MODEL: {[key: string]: cassandra.mapping.ModelO
             "codechallengemethod": "codeChallengeMethod",
             "responsemode": "responseMode",
             "certificatethumbprint": "certificateThumbprint",
+            "state": "state",
             "createdatms": "createdAtMs",
             "expiresatms": "expiresAtMs",
         }

@@ -376,6 +376,7 @@ create TABLE pushed_auth_request (
 	codechallengemethod VARCHAR2(16) NOT NULL,
 	responsemode VARCHAR2(32) NOT NULL,
     certificatethumbprint VARCHAR2(128) NOT NULL,
+    state VARCHAR2(128) NOT NULL;
 	createdatms NUMBER NOT NULL,
 	expiresatms NUMBER NOT NULL
 );
