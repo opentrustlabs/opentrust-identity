@@ -10,6 +10,7 @@ import {
     CLIENT_TYPE_USER_DELEGATED_PERMISSIONS,
     FAPI_CLIENT_CERTIFICATE_HEADER,
     FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER,
+    OIDC_PAR_REQUEST_URI_PREFIX,
     OIDC_TOKEN_ERROR_INVALID_CLIENT
 } from '@/utils/consts';
 import { generateHash, hasValidLoopbackRedirectUri } from '@/utils/dao-utils';
@@ -366,7 +367,7 @@ export default async function handler(
     
 
     // Generate request_uri (URN format as per RFC 9126)
-    const requestUri = `urn:ietf:params:oauth:request_uri:${randomUUID()}`;
+    const requestUri = `${OIDC_PAR_REQUEST_URI_PREFIX}${randomUUID()}`;
     const expiresAtMs = Date.now() + (PAR_EXPIRY_SECONDS * 1000);
 
     // Create PAR record to store
