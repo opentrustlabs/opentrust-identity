@@ -710,6 +710,8 @@ type PreAuthenticationState {
     tenantId: String!
     clientId: String!
     expiresAtMs: Float!
+    nonce: String
+    certificateThumbprint: String
 }
 
 type AuthorizationCodeData {

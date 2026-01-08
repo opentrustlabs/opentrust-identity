@@ -1492,3 +1492,33 @@ export const CLIENT_FAPI_CONFIGURATION_MODEL: {[key: string]: cassandra.mapping.
     
 }
 
+export const PUSHED_AUTH_REQUEST_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
+    "pushed_auth_request": {
+        tables: ["pushed_auth_request"],
+        columns: {
+            "requesturi": "requestUri",
+            "clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+            "responsetype": "responseType",
+            "redirecturi": "redirectUri",
+            "scope": "scope",
+            "nonce": "nonce",
+            "codechallenge": "codeChallenge",
+            "codechallengemethod": "codeChallengeMethod",
+            "responsemode": "responseMode",
+            "certificatethumbprint": "certificateThumbprint",
+            "createdatms": "createdAtMs",
+            "expiresatms": "expiresAtMs",
+        }
+    }
+}

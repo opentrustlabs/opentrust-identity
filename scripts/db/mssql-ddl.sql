@@ -357,8 +357,26 @@ create TABLE pre_authentication_state (
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
     expiresatms BIGINT NOT NULL,
+    nonce VARCHAR(128),
+    certificatethumbprint VARCHAR(128),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
+);
+
+create TABLE pushed_auth_request (
+	requesturi VARCHAR(128) PRIMARY KEY,
+	clientid VARCHAR(64) NOT NULL,
+	tenantid VARCHAR(64) NOT NULL,
+	responsetype VARCHAR(32) NOT NULL,
+	redirecturi VARCHAR(256) NOT NULL,
+	scope VARCHAR(512) NOT NULL,
+	nonce VARCHAR(128) NOT NULL,
+	codechallenge VARCHAR(128) NOT NULL,
+	codechallengemethod VARCHAR(16) NOT NULL,
+	responsemode VARCHAR(32) NOT NULL,
+    certificatethumbprint VARCHAR(128) NOT NULL,
+	createdatms BIGINT NOT NULL,
+	expiresatms BIGINT NOT NULL
 );
 
 create TABLE authorization_code_data (

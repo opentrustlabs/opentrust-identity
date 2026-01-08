@@ -4,14 +4,18 @@ import ClientDao from '@/lib/dao/client-dao';
 import ScopeDao from '@/lib/dao/scope-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS } from '@/utils/consts';
-import { generateRandomToken, hasValidLoopbackRedirectUri } from '@/utils/dao-utils';
-import type { NextApiRequest, NextApiResponse } from 'next'
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, FAPI_CLIENT_CERTIFICATE_HEADER, FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER } from '@/utils/consts';
+import { generateRandomToken, hasValidLoopbackRedirectUri, generateHash } from '@/utils/dao-utils';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { X509Certificate } from 'crypto';
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+
+// TODO: Add ParDao to factory
+// const parDao = DaoFactory.getInstance().getParDao();
 
 // const {
 //     AUTH_DOMAIN
@@ -31,34 +35,102 @@ export default async function handler(
 		code_challenge,
 		code_challenge_method,
 		response_type,
-		response_mode } = req.query;
+		response_mode,
+		request_uri,
+		nonce,
+		claims,
+		acr_values
+	} = req.query;
 
-
-	const tenantId = tenant_id as string;
-	const clientId = client_id as string;
-
-	// Required parameter
-	const redirectUri = redirect_uri as string;
-
-	// Scope should be set (at a minimum) to openid to access the user info endpoint.
-	// profile email and offline_access are all optional but recommended.
-	const oidcScope = scope as string;
-
-	// Clients SHOULD sent a state value
-	const oidcState = state as string;
-
-	// Hashed value of a random string that the client generates. Only if the client supports PKCE
-	const codeChallenge = code_challenge as string;
-
-	// Only allow a value of S256, never plain, if the client supports PKCE, 
-	const codeChallengeMethod = code_challenge_method as string;
-
-	// This should be set to code for the authorization endpoint, token for the token endpoint
-	const responseType = response_type as string;	// code
-
-	// Optional parameter, values are either fragment or query. 
-	// Default to query if not present or set to something else besides fragment
+	let tenantId = tenant_id as string;
+	let clientId = client_id as string;
+	let redirectUri = redirect_uri as string;
+	let oidcScope = scope as string;
+	let oidcState = state as string;
+	let codeChallenge = code_challenge as string;
+	let codeChallengeMethod = code_challenge_method as string;
+	let responseType = response_type as string;
 	let responseMode = response_mode as string;
+	let oidcNonce = nonce as string;
+	let oidcClaims = claims as string;
+	let acrValues = acr_values as string;
+
+	// ============================================================================
+	// PAR (Pushed Authorization Request) Support - RFC 9126
+	// ============================================================================
+	// If request_uri is present, this is a PAR request. Load the stored request
+	// parameters and override any parameters provided in the query string.
+	// ============================================================================
+	const requestUri = request_uri as string;
+
+	if (requestUri) {
+		// Validate request_uri format (must be URN as per RFC 9126)
+		if (!requestUri.startsWith('urn:ietf:params:oauth:request_uri:')) {
+			res.status(302).setHeader("location", `/authorize/login?error=invalid_request&error_description=ERROR_INVALID_REQUEST_URI_FORMAT`);
+			res.end();
+			return;
+		}
+
+		// TODO: Fetch PAR record from database
+		// const parRecord = await parDao.getPARByRequestUri(requestUri);
+		// For now, this is a placeholder
+		const parRecord = null; // Replace with actual fetch
+
+		if (!parRecord) {
+			res.status(302).setHeader("location", `/authorize/login?error=invalid_request&error_description=ERROR_REQUEST_URI_NOT_FOUND`);
+			res.end();
+			return;
+		}
+
+		// TODO: Check if PAR has expired
+		// if (parRecord.expiresAtMs < Date.now()) {
+		//     res.status(302).setHeader("location", `/authorize/login?error=invalid_request&error_description=ERROR_REQUEST_URI_EXPIRED`);
+		//     res.end();
+		//     return;
+		// }
+
+		// TODO: Check if PAR has already been consumed (single-use)
+		// if (parRecord.consumed) {
+		//     res.status(302).setHeader("location", `/authorize/login?error=invalid_request&error_description=ERROR_REQUEST_URI_ALREADY_USED`);
+		//     res.end();
+		//     return;
+		// }
+
+		// TODO: Mark PAR as consumed
+		// await parDao.markPARConsumed(requestUri);
+
+		// TODO: Override authorization parameters with values from PAR record
+		// tenantId = parRecord.tenantId;
+		// clientId = parRecord.clientId;
+		// redirectUri = parRecord.redirectUri;
+		// oidcScope = parRecord.scope;
+		// oidcState = parRecord.state;
+		// codeChallenge = parRecord.codeChallenge;
+		// codeChallengeMethod = parRecord.codeChallengeMethod;
+		// responseType = parRecord.responseType;
+		// responseMode = parRecord.responseMode || 'query';
+		// oidcNonce = parRecord.nonce;
+		// oidcClaims = parRecord.claims;
+		// acrValues = parRecord.acrValues;
+		// certificateThumbprint = parRecord.certificateThumbprint;
+
+		// IMPORTANT: For FAPI, when request_uri is used, clients MUST NOT send
+		// additional authorization parameters in the query string. If they do,
+		// the authorization server MUST reject the request.
+		// TODO: Add validation to reject if both request_uri and other params present
+		// if (client_id || redirect_uri || scope || state || code_challenge) {
+		//     res.status(302).setHeader("location", `/authorize/login?error=invalid_request&error_description=ERROR_REQUEST_URI_WITH_ADDITIONAL_PARAMS`);
+		//     res.end();
+		//     return;
+		// }
+	}
+
+
+
+	// ============================================================================
+	// Standard authorization parameter normalization
+	// ============================================================================
+	// Default to query if not present or set to something else besides fragment
 	if (responseMode !== "fragment") {
 		responseMode = "query";
 	}
@@ -191,8 +263,8 @@ export default async function handler(
     }
     
 
-	// In the success case, create a unique key for the query parameter which maps 
-	// all of the incoming values to a single record and return it instead of the multiple 
+	// In the success case, create a unique key for the query parameter which maps
+	// all of the incoming values to a single record and return it instead of the multiple
 	// query params.
     const preAuthenticationState: PreAuthenticationState = {
         clientId: clientId,
@@ -203,9 +275,12 @@ export default async function handler(
         scope: oidcScope,
         tenantId: tenantId,
         token: generateRandomToken(32, "hex"),
-        codeChallenge: codeChallenge, 
+        codeChallenge: codeChallenge,
         codeChallengeMethod: codeChallengeMethod,
-        state: oidcState
+        state: oidcState,
+        // TODO: Add these fields to PreAuthenticationState entity for FAPI Advanced support
+        // nonce: oidcNonce,
+        // certificateThumbprint: certificateThumbprint
     }
     await authDao.savePreAuthenticationState(preAuthenticationState);
 

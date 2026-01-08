@@ -567,7 +567,25 @@ create TABLE pre_authentication_state (
     scope TEXT,
     tenantid UUID,
     clientid UUID,
-    expiresatms BIGINT
+    expiresatms BIGINT,
+    nonce TEXT,
+    certificatethumbprint TEXT
+);
+
+create TABLE pushed_auth_request (
+	requesturi TEXT PRIMARY KEY,
+	clientid UUID,
+	tenantid UUID,
+	responsetype TEXT,
+	redirecturi TEXT,
+	scope TEXT,
+	nonce TEXT,
+	codechallenge TEXT,
+	codechallengemethod TEXT,
+	responsemode TEXT,
+    certificatethumbprint TEXT,
+	createdatms BIGINT,
+	expiresatms BIGINT
 );
 
 create TABLE authorization_code_data (

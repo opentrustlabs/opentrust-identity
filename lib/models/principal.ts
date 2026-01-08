@@ -79,8 +79,9 @@ export interface JWTPrincipal {
     tenant_name: string,
     client_id: string,
     client_name: string,
-    client_type: string
-    principal_type: string
+    client_type: string,
+    principal_type: string,
+    nonce: string | null
 }
 
 /**

@@ -71,8 +71,19 @@ const PreAuthenticationStateEntity = new EntitySchema({
             primary: false,
             nullable: true,
             name: "state"
+        },
+        nonce: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "nonce"
+        },
+        certificateThumbprint: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "certificatethumbprint"
         }
-
     },
 
     tableName: "pre_authentication_state",
