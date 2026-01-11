@@ -51,7 +51,7 @@ export interface MyUserProfile {
 /**
  * JWTPrincipal is the object that is used to sign JWTs and the object which is
  * returned for the OIDC user infor endpoint. It contains the basic
- * JWT claims set plus some additional information about the tenant and c.ient.
+ * JWT claims set plus some additional information about the tenant and client.
  */
 export interface JWTPrincipal {
     sub: string,

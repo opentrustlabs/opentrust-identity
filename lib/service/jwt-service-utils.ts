@@ -16,6 +16,7 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import { logWithDetails } from "../logging/logger";
+import { PushedAuthRequest } from "../entities/pushed-auth-request.entity";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -579,6 +580,23 @@ class JwtServiceUtils {
         }
         
         return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
+    }
+
+    public async signFapiResponse(client: Client, authCode: string, pushedAuthRequest: PushedAuthRequest): Promise<string | null>{
+        const now = Date.now();
+        const principal: JWTPayload = {
+            exp: Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
+            iss: `${AUTH_DOMAIN}/api/${client.tenantId}`,
+            aud: `${client.clientId}`,
+            iat: Math.floor( now / 1000),
+            state: pushedAuthRequest.state,
+            jti: randomUUID().toString(),
+            tenant_id: client.tenantId,
+            code: authCode
+        };
+
+        const s: string | null = await this.signJwt(principal);
+        return s;
     }
 
 

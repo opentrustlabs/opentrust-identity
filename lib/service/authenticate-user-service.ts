@@ -1,10 +1,10 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel, UserFailedPasswordResetAttempts, PreAuthenticationStateProtocolType } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -1709,13 +1709,44 @@ class AuthenticateUserService extends IdentityService {
                 await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
             }
         }
-        
+        let jti: string | null = null;
         if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){    
             try {
-                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
+                if(!userAuthenticationState.preAuthToken){
+                    throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
+                }
+                const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(userAuthenticationState.preAuthToken);
+                
+                if(preAuthenticationState === null){
+                    throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
+                }                
+                if(preAuthenticationState.expiresAtMs < Date.now()){
+                    await authDao.deletePreAuthenticationState(userAuthenticationState.preAuthToken);
+                    throw new GraphQLError(ERROR_CODES.EC00183.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00183}});
+                }
+                // Before checking whether this is a FAPI or OIDC type of pre-auth-token, we can
+                // set some common values on the response and delete the existing pre-auth data.
                 response.userAuthenticationState = userAuthenticationState;
-                response.uri = authorizationCode.uri;
-                userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;                
+                userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                await authDao.deletePreAuthenticationState(userAuthenticationState.preAuthToken);
+                if(preAuthenticationState.preAuthenticationStateProtocol === PreAuthenticationStateProtocolType.Oidc){
+                    // If OIDC, then generate the code now and have the browser redirect to 
+                    // to the redirect URI of the calling client.
+                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, preAuthenticationState);
+                    response.uri = authorizationCode.uri;                    
+                }
+                else{
+                    // This is a FAPI type of request, so we need to complete it in the 
+                    // specific authorize handler for FAPI. Since we need to carry over the
+                    // pre-auth data to the fapi handler, we need to generate a new token so
+                    // that users cannot just take the exising _tk parameter (which is visible in the URI)
+                    // and send it to the /api/{tenant_id}/fapi/authorize endpoint without going through
+                    // the login process.
+                    const token = generateRandomToken(32, "hex");
+                    preAuthenticationState.token = token;
+                    await authDao.savePreAuthenticationState(preAuthenticationState);
+                    response.uri = `/api/${preAuthenticationState.tenantId}/fapi/authorize?${QUERY_PARAM_PREAUTHN_TOKEN}=${token}`;
+                }
             }
             catch(err: unknown){
                 const e = err as Error;
@@ -1730,7 +1761,7 @@ class AuthenticateUserService extends IdentityService {
                     response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 }
                 else{
-                    let jti: string | null = null;
+                    
                     if(userAuthenticationState.deviceCodeId){
                         response.userAuthenticationState = userAuthenticationState;
                         response.uri = "/device/registered";
@@ -1750,31 +1781,50 @@ class AuthenticateUserService extends IdentityService {
                             jti = jwtSigningResponse.principal.jti || null;
                         }
                     }
-                    // If the last step in authentication is to send a security event:
-                    const finalUserAuthenticationState = arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1];
-                    if(
-                        finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
-                        finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ||
-                        finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
-                    ){
-                        finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                        const securityEventType: SecurityEventType = 
-                            finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
-                                ? "successful_authentication" : 
-                                finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
-                                "duress_authentication" :
-                                "device_registered";
+                    // // If the last step in authentication is to send a security event:
+                    // const finalUserAuthenticationState = arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1];
+                    // if(
+                    //     finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
+                    //     finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ||
+                    //     finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
+                    // ){
+                    //     finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                    //     const securityEventType: SecurityEventType = 
+                    //         finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
+                    //             ? "successful_authentication" : 
+                    //             finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
+                    //             "duress_authentication" :
+                    //             "device_registered";
                         
                         
-                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls(); 
-                        oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);                        
-                    }
+                    //     const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls(); 
+                    //     oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);                        
+                    // }
                 }
             }
             catch(err: unknown){
                 const e = err as Error;            
                 throw new GraphQLError(e.message);
             }
+        }
+        // If the last step in authentication is to send a security event:
+        const finalUserAuthenticationState = arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1];
+        if(
+            finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
+            finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ||
+            finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
+        ){
+            finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+            const securityEventType: SecurityEventType = 
+                finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
+                    ? "successful_authentication" : 
+                    finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
+                    "duress_authentication" :
+                    "device_registered";
+            
+            
+            const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls(); 
+            oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);                        
         }
         // If all is successful, we can delete all of the state records tied to this authentication attempt
         if(response.userAuthenticationState.authenticationState !== AuthenticationState.Error){

@@ -1,4 +1,4 @@
-import { Tenant, Client, PreAuthenticationState, ClientScopeRel, Scope } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, PreAuthenticationState, ClientScopeRel, Scope, PreAuthenticationStateProtocolType } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import ScopeDao from '@/lib/dao/scope-dao';
@@ -26,6 +26,7 @@ export default async function handler(
 ) {
 
     const {
+        tenant_id,
         request_uri,
     } = req.query;
 
@@ -39,7 +40,7 @@ export default async function handler(
     const requestUri = request_uri as string;
 
     if (requestUri) {
-        handleFapiAuthorizationRequest(requestUri, res);
+        handleFapiAuthorizationRequest(requestUri, tenant_id as string, res);
     }
     else {
         handleStandardAuthorizationRequest(req, res);
@@ -221,7 +222,8 @@ async function handleStandardAuthorizationRequest(req: NextApiRequest, res: Next
         codeChallengeMethod: codeChallengeMethod,
         state: oidcState,
         nonce: oidcNonce,
-        certificateThumbprint: null
+        certificateThumbprint: null,
+        preAuthenticationStateProtocol: PreAuthenticationStateProtocolType.Oidc
     }
     await authDao.savePreAuthenticationState(preAuthenticationState);
 
@@ -230,7 +232,7 @@ async function handleStandardAuthorizationRequest(req: NextApiRequest, res: Next
 
 }
 
-async function handleFapiAuthorizationRequest(requestUri: string, res: NextApiResponse) {
+async function handleFapiAuthorizationRequest(requestUri: string, tenantId: string, res: NextApiResponse) {
 
     // Validate request_uri format (must be URN as per RFC 9126)
     // If it does not have the valid prefix, 
@@ -240,9 +242,6 @@ async function handleFapiAuthorizationRequest(requestUri: string, res: NextApiRe
         return;
     }
 
-    // TODO: Fetch PAR record from database
-    // const parRecord = await parDao.getPARByRequestUri(requestUri);
-    // For now, this is a placeholder
     const pushedAuthRequest: PushedAuthRequest | null = await authDao.getParData(requestUri);
 
     if (!pushedAuthRequest) {
@@ -257,21 +256,36 @@ async function handleFapiAuthorizationRequest(requestUri: string, res: NextApiRe
         return;
     }
     
+    const client: Client | null = await clientDao.getClientById(pushedAuthRequest.clientId);
+    if(!client || client.enabled !== true || client.markForDelete === true || client.tenantId !== tenantId){
+        res.status(400).json({error: "invalid_request", error_description: "Invalid Client"});
+        res.end();
+        return;
+    }
 
+    // Save the preauthenticationstate data with thumbprint
+    const preAuthenticationState: PreAuthenticationState = {
+        clientId: pushedAuthRequest.clientId,
+        expiresAtMs: Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
+        redirectUri: pushedAuthRequest.redirectUri,
+        responseMode: pushedAuthRequest.responseMode,
+        responseType: pushedAuthRequest.responseType,
+        scope: pushedAuthRequest.scope,
+        tenantId: tenantId,
+        token: generateRandomToken(32, "hex"),
+        codeChallenge: pushedAuthRequest.codeChallenge,
+        codeChallengeMethod: pushedAuthRequest.codeChallengeMethod,
+        state: pushedAuthRequest.state,
+        nonce: pushedAuthRequest.nonce,
+        certificateThumbprint: pushedAuthRequest.certificateThumbprint,
+        preAuthenticationStateProtocol: PreAuthenticationStateProtocolType.Fapi
+    }
+    await authDao.savePreAuthenticationState(preAuthenticationState);
 
-    // For FORM POST JWTs send the following back
-    // regardless of whether it is an error or success. The value must always
-    // be a signed JWT
-    // 
-    // <!DOCTYPE html>
-    // <html>
-    // <body onload="document.forms[0].submit()">
-    //     <form method="post" action="https://client.example/callback">
-    //     <input type="hidden" name="response"
-    //             value="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9..." />
-    //     </form>
-    // </body>
-    // </html>
+    // Delete the PAR record
+    await authDao.deleteParData(requestUri);
 
+    res.status(302).setHeader("location", `/authorize/login?${QUERY_PARAM_PREAUTHN_TOKEN}=${preAuthenticationState.token}&${QUERY_PARAM_TENANT_ID}=${tenantId}`);
+    res.end();
 
 }

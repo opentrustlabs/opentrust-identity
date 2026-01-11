@@ -698,6 +698,11 @@ type UserScopeRel {
     scopeId: String!
 }
 
+enum PreAuthenticationStateProtocolType {
+    OIDC,
+    FAPI
+}
+
 type PreAuthenticationState {
     token: String!
     state: String
@@ -710,6 +715,7 @@ type PreAuthenticationState {
     tenantId: String!
     clientId: String!
     expiresAtMs: Float!
+    preAuthenticationStateProtocol: PreAuthenticationStateProtocolType!
     nonce: String
     certificateThumbprint: String
 }

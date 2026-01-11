@@ -83,6 +83,12 @@ const PreAuthenticationStateEntity = new EntitySchema({
             primary: false,
             nullable: true,
             name: "certificatethumbprint"
+        },
+        preAuthenticationStateProtocol: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "preauthenticationstateprotocol"
         }
     },
 

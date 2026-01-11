@@ -360,6 +360,7 @@ create TABLE pre_authentication_state (
     expiresatms NUMBER NOT NULL,
     nonce VARCHAR2(128),
     certificatethumbprint VARCHAR2(128),
+    preauthenticationstateprotocol VARCHAR2(16) NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
