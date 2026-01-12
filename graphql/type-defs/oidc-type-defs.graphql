@@ -783,6 +783,7 @@ type RefreshData {
     refreshCount: Int!
     scope: String!
     expiresAtMs: Float!
+    certificateThumbprint: String
 }
 
 enum FederatedOIDCAuthorizationRelType {

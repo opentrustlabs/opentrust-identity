@@ -1,10 +1,19 @@
 import { readFileSync, existsSync } from "node:fs";
-import { randomBytes, hash, pbkdf2Sync, scryptSync, createHmac } from "node:crypto";
+import { randomBytes, hash, pbkdf2Sync, scryptSync, createHmac, X509Certificate } from "node:crypto";
 import bcrypt from "bcrypt";
-import { Client, UserCredential } from "@/graphql/generated/graphql-types";
+import { UserCredential } from "@/graphql/generated/graphql-types";
 import { PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, ALL_OIDC_SUPPORTED_SCOPE_VALUES } from "./consts";
 import { ValueTransformer } from "typeorm";
 
+export interface ParsedClientCertificate {
+    certificatePemEncoded: string,
+	certificate: X509Certificate | null,
+	sanUri: string,
+	certificateDerEncoded: Buffer | null,
+	certificateThumbprint: string,
+	error: string | null,
+	errorDescription: string | null
+}
 
 export function base64Decode(s: string): string {
     return Buffer.from(s, "base64").toString("utf-8");
@@ -21,29 +30,29 @@ export function base64Encode(s: string): string {
  * @returns 
  */
 export function getFileContents(fileName: string, defaultContents?: string): any {
-    let fileContents; 
+    let fileContents;
 
-    if(!existsSync(fileName)){
+    if (!existsSync(fileName)) {
         throw new Error("ERROR_FILE_DOES_NOT_EXIST");
     }
-    else{
-        fileContents = readFileSync(fileName, {encoding: "utf-8"});
+    else {
+        fileContents = readFileSync(fileName, { encoding: "utf-8" });
     }
     return fileContents;
 }
 
 export type TokenEncodingType = "hex" | "base64" | "base64url";
-export type HashAlgorithm = "sha256" | "sha384" | "sha512"; 
+export type HashAlgorithm = "sha256" | "sha384" | "sha512";
 /**
  * 
  * @param lengthInBytes
  * @param encoding defaults to base64url
  * @returns 
  */
-export function generateRandomToken(lengthInBytes: number, encoding?: TokenEncodingType){
-    if(!encoding){
+export function generateRandomToken(lengthInBytes: number, encoding?: TokenEncodingType) {
+    if (!encoding) {
         encoding = "base64url";
-    }    
+    }
     return randomBytes(lengthInBytes).toString(encoding);
 }
 
@@ -51,9 +60,9 @@ export function generateRandomToken(lengthInBytes: number, encoding?: TokenEncod
  * 
  * @returns 
  */
-export function generateCodeVerifierAndChallenge(): {verifier: string, challenge: string} {
+export function generateCodeVerifierAndChallenge(): { verifier: string, challenge: string } {
     const verifier: string = generateRandomToken(32);
-    const challenge = generateHash(verifier); 
+    const challenge = generateHash(verifier);
     return ({
         verifier,
         challenge
@@ -68,10 +77,10 @@ export function generateCodeVerifierAndChallenge(): {verifier: string, challenge
  * @returns 
  */
 export function generateHash(data: string | Buffer, hashAlgorithm?: HashAlgorithm, encoding?: TokenEncodingType): string {
-    if(!encoding){
+    if (!encoding) {
         encoding = "base64url";
     }
-    if(!hashAlgorithm){
+    if (!hashAlgorithm) {
         hashAlgorithm = "sha256"
     }
     return hash(hashAlgorithm, data, encoding);
@@ -101,16 +110,16 @@ export function sha256HashPassword(password: string, salt: string, iterations: n
     const hmac = createHmac('sha256', salt);
     hmac.update(password);
     let hash = hmac.digest(); // Binary, not base64
-    
+
     // Re-hash the binary data, not base64 string
-    for(let i = 1; i < iterations; i++){
+    for (let i = 1; i < iterations; i++) {
         const hmac2 = createHmac('sha256', salt);
         hmac2.update(hash);
         hash = hmac2.digest();
     }
-    
+
     return hash.toString('base64');
-    
+
     // let hash = createHash("sha256").update(`${password}${salt}`).digest("base64");
     // for(let i = 1; i < iterations; i++){
     //     hash = createHash("sha256").update(hash).digest("base64");
@@ -208,29 +217,29 @@ export function getDomainFromEmail(email: string): string {
  */
 export function hasValidLoopbackRedirectUri(uris: Array<string>, redirectUri: string): boolean {
     let bRetVal: boolean = false;
-    try{
+    try {
         const rUrl: URL = new URL(redirectUri);
-        if(rUrl.hostname === "localhost" || rUrl.hostname === "127.0.0.1"){
-            for(let i = 0; i < uris.length; i++){
-                try{
+        if (rUrl.hostname === "localhost" || rUrl.hostname === "127.0.0.1") {
+            for (let i = 0; i < uris.length; i++) {
+                try {
                     const tUrl = new URL(uris[i]);
-                    if(
-                        tUrl.hostname === rUrl.hostname && 
+                    if (
+                        tUrl.hostname === rUrl.hostname &&
                         tUrl.protocol === rUrl.protocol &&
                         tUrl.pathname === rUrl.pathname
-                    ){                        
+                    ) {
                         bRetVal = true;
-                        break;                        
+                        break;
                     }
                 }
-                catch(e){
+                catch (e) {
                     // Ignore, although there really shouldn't be any misconfigured URIs stored 
                     // for the client
                 }
             }
         }
     }
-    catch(ignore: any){
+    catch (ignore: any) {
         // In case any parsing of the supplied redirectUri by the client
         // we do not need to do anything but return false.
     }
@@ -288,7 +297,7 @@ export function generateUserCredential(userId: string, password: string, hashAlg
         hashingAlgorithm: hashAlgorithm,
         userId: userId
     }
-} 
+}
 
 // postgres | mysql | oracle | mssql
 type BlobType = "blob" | "bytea" | "varbinary"
@@ -370,7 +379,7 @@ export const BooleanTransformer: ValueTransformer = {
 };
 
 export type BigIntType = "bigint" | "number";
-export function getBigIntTypeForDriver(dbType: string): BigIntType{
+export function getBigIntTypeForDriver(dbType: string): BigIntType {
     switch (dbType) {
         case "mysql":
         case "mariadb":
@@ -388,7 +397,7 @@ export function getBigIntTypeForDriver(dbType: string): BigIntType{
 
 export type IntType = "int" | "number";
 export function getIntTypeForDriver(dbType: string): IntType {
-switch (dbType) {
+    switch (dbType) {
         case "mysql":
         case "mariadb":
         case "postgres":
@@ -403,3 +412,68 @@ switch (dbType) {
     }
 }
 
+
+export function getParsedFapiClientCertificate(uriEncodedCertificate: string): ParsedClientCertificate {
+
+    const parsedClientCertificate: ParsedClientCertificate = {
+        certificatePemEncoded: "",
+        certificate: null,
+        sanUri: "",
+        certificateDerEncoded: null,
+        certificateThumbprint: "",
+        error: null,
+        errorDescription: null
+    };
+
+    try {
+        const certPem: string = decodeURIComponent(uriEncodedCertificate);
+        const cert = new X509Certificate(certPem);
+
+        // Extract SAN:URI for FAPI client identification
+        const sanExtension = cert.subjectAltName;
+        if (!sanExtension) {
+            parsedClientCertificate.error = "invalid_client";
+            parsedClientCertificate.errorDescription = "Client certificate missing SAN extension";
+            return parsedClientCertificate;            
+        }
+
+        const sanEntries = sanExtension.split(', ');
+        const uriEntries = sanEntries.filter(entry => entry.startsWith('URI:'));
+
+        if (uriEntries.length !== 1) {
+            parsedClientCertificate.error = "invalid_client";
+            parsedClientCertificate.errorDescription = "Client certificate must have exactly one SAN:URI entry";
+            return parsedClientCertificate;  
+        }
+
+        const clientCertificateSanUri = uriEntries[0].substring(4);
+        if(!clientCertificateSanUri || clientCertificateSanUri === ""){
+            parsedClientCertificate.error = "invalid_client";
+            parsedClientCertificate.errorDescription = "Client certificate missing SAN:URI entry";
+            return parsedClientCertificate; 
+        }
+
+        // Store certificate thumbprint for later validation during token request
+        const derEncoded: Buffer = Buffer.from(
+            certPem
+                .replace(/-----BEGIN CERTIFICATE-----/, '')
+                .replace(/-----END CERTIFICATE-----/, '')
+                .replace(/\s+/g, ''),
+            'base64'
+        );
+        const certificateThumbprint = generateHash(derEncoded, 'sha256', 'base64url');
+
+        parsedClientCertificate.certificate = cert;
+        parsedClientCertificate.certificateDerEncoded = derEncoded;
+        parsedClientCertificate.sanUri = clientCertificateSanUri;
+        parsedClientCertificate.certificatePemEncoded = certPem;
+        parsedClientCertificate.certificateThumbprint = certificateThumbprint;
+        return parsedClientCertificate;
+    } 
+    catch (error: unknown) {
+        const e = error as Error;
+        parsedClientCertificate.error = "invalid_client";
+        parsedClientCertificate.errorDescription = `Certificate parsing failed: ${e.message}`;
+        return parsedClientCertificate;          
+    }
+}

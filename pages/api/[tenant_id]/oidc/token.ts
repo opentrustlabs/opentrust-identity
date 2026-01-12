@@ -5,7 +5,7 @@ import TenantDao from '@/lib/dao/tenant-dao';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
 import { CLIENT_TYPE_SERVICE_ACCOUNT, FAPI_CLIENT_CERTIFICATE_HEADER, FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_DEVICE_CODE, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS, OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED, OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING, OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE, OIDC_TOKEN_ERROR_EXPIRED_TOKEN, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, REFRESH_TOKEN_CLIENT_TYPE_DEVICE, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
-import { base64Decode, generateHash } from '@/utils/dao-utils';
+import { base64Decode, generateHash, getParsedFapiClientCertificate, ParsedClientCertificate } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID, X509Certificate } from 'crypto';
 import JwtService from '@/lib/service/jwt-service-utils';
@@ -29,6 +29,18 @@ const clientAuthValidationService: ClientAuthValidationService = new ClientAuthV
 const jwtService: JwtService = new JwtService();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
+
+interface FapiTokenData {
+    tenantId: string,
+    clientId: string,
+    scope: string | null,
+    redirectUri: string,
+    grantType: string,
+    codeVerifier: string,
+    code: string,
+    traceId: string
+}
+
 interface TokenData {
     tenantId: string,
     clientId: string,
@@ -44,6 +56,8 @@ interface TokenData {
     deviceCode: string | null,
     traceId: string
 }
+
+
 
 export default async function handler(
 	req: NextApiRequest,
@@ -124,6 +138,7 @@ export default async function handler(
     const clientAssertionType = client_assertion_type ? client_assertion_type as string : null;
     const deviceCode = device_code ? device_code as string : null;
 
+
     // Extract FAPI client certificate headers
     const clientCertificate = req.headers[FAPI_CLIENT_CERTIFICATE_HEADER] ? req.headers[FAPI_CLIENT_CERTIFICATE_HEADER] as string : null;
     const clientCertificateVerify = req.headers[FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER] ? req.headers[FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER] as string : null;
@@ -140,11 +155,28 @@ export default async function handler(
         return res.status(400).json(error);
     }
 
-    if (clientCertificate !== null && clientCertificateVerify !== null && grantType === GRANT_TYPE_CLIENT_CREDENTIALS) {
-        return handleFapiClientCredentialsGrant(clientCertificate, clientCertificateVerify, traceId, res);
+    if (clientCertificate !== null && clientCertificateVerify !== null) {
+        if(grantType === GRANT_TYPE_CLIENT_CREDENTIALS){
+            return handleFapiClientCredentialsGrant(clientCertificate, clientCertificateVerify, traceId, res);
+        }
+        else if(grantType === GRANT_TYPE_AUTHORIZATION_CODE){
+            const fapiTokenData: FapiTokenData = {
+                tenantId,
+                clientId: clientId || "",
+                scope: oidcScope,
+                redirectUri: redirectUri || "",
+                grantType: grantType,
+                codeVerifier: codeVerifier || "",
+                code: oidcCode,
+                traceId: traceId
+            }
+            return handleFapiAuthorizationCodeGrant(clientCertificate, clientCertificateVerify, req, res, fapiTokenData);
+        }
+        else if(grantType === GRANT_TYPE_REFRESH_TOKEN){
+            //return handleFapiRefreshTokenGrant();
+        }
     }
     else if (clientId !== null && clientId !== "") {
-
         // Handle the different types of grant types:
         // 1. Authorization code
         // 2. Refresh token
@@ -167,7 +199,7 @@ export default async function handler(
         }
 
         if (grantType === GRANT_TYPE_AUTHORIZATION_CODE) {
-            return handleAuthorizationCodeGrant(tokenData, req, res, clientCertificate, clientCertificateVerify);
+            return handleAuthorizationCodeGrant(tokenData, req, res);
         }
         else if (grantType === GRANT_TYPE_REFRESH_TOKEN) {
             return handleRefreshTokenGrant(tokenData, res);
@@ -196,7 +228,7 @@ export default async function handler(
 
 }
 
-async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRequest, res: NextApiResponse, clientCertificate: string | null, clientCertificateVerify: string | null) {
+async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRequest, res: NextApiResponse) {
 
     const authorizationCodeData: AuthorizationCodeData | null = await authDao.getAuthorizationCodeData(tokenData.code || "");
 
@@ -214,45 +246,16 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRe
     // Delete the authorization code immediately so that it cannot be reused. No need to wait.
     authDao.deleteAuthorizationCodeData(tokenData.code || "");
 
-    // If this is NOT a FAPI token request, then the client will need to send 
-    // all of the relevant information as request parameters. 
-    if(!clientCertificate){
-        if(
-            authorizationCodeData.tenantId !== tokenData.tenantId ||
-            authorizationCodeData.clientId !== tokenData.clientId ||
-            authorizationCodeData.redirectUri !== tokenData.redirectUri ||
-            authorizationCodeData.expiresAtMs < Date.now() ||
-            authorizationCodeData.scope !== tokenData.scope
-        ){
-            const error: OIDCErrorResponseBody = {
-                error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
-                error_code: "0000721",
-                error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: tokenData.traceId
-            }
-            return res.status(400).json(error);
-        }
-    }
-
-    if(clientCertificate && clientCertificateVerify && clientCertificateVerify !== "SUCCESS"){
+    if(
+        authorizationCodeData.tenantId !== tokenData.tenantId ||
+        authorizationCodeData.clientId !== tokenData.clientId ||
+        authorizationCodeData.redirectUri !== tokenData.redirectUri ||
+        authorizationCodeData.expiresAtMs < Date.now() ||
+        authorizationCodeData.scope !== tokenData.scope
+    ){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
-            error_code: "0000729",
-            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE",
-            error_uri: "",
-            timestamp: Date.now(),
-            trace_id: tokenData.traceId
-        }
-        return res.status(400).json(error);
-    }
-
-    const client: Client | null = await clientDao.getClientById(authorizationCodeData.clientId);
-    if(client === null || client.enabled !== true || client.markForDelete === true){
-        const error: OIDCErrorResponseBody = {
-            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
-            error_code: "0000729",
+            error_code: "0000721",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
             error_uri: "",
             timestamp: Date.now(),
@@ -261,85 +264,38 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRe
         return res.status(400).json(error);
     }
 
-    
-    // Validate the code challenge if it exists.
+    // Check to make sure that the client is NOT FAPI-enabled to prevent
+    // downgrade attacks
+    const client: Client | null = await clientDao.getClientById(tokenData.clientId);
+    if(client === null || client.enabled !== true || client.markForDelete === true || client.fapiEnabled === true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    // Validate the code challenge if it exists or validate the
+    // client authentication using either client secret or signed jwt
+    // Issue the token response
     //
     // The presence of the code challenge indicates that the client
-    // cannot store a client_secret value securely or is FAPI-enabled and so uses the PKCE
+    // cannot store a client_secret value securely and so uses the PKCE
     // extention for the auth and token endpoints. The client will have been
     // validated for the PKCE extension enablement in the authorization call
     // before getting to this point.
-    let codeChallengeValidated: boolean = false;
     if(authorizationCodeData.codeChallenge){
-        const error: OIDCErrorResponseBody | null = validateCodeVerifier(authorizationCodeData.codeChallenge, tokenData);
+        const error: OIDCErrorResponseBody | null = validateCodeVerifier(authorizationCodeData.codeChallenge, tokenData.codeVerifier || "", tokenData.traceId);
         if(error){
             return res.status(400).json(error);
-        }
-        codeChallengeValidated = true;
+        }        
     }
-    
-    // If there is a client certificate, then extract the SAN:URI value and retrieve the
-    // client information to make sure it matches that value in the authorization code data
-    if(clientCertificate){
-        const certPem: string = decodeURIComponent(clientCertificate);
-        const cert = new X509Certificate(certPem);
-
-        // Extract SAN:URI for FAPI client identification
-        const sanExtension = cert.subjectAltName;
-        if (!sanExtension) {
-            return res.status(400).json({
-                error: 'invalid_client',
-                error_description: 'Client certificate missing SAN extension',
-                error_code: '0000803'
-            });
-        }
-
-        const sanEntries = sanExtension.split(', ');
-        const uriEntries = sanEntries.filter(entry => entry.startsWith('URI:'));
-
-        if (uriEntries.length !== 1) {
-            const error: OIDCErrorResponseBody = {
-                error: "invalid_client",
-                error_code: "0000729",
-                error_description: "Client certificate must have exactly one SAN:URI entry",
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: tokenData.traceId
-            }
-            return res.status(400).json(error);
-        }
-        const clientCertificateSanUri = uriEntries[0].substring(4);
-        const clientBySanUri: Client | null = await clientDao.getClientByFapiIdentifier(clientCertificateSanUri);
-        if(clientBySanUri === null || clientBySanUri.fapiEnabled !== true || clientBySanUri.clientId !== client.clientId || clientBySanUri.tenantId !== tokenData.tenantId){
-            const error: OIDCErrorResponseBody = {
-                error: "invalid_client",
-                error_code: "0000729",
-                error_description: "Client not found for certificate SAN:URI",
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: tokenData.traceId
-            }
-            return res.status(400).json(error);
-        }
-        if(!codeChallengeValidated){
-            const error: OIDCErrorResponseBody = {
-                error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                error_code: "0000718",
-                error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CODE_VERIFIER",
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: tokenData.traceId                
-            }
-            return res.status(400).json(error);
-        }
-    }
-
-    // For non-FAPI clients, we need to check to make sure that if PKCE is not enabled
-    // and they do NOT send in either a client assertion or client secret, then return an error.
-    if(client.fapiEnabled !== true){
-        // There either has to be validated code challenge or the client must send
-        // a client assertion or client secret.
-        if(codeChallengeValidated !== true && tokenData.clientAssertion === null && tokenData.clientSecret === null){
+    else{
+        if(tokenData.clientAssertion === null && tokenData.clientSecret === null){
             const error: OIDCErrorResponseBody = {
                 error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
                 error_code: "0000720",
@@ -350,8 +306,6 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRe
             }
             return res.status(400).json(error);
         }
-        
-
         let credentialIsValid: boolean = false;
         if(tokenData.clientSecret){
             credentialIsValid = await clientAuthValidationService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
@@ -372,8 +326,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRe
         }
     }
     
-    const response = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId);    
-    //const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId);    
+    const response = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId);        
     if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
@@ -426,10 +379,11 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRe
     oidcServiceUtils.invokeSecurityEventCallback(securityEvent, authToken);
 
     return res.status(200).json(response.oidcTokenResponse);
+   
     
 }
 
-function validateCodeVerifier(codeChallenge: string, tokenData: TokenData): OIDCErrorResponseBody | null {
+function validateCodeVerifier(codeChallenge: string, codeVerifier: string, traceId: string): OIDCErrorResponseBody | null {
     
     // Validate the code challenge if it exists or validate the
     // client authentication using either client secret or signed jwt
@@ -441,18 +395,18 @@ function validateCodeVerifier(codeChallenge: string, tokenData: TokenData): OIDC
     // validated for the PKCE extension enablement in the authorization call
     // before getting to this point.
     
-    if(!tokenData.codeVerifier || "" === tokenData.codeVerifier){
+    if(!codeVerifier || "" === codeVerifier){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
             error_code: "0000718",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CODE_VERIFIER",
             error_uri: "",
             timestamp: Date.now(),
-            trace_id: tokenData.traceId                
+            trace_id: traceId                
         }
         return error;
     }
-    const hashedVerifier = generateHash(tokenData.codeVerifier, "sha256", "base64url");
+    const hashedVerifier = generateHash(codeVerifier, "sha256", "base64url");
     if(hashedVerifier !== codeChallenge){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
@@ -460,7 +414,7 @@ function validateCodeVerifier(codeChallenge: string, tokenData: TokenData): OIDC
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE_VERIFIER",
             error_uri: "",
             timestamp: Date.now(),
-            trace_id: tokenData.traceId
+            trace_id: traceId
         }
         return error;
     }
@@ -597,16 +551,13 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     // want to require the verifier, but it is a good idea to limit the number of refresh
     // tokens issued.
     else if(refreshTokenData.refreshTokenClientType === REFRESH_TOKEN_CLIENT_TYPE_PKCE){
-        const error: OIDCErrorResponseBody | null = validateCodeVerifier(tokenData.codeVerifier || "", tokenData);
+        const error: OIDCErrorResponseBody | null = validateCodeVerifier(refreshTokenData.codeChallenge || "", tokenData.codeVerifier || "", tokenData.traceId);
         if(error){
             return res.status(400).json(error);
         }
     }
-
     // else this is a DEVICE client type and cannot send credentials or verifiers and so we cannot
     // do anything more to verify it.
-
-
 
     // Finally, have we maxed out the number of refresh tokens that can be issued?
     if(client.maxRefreshTokenCount && refreshTokenData.refreshCount > client.maxRefreshTokenCount){
@@ -711,6 +662,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
 
     // For FAPI clients, their client is derived from the subject alternate names field in the client certificate
     // and must not be present in the request body or auth header or anywhere else.
+    // To prevent downgrade attacks, do not let FAPI enabled clients obtain tokens without client certs
     if(client.fapiEnabled === true){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
@@ -754,7 +706,6 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     }
     
     const response = await jwtService.signClientJwt(client, tenant);
-    //const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signClientJwt(client, tenant);
     if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
@@ -771,128 +722,256 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
 
 }
 
-async function handleFapiClientCredentialsGrant(clientCertificate: string, clientCertificateVerify: string, traceId: string, res: NextApiResponse){
-    // FAPI: Parse and validate client certificate if provided
-    
-    if(clientCertificate && clientCertificateVerify){
-        // Check that the certificate was successfully verified by the web server
-        if(clientCertificateVerify !== "SUCCESS"){
-            const error: OIDCErrorResponseBody = {
-                error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                error_code: "0000740",
-                error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE_VERIFICATION",
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: traceId
-            }
-            return res.status(400).json(error);
+async function handleFapiAuthorizationCodeGrant(
+        clientCertificate: string, 
+        clientCertificateVerify: string, 
+        req: NextApiRequest, 
+        res: NextApiResponse, 
+        fapiTokenData: FapiTokenData    
+    )
+{
+
+    // FAPI: Parse and validate client certificate if provided    
+    // Check that the certificate was successfully verified by the web server
+    if(clientCertificateVerify !== "SUCCESS"){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000740",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE_VERIFICATION",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
         }
-
-        try {
-            // The certificate is URL-encoded PEM format from the web server
-            const certPem: string = decodeURIComponent(clientCertificate);
-            const cert = new X509Certificate(certPem);
-
-            // Extract Subject Alternative Names (SAN)
-            const sanExtension = cert.subjectAltName;
-
-            if(!sanExtension){
-                const error: OIDCErrorResponseBody = {
-                    error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                    error_code: "0000741",
-                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_SAN_IN_CLIENT_CERTIFICATE",
-                    error_uri: "",
-                    timestamp: Date.now(),
-                    trace_id: traceId
-                }
-                return res.status(400).json(error);
-            }
-
-            // Parse SAN entries to find URI type
-            // Format from X509Certificate is: "URI:value, DNS:value, ..." etc.
-            const sanEntries = sanExtension.split(", ");
-            const uriEntries = sanEntries.filter(entry => entry.startsWith("URI:"));
-
-            if(uriEntries.length !== 1){
-                const error: OIDCErrorResponseBody = {
-                    error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                    error_code: "0000742",
-                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN_URI_COUNT_IN_CLIENT_CERTIFICATE",
-                    error_uri: "",
-                    timestamp: Date.now(),
-                    trace_id: traceId
-                }
-                return res.status(400).json(error);
-            }
-
-            // Extract the URI value (remove "URI:" prefix)
-            const clientCertificateSanUri = uriEntries[0].substring(4);
-            const client: Client | null = await clientDao.getClientByFapiIdentifier(clientCertificateSanUri);
-            if(client === null){
-                const error: OIDCErrorResponseBody = {
-                    error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                    error_code: "0000743",
-                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN",
-                    error_uri: "",
-                    timestamp: Date.now(),
-                    trace_id: traceId
-                }
-                return res.status(400).json(error);
-            }
-            if(client.enabled !== true || client.markForDelete === true || client.fapiEnabled !== true){
-                const error: OIDCErrorResponseBody = {
-                    error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-                    error_code: "0000733",
-                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
-                    error_uri: "",
-                    timestamp: Date.now(),
-                    trace_id: traceId
-                }
-                return res.status(400).json(error);
-            }
-
-            const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
-            if(!tenant || tenant.enabled !== true || tenant.markForDelete === true){
-                const error: OIDCErrorResponseBody = {
-                    error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-                    error_code: "0000732",
-                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT",
-                    error_uri: "",
-                    timestamp: Date.now(),
-                    trace_id: traceId
-                }
-                return res.status(400).json(error);
-            }
-            
-            const response = await jwtService.signClientJwt(client, tenant, certPem);
-            if(!response){
-                const error: OIDCErrorResponseBody = {
-                    error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
-                    error_code: "0000721",
-                    error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_FAILED_SIGNATURE",
-                    error_uri: "",
-                    timestamp: Date.now(),
-                    trace_id: traceId
-                }
-                return res.status(400).json(error);
-            }
-
-            return res.status(200).json(response.oidcTokenResponse);
-
-        } catch(error: unknown) {
-            const e = error as Error;
-            const errorResponse: OIDCErrorResponseBody = {
-                error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                error_code: "0000744",
-                error_description: `ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE: ${e.message}`,
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: traceId
-            }
-            return res.status(400).json(errorResponse);
-        }
+        return res.status(400).json(error);
     }
 
+    const parsedClientCertificate: ParsedClientCertificate = getParsedFapiClientCertificate(clientCertificate);
+    if(parsedClientCertificate.error !== null){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000743",
+            error_description: parsedClientCertificate.errorDescription || "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    
+    const client: Client | null = await clientDao.getClientByFapiIdentifier(parsedClientCertificate.sanUri);
+    if(client === null){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000743",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(client.clientId !== fapiTokenData.clientId || client.enabled !== true || client.markForDelete === true || client.fapiEnabled !== true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000733",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
+    if(!tenant || tenant.enabled !== true || tenant.markForDelete === true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000732",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    const authorizationCodeData: AuthorizationCodeData | null = await authDao.getAuthorizationCodeData(fapiTokenData.code || "");
+
+    if(!authorizationCodeData){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_GRANT,
+            error_code: "0000717",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_BAD_AUTHORIZATION_CODE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId       
+        }
+        return res.status(400).json(error);
+    }
+    // Delete the authorization code immediately so that it cannot be reused. No need to wait.
+    authDao.deleteAuthorizationCodeData(fapiTokenData.code || "");
+
+    if(
+        authorizationCodeData.tenantId !== fapiTokenData.tenantId ||
+        authorizationCodeData.clientId !== fapiTokenData.clientId ||
+        authorizationCodeData.redirectUri !== fapiTokenData.redirectUri ||
+        authorizationCodeData.expiresAtMs < Date.now() ||
+        authorizationCodeData.scope !== fapiTokenData.scope
+    ){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    // PKCE is required for FAPI
+    const codeVerificationValidationErrorResponse: OIDCErrorResponseBody | null = validateCodeVerifier(authorizationCodeData.codeChallenge || "", fapiTokenData.codeVerifier || "", fapiTokenData.traceId);
+    if(codeVerificationValidationErrorResponse){
+        return res.status(400).json(codeVerificationValidationErrorResponse);
+    }
+
+    const response = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId, parsedClientCertificate.certificateThumbprint);
+    
+    if(!response){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_USER",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    if(response.oidcTokenResponse.refresh_token){
+        const refreshData: RefreshData = {
+            clientId: authorizationCodeData.clientId,
+            refreshCount: 1,
+            refreshToken: generateHash(response.oidcTokenResponse.refresh_token),
+            refreshTokenClientType: authorizationCodeData.codeChallenge ? REFRESH_TOKEN_CLIENT_TYPE_PKCE : REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT,
+            tenantId: authorizationCodeData.tenantId,
+            userId: authorizationCodeData.userId,
+            scope: authorizationCodeData.scope,
+            redirecturi: authorizationCodeData.redirectUri,
+            codeChallenge: authorizationCodeData.codeChallenge ? authorizationCodeData.codeChallenge : null,
+            codeChallengeMethod: authorizationCodeData.codeChallengeMethod ? authorizationCodeData.codeChallengeMethod : null,
+            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+        }
+        await authDao.saveRefreshData(refreshData);
+    };
+
+    const ipAddress: string = req.headers[HTTP_HEADER_X_IP_ADDRESS] as string || "";
+    const geoLocation: string = req.headers[HTTP_HEADER_X_GEO_LOCATION] as string || ""
+
+    const authToken = await jwtService.getAuthTokenForOutboundCalls();
+    const address: OIDCUserInfoAddress | null = response.principal.address ? response.principal.address as OIDCUserInfoAddress : null; 
+    const securityEvent: SecurityEvent = {
+        securityEventType: "auth_code_exchanged",
+        userId: response.principal.sub || "unknown",
+        email: response.principal.email as string || "unknown",
+        phoneNumber: response.principal.phone_number as string || null,
+        address: address ? address.street_address : null,
+        city: address ? address.locality as string : null,
+        stateRegionProvince: address ? address.region : null,
+        countryCode: response.principal.country_code as string || null,
+        postalCode: address ? address.postal_code  : null,
+        jti: response.principal.jti || "",
+        ipAddress: ipAddress,
+        geoLocation: geoLocation,
+        deviceFingerprint: ""
+    }
+    oidcServiceUtils.invokeSecurityEventCallback(securityEvent, authToken);
+
+    return res.status(200).json(response.oidcTokenResponse);
+
+}
+
+async function handleFapiClientCredentialsGrant(clientCertificate: string, clientCertificateVerify: string, traceId: string, res: NextApiResponse){
+    
+    // FAPI: Parse and validate client certificate if provided    
+    // Check that the certificate was successfully verified by the web server
+    if(clientCertificateVerify !== "SUCCESS"){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000740",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE_VERIFICATION",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    const parsedClientCertificate: ParsedClientCertificate = getParsedFapiClientCertificate(clientCertificate);
+    if(parsedClientCertificate.error !== null){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000743",
+            error_description: parsedClientCertificate.errorDescription || "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: traceId
+        }
+        return res.status(400).json(error);
+    }
+    
+    const client: Client | null = await clientDao.getClientByFapiIdentifier(parsedClientCertificate.sanUri);
+    if(client === null){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000743",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(client.enabled !== true || client.markForDelete === true || client.fapiEnabled !== true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000733",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
+    if(!tenant || tenant.enabled !== true || tenant.markForDelete === true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000732",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: traceId
+        }
+        return res.status(400).json(error);
+    }
+    
+    const response = await jwtService.signClientJwt(client, tenant, parsedClientCertificate.certificateThumbprint);
+    if(!response){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_FAILED_SIGNATURE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    return res.status(200).json(response.oidcTokenResponse);
     
 }
 

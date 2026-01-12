@@ -13,7 +13,7 @@ import {
     OIDC_PAR_REQUEST_URI_PREFIX,
     OIDC_TOKEN_ERROR_INVALID_CLIENT
 } from '@/utils/consts';
-import { generateHash, hasValidLoopbackRedirectUri } from '@/utils/dao-utils';
+import { generateHash, getParsedFapiClientCertificate, hasValidLoopbackRedirectUri, ParsedClientCertificate } from '@/utils/dao-utils';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import { PushedAuthRequest } from '@/lib/entities/pushed-auth-request.entity';
 import { logWithDetails } from '@/lib/logging/logger';
@@ -156,63 +156,18 @@ export default async function handler(
         logWithDetails("error", "FAPI PAR: Missing Client ID", {...error});
     }
     
+    const parsedClientCertificate: ParsedClientCertificate = getParsedFapiClientCertificate(clientCertificate);
 
-    try {
-        const certPem: string = decodeURIComponent(clientCertificate);
-        const cert = new X509Certificate(certPem);
-
-        // Extract SAN:URI for FAPI client identification
-        const sanExtension = cert.subjectAltName;
-        if (!sanExtension) {
-            return res.status(400).json({
-                error: 'invalid_client',
-                error_description: 'Client certificate missing SAN extension',
-                error_code: '0000803'
-            });
-        }
-
-        const sanEntries = sanExtension.split(', ');
-        const uriEntries = sanEntries.filter(entry => entry.startsWith('URI:'));
-
-        if (uriEntries.length !== 1) {
-            return res.status(400).json({
-                error: 'invalid_client',
-                error_description: 'Client certificate must have exactly one SAN:URI entry',
-                error_code: '0000804'
-            });
-        }
-
-        clientCertificateSanUri = uriEntries[0].substring(4);
-        // Store certificate thumbprint for later validation during token request
-        const derEncoded: Buffer = Buffer.from(
-            certPem
-                .replace(/-----BEGIN CERTIFICATE-----/, '')
-                .replace(/-----END CERTIFICATE-----/, '')
-                .replace(/\s+/g, ''),
-            'base64'
-        );
-        certificateThumbprint = generateHash(derEncoded, 'sha256', 'base64url');        
-
-    } 
-    catch (error: unknown) {
-        const e = error as Error;
+    if(parsedClientCertificate.error !== null){
         return res.status(400).json({
-            error: 'invalid_client',
-            error_description: `Certificate parsing failed: ${e.message}`,
-            error_code: '0000806'
+            error: parsedClientCertificate.error,
+            error_description: parsedClientCertificate.errorDescription || "",
+            error_code: "000805"
         });
     }
+    
 
-
-    if(!clientCertificateSanUri){
-        return res.status(400).json({
-            error: 'invalid_client',
-            error_description: `Cannot identify the SAN:URI value.`,
-            error_code: '0000806'
-        });
-    }
-
-    client = await clientDao.getClientByFapiIdentifier(clientCertificateSanUri);
+    client = await clientDao.getClientByFapiIdentifier(parsedClientCertificate.sanUri);
 
     if (!client || client.enabled !== true || client.markForDelete === true) {
         return res.status(400).json({
@@ -382,7 +337,7 @@ export default async function handler(
         codeChallenge: codeChallenge,
         codeChallengeMethod: codeChallengeMethod,
         responseMode: responseMode,
-        certificateThumbprint,
+        certificateThumbprint: parsedClientCertificate.certificateThumbprint,
         state: state,
         createdAtMs: Date.now(),
         expiresAtMs: expiresAtMs

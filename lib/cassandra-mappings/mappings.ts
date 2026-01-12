@@ -649,7 +649,8 @@ export const PRE_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.
 			"responsemode": "responseMode",
 			"responsetype": "responseType",
 			"scope": "scope",
-			"state": "state"
+			"state": "state",
+            "preauthenticationstateprotocol": "preAuthenticationStateProtocol"
         }
     }
 };
@@ -709,7 +710,8 @@ export const REFRESH_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 			"scope": "scope",
 			"codechallenge": "codeChallenge",
 			"codechallengemethod": "codeChallengeMethod",
-			"expiresatms": "expiresAtMs"
+			"expiresatms": "expiresAtMs",
+            "certificatethumbprint": "certificateThumbprint"
         }
     }
 };

@@ -1780,26 +1780,7 @@ class AuthenticateUserService extends IdentityService {
                             userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
                             jti = jwtSigningResponse.principal.jti || null;
                         }
-                    }
-                    // // If the last step in authentication is to send a security event:
-                    // const finalUserAuthenticationState = arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1];
-                    // if(
-                    //     finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
-                    //     finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ||
-                    //     finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
-                    // ){
-                    //     finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                    //     const securityEventType: SecurityEventType = 
-                    //         finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
-                    //             ? "successful_authentication" : 
-                    //             finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
-                    //             "duress_authentication" :
-                    //             "device_registered";
-                        
-                        
-                    //     const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls(); 
-                    //     oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);                        
-                    // }
+                    }                    
                 }
             }
             catch(err: unknown){

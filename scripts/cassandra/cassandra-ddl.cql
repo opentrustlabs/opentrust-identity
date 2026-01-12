@@ -569,7 +569,8 @@ create TABLE pre_authentication_state (
     clientid UUID,
     expiresatms BIGINT,
     nonce TEXT,
-    certificatethumbprint TEXT
+    certificatethumbprint TEXT,
+    preauthenticationstateprotocol TEXT
 );
 
 create TABLE pushed_auth_request (
@@ -654,6 +655,7 @@ create TABLE refresh_data (
     codechallenge TEXT,
     codechallengemethod TEXT,
     expiresatms BIGINT,
+    certificatethumbprint TEXT,
     PRIMARY KEY (refreshtoken, userid)
 );
 
@@ -669,6 +671,7 @@ create TABLE refresh_data_by_user_id (
     codechallenge TEXT,
     codechallengemethod TEXT,
     expiresatms BIGINT,
+    certificatethumbprint TEXT,
     PRIMARY KEY (userid, refreshtoken)
 );
 
