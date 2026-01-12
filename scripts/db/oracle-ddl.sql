@@ -431,7 +431,7 @@ create TABLE refresh_data (
     codechallenge VARCHAR2(256),
     codechallengemethod VARCHAR2(32),
     expiresatms NUMBER NOT NULL,
-    certificatethumbprint VARCHAR2(256),
+    certificatethumbprint VARCHAR2(128),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES users(userid)
