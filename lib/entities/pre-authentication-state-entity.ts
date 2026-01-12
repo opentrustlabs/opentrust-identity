@@ -1,5 +1,5 @@
 import { EntitySchema } from 'typeorm';
-import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+import { BooleanTransformer, getBigIntTypeForDriver, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
 const {
     RDB_DIALECT
@@ -89,6 +89,19 @@ const PreAuthenticationStateEntity = new EntitySchema({
             primary: false,
             nullable: false,
             name: "preauthenticationstateprotocol"
+        },
+        userAuthenticated: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "userauthenticated",
+            transformer: BooleanTransformer
+        },
+        authenticatedUserId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticateduserid"
         }
     },
 

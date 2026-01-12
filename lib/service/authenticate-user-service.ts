@@ -1741,9 +1741,13 @@ class AuthenticateUserService extends IdentityService {
                     // pre-auth data to the fapi handler, we need to generate a new token so
                     // that users cannot just take the exising _tk parameter (which is visible in the URI)
                     // and send it to the /api/{tenant_id}/fapi/authorize endpoint without going through
-                    // the login process.
+                    // the login process and we need to se the userAuthenticated property to true and
+                    // give the token 2 minutes until it expires.
                     const token = generateRandomToken(32, "hex");
                     preAuthenticationState.token = token;
+                    preAuthenticationState.userAuthenticated = true;
+                    preAuthenticationState.authenticatedUserId = user.userId;
+                    preAuthenticationState.expiresAtMs = Date.now() + (2 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */);
                     await authDao.savePreAuthenticationState(preAuthenticationState);
                     response.uri = `/api/${preAuthenticationState.tenantId}/fapi/authorize?${QUERY_PARAM_PREAUTHN_TOKEN}=${token}`;
                 }

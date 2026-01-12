@@ -175,7 +175,9 @@ export const AUTHORIZATION_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.M
                 toModel(columnValue) {
                     return columnValue.toString();
                 }
-            }
+            },
+            "nonce": "nonce",
+            "certificatethumbprint": "certificateThumbprint"
         }
     }
 };
@@ -650,7 +652,10 @@ export const PRE_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.
 			"responsetype": "responseType",
 			"scope": "scope",
 			"state": "state",
-            "preauthenticationstateprotocol": "preAuthenticationStateProtocol"
+            "nonce": "nonce",
+            "preauthenticationstateprotocol": "preAuthenticationStateProtocol",
+            "userauthenticated": "userAuthenticated",
+            "authenticateduserid": "authenticatedUserId"
         }
     }
 };

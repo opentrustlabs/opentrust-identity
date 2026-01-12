@@ -718,6 +718,8 @@ type PreAuthenticationState {
     preAuthenticationStateProtocol: PreAuthenticationStateProtocolType!
     nonce: String
     certificateThumbprint: String
+    userAuthenticated: Boolean!
+    authenticatedUserId: String
 }
 
 type AuthorizationCodeData {
@@ -730,6 +732,8 @@ type AuthorizationCodeData {
     codeChallenge: String
     userId: String!
     expiresAtMs: Float!
+    nonce: String
+    certificateThumbprint: String
 }
 
 enum DeviceCodeAuthorizationStatus {

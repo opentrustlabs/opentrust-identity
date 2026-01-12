@@ -1,11 +1,11 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail, CaptchaConfig, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail, CaptchaConfig, TenantLookAndFeel, PreAuthenticationStateProtocolType } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import {  generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -1374,10 +1374,41 @@ class RegisterUserService extends IdentityService {
         
         if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
             try{
-                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
-                response.userRegistrationState = userRegistrationState;
-                response.uri = authorizationCode.uri;
-                userRegistrationState.registrationStateStatus = STATUS_COMPLETE;        
+                const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(userRegistrationState.preAuthToken || "");
+                if(preAuthenticationState === null){
+                    throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
+                }                
+                if(preAuthenticationState.expiresAtMs < Date.now()){
+                    await authDao.deletePreAuthenticationState(userRegistrationState.preAuthToken || "");
+                    throw new GraphQLError(ERROR_CODES.EC00183.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00183}});
+                }
+                // Before checking whether this is a FAPI or OIDC type of pre-auth-token, we can
+                // set some common values on the response and delete the existing pre-auth data.
+                response.userRegistrationState = userRegistrationState;                
+                userRegistrationState.registrationStateStatus = STATUS_COMPLETE;   
+                await authDao.deletePreAuthenticationState(userRegistrationState.preAuthToken || "");
+                if(preAuthenticationState.preAuthenticationStateProtocol === PreAuthenticationStateProtocolType.Oidc){
+                    // If OIDC, then generate the code now and have the browser redirect to 
+                    // to the redirect URI of the calling client.
+                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, preAuthenticationState);
+                    response.uri = authorizationCode.uri;                    
+                }
+                else{
+                    // This is a FAPI type of request, so we need to complete it in the 
+                    // specific authorize handler for FAPI. Since we need to carry over the
+                    // pre-auth data to the fapi handler, we need to generate a new token so
+                    // that users cannot just take the exising _tk parameter (which is visible in the URI)
+                    // and send it to the /api/{tenant_id}/fapi/authorize endpoint without going through
+                    // the login process and we need to se the userAuthenticated property to true and
+                    // give the token 2 minutes until it expires.
+                    const token = generateRandomToken(32, "hex");
+                    preAuthenticationState.token = token;
+                    preAuthenticationState.userAuthenticated = true;
+                    preAuthenticationState.authenticatedUserId = user.userId;
+                    preAuthenticationState.expiresAtMs = Date.now() + (2 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */);
+                    await authDao.savePreAuthenticationState(preAuthenticationState);
+                    response.uri = `/api/${preAuthenticationState.tenantId}/fapi/authorize?${QUERY_PARAM_PREAUTHN_TOKEN}=${token}`;
+                }
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             catch(err: any){

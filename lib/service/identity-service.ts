@@ -1168,7 +1168,7 @@ class IdentityService {
             tenantId: preAuthenticationState.tenantId,
             userId: userId,
             codeChallenge: preAuthenticationState.codeChallenge,
-            codeChallengeMethod: preAuthenticationState.codeChallengeMethod            
+            codeChallengeMethod: preAuthenticationState.codeChallengeMethod
         }
         await authDao.saveAuthorizationCodeData(authorizationCodeData);
 

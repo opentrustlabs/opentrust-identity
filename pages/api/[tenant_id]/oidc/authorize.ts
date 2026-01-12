@@ -223,7 +223,8 @@ async function handleStandardAuthorizationRequest(req: NextApiRequest, res: Next
         state: oidcState,
         nonce: oidcNonce,
         certificateThumbprint: null,
-        preAuthenticationStateProtocol: PreAuthenticationStateProtocolType.Oidc
+        preAuthenticationStateProtocol: PreAuthenticationStateProtocolType.Oidc,
+        userAuthenticated: false
     }
     await authDao.savePreAuthenticationState(preAuthenticationState);
 
@@ -266,7 +267,7 @@ async function handleFapiAuthorizationRequest(requestUri: string, tenantId: stri
     // Save the preauthenticationstate data with thumbprint
     const preAuthenticationState: PreAuthenticationState = {
         clientId: pushedAuthRequest.clientId,
-        expiresAtMs: Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
+        expiresAtMs: Date.now() + (5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */),
         redirectUri: pushedAuthRequest.redirectUri,
         responseMode: pushedAuthRequest.responseMode,
         responseType: pushedAuthRequest.responseType,
@@ -278,7 +279,8 @@ async function handleFapiAuthorizationRequest(requestUri: string, tenantId: stri
         state: pushedAuthRequest.state,
         nonce: pushedAuthRequest.nonce,
         certificateThumbprint: pushedAuthRequest.certificateThumbprint,
-        preAuthenticationStateProtocol: PreAuthenticationStateProtocolType.Fapi
+        preAuthenticationStateProtocol: PreAuthenticationStateProtocolType.Fapi,
+        userAuthenticated: false
     }
     await authDao.savePreAuthenticationState(preAuthenticationState);
 

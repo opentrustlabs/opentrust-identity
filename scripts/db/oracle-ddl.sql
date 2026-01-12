@@ -361,6 +361,8 @@ create TABLE pre_authentication_state (
     nonce VARCHAR2(128),
     certificatethumbprint VARCHAR2(128),
     preauthenticationstateprotocol VARCHAR2(16) NOT NULL,
+    userauthenticated NUMBER(1) NOT NULL,
+    authenticateduserid VARCHAR2(64),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
@@ -392,6 +394,8 @@ create TABLE authorization_code_data (
     codechallengemethod VARCHAR2(32),
     userid VARCHAR2(64) NOT NULL,
     expiresatms NUMBER NOT NULL,
+    nonce VARCHAR2(128),
+    certificatethumbprint VARCHAR2(128),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES users(userid)

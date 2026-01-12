@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData, PreAuthenticationState } from "@/graphql/generated/graphql-types";
 import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -412,7 +412,7 @@ class JwtServiceUtils {
      * @param tenantId 
      * @param scope 
      */
-    public async signUserJwt(userId: string, clientId: string, tenantId: string, certificateThumbprint?: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
+    public async signUserJwt(userId: string, clientId: string, tenantId: string, certificateThumbprint?: string, nonce?: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user || user.enabled === false || user.markForDelete === true || user.locked === true){
             return Promise.resolve(null);
@@ -462,9 +462,12 @@ class JwtServiceUtils {
             client_type: client.clientType,
             principal_type: PRINCIPAL_TYPE_END_USER
         };
-        
-        if(certificateThumbprint){            
+
+        if(certificateThumbprint){
             principal["cnf"] = {"x5t#S256": certificateThumbprint}
+        }
+        if(nonce){
+            principal.nonce = nonce;
         }
 
         const idToken: string | null = await this.signJwt(principal);
@@ -581,18 +584,21 @@ class JwtServiceUtils {
         return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
     }
 
-    public async signFapiResponse(client: Client, authCode: string, pushedAuthRequest: PushedAuthRequest): Promise<string | null>{
+    public async signFapiResponse(client: Client, authCode: string, preAuthenticationState: PreAuthenticationState): Promise<string | null>{
         const now = Date.now();
         const principal: JWTPayload = {
             exp: Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
             iss: `${AUTH_DOMAIN}/api/${client.tenantId}`,
             aud: `${client.clientId}`,
             iat: Math.floor( now / 1000),
-            state: pushedAuthRequest.state,
+            state: preAuthenticationState.state,
             jti: randomUUID().toString(),
             tenant_id: client.tenantId,
             code: authCode
         };
+        if(preAuthenticationState.nonce){
+            principal.nonce = preAuthenticationState.nonce;
+        }
 
         const s: string | null = await this.signJwt(principal);
         return s;

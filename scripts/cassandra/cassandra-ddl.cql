@@ -570,7 +570,9 @@ create TABLE pre_authentication_state (
     expiresatms BIGINT,
     nonce TEXT,
     certificatethumbprint TEXT,
-    preauthenticationstateprotocol TEXT
+    preauthenticationstateprotocol TEXT,
+    userauthenticated BOOLEAN,
+    authenticateduserid TEXT
 );
 
 create TABLE pushed_auth_request (
@@ -591,7 +593,7 @@ create TABLE pushed_auth_request (
 );
 
 create TABLE authorization_code_data (
-    code TEXT  PRIMARY KEY,
+    code TEXT PRIMARY KEY,
     redirecturi TEXT,
     tenantid TEXT,
     clientid TEXT,
@@ -599,7 +601,9 @@ create TABLE authorization_code_data (
     codechallenge TEXT,
     codechallengemethod TEXT,
     userid TEXT,
-    expiresatms BIGINT    
+    expiresatms BIGINT,
+    nonce TEXT,
+    certificatethumbprint TEXT
 );
 
 

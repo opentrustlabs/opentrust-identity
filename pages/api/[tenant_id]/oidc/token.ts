@@ -956,7 +956,7 @@ async function handleFapiAuthorizationCodeGrant(
         }
         return res.status(400).json(error);
     }
-    if(client.clientId !== fapiTokenData.clientId || client.enabled !== true || client.markForDelete === true || client.fapiEnabled !== true){
+    if(client.clientId !== fapiTokenData.clientId || client.enabled !== true || client.markForDelete === true || client.fapiEnabled !== true || client.tenantId !== fapiTokenData.tenantId){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
             error_code: "0000733",
@@ -1014,6 +1014,17 @@ async function handleFapiAuthorizationCodeGrant(
         }
         return res.status(400).json(error);
     }
+    if(authorizationCodeData.certificateThumbprint !== parsedClientCertificate.certificateThumbprint){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
 
     // PKCE is required for FAPI
     const codeVerificationValidationErrorResponse: OIDCErrorResponseBody | null = validateCodeVerifier(authorizationCodeData.codeChallenge || "", fapiTokenData.codeVerifier || "", fapiTokenData.traceId);
@@ -1021,7 +1032,13 @@ async function handleFapiAuthorizationCodeGrant(
         return res.status(400).json(codeVerificationValidationErrorResponse);
     }
 
-    const response = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId, parsedClientCertificate.certificateThumbprint);
+    const response = await jwtService.signUserJwt(
+        authorizationCodeData.userId,
+        authorizationCodeData.clientId,
+        authorizationCodeData.tenantId,
+        parsedClientCertificate.certificateThumbprint,
+        authorizationCodeData.nonce || undefined
+    );
     
     if(!response){
         const error: OIDCErrorResponseBody = {
