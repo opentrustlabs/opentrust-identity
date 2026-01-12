@@ -38,7 +38,8 @@ interface FapiTokenData {
     grantType: string,
     codeVerifier: string,
     code: string,
-    traceId: string
+    traceId: string,
+    refreshToken: string | null
 }
 
 interface TokenData {
@@ -168,12 +169,24 @@ export default async function handler(
                 grantType: grantType,
                 codeVerifier: codeVerifier || "",
                 code: oidcCode,
-                traceId: traceId
+                traceId: traceId,
+                refreshToken: null
             }
             return handleFapiAuthorizationCodeGrant(clientCertificate, clientCertificateVerify, req, res, fapiTokenData);
         }
         else if(grantType === GRANT_TYPE_REFRESH_TOKEN){
-            //return handleFapiRefreshTokenGrant();
+            const fapiTokenData: FapiTokenData = {
+                tenantId,
+                clientId: clientId || "",
+                scope: oidcScope,
+                redirectUri: redirectUri || "",
+                grantType: grantType,
+                codeVerifier: codeVerifier || "",
+                code: oidcCode,
+                traceId: traceId,
+                refreshToken: refreshToken
+            }
+            return handleFapiRefreshTokenGrant(clientCertificate, clientCertificateVerify, res, fapiTokenData);
         }
     }
     else if (clientId !== null && clientId !== "") {
@@ -351,7 +364,8 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRe
             redirecturi: authorizationCodeData.redirectUri,
             codeChallenge: authorizationCodeData.codeChallenge ? authorizationCodeData.codeChallenge : null,
             codeChallengeMethod: authorizationCodeData.codeChallengeMethod ? authorizationCodeData.codeChallengeMethod : null,
-            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000), // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            certificateThumbprint: null
         }
         await authDao.saveRefreshData(refreshData);
     };
@@ -546,18 +560,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             }
             return res.status(400).json(error);
         }
-    }
-    // Otherwise validate the original code challenge against the verifier. For PKCE we always
-    // want to require the verifier, but it is a good idea to limit the number of refresh
-    // tokens issued.
-    else if(refreshTokenData.refreshTokenClientType === REFRESH_TOKEN_CLIENT_TYPE_PKCE){
-        const error: OIDCErrorResponseBody | null = validateCodeVerifier(refreshTokenData.codeChallenge || "", tokenData.codeVerifier || "", tokenData.traceId);
-        if(error){
-            return res.status(400).json(error);
-        }
-    }
-    // else this is a DEVICE client type and cannot send credentials or verifiers and so we cannot
-    // do anything more to verify it.
+    }    
 
     // Finally, have we maxed out the number of refresh tokens that can be issued?
     if(client.maxRefreshTokenCount && refreshTokenData.refreshCount > client.maxRefreshTokenCount){
@@ -604,7 +607,8 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             redirecturi: refreshTokenData.redirecturi,
             codeChallenge: refreshTokenData.codeChallenge,
             codeChallengeMethod: refreshTokenData.codeChallengeMethod,
-            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000), // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            certificateThumbprint: null
         }
         await authDao.saveRefreshData(newRefreshData);
     };
@@ -722,6 +726,188 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
 
 }
 
+async function handleFapiRefreshTokenGrant(
+        clientCertificate: string, 
+        clientCertificateVerify: string, 
+        res: NextApiResponse, 
+        fapiTokenData: FapiTokenData
+    )
+{
+
+    if(!fapiTokenData.refreshToken || fapiTokenData.refreshToken === ""){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000722",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_REFRESH_TOKEN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    // FAPI: Parse and validate client certificate if provided    
+    // Check that the certificate was successfully verified by the web server
+    if(clientCertificateVerify !== "SUCCESS"){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000740",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE_VERIFICATION",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    const parsedClientCertificate: ParsedClientCertificate = getParsedFapiClientCertificate(clientCertificate);
+    if(parsedClientCertificate.error !== null){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000743",
+            error_description: parsedClientCertificate.errorDescription || "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    
+    const client: Client | null = await clientDao.getClientByFapiIdentifier(parsedClientCertificate.sanUri);
+    if(client === null){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000743",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_SAN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(client.clientId !== fapiTokenData.clientId || client.enabled !== true || client.markForDelete === true || client.fapiEnabled !== true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000733",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
+    if(!tenant || tenant.enabled !== true || tenant.markForDelete === true){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000732",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    // We always store the refresh token by its hashed value so that anybody who has access
+    // to the raw data would NOT be able to misuse them.
+    const hashedRefreshToken: string = generateHash(fapiTokenData.refreshToken);
+    const refreshTokenData: RefreshData | null = await authDao.getRefreshData(hashedRefreshToken);
+    if(!refreshTokenData){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000723",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_REFRESH_TOKEN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(refreshTokenData.expiresAtMs < Date.now()){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000738",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_EXPIRED_REFRESH_TOKEN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(refreshTokenData.certificateThumbprint !== parsedClientCertificate.certificateThumbprint){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000738",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CERTIFICATE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    // Finally, have we maxed out the number of refresh tokens that can be issued?
+    if(client.maxRefreshTokenCount && refreshTokenData.refreshCount > client.maxRefreshTokenCount){
+
+        // Delete the refresh token ONLY in this error case, since in the others
+        // there is still a possibility that the client was malicious or misconfigured
+        // and so we should maintain the refresh token in the meantime.
+        authDao.deleteRefreshDataByRefreshToken(hashedRefreshToken);
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000730",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MAXIMUM_REFRESH_COUNT_REACHED",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    // This will rotate the refresh token. So we need to remove the old
+    // one (based on its hash value) and save the new one (also based on
+    // its hash value).
+    const response = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId, parsedClientCertificate.certificateThumbprint);    
+    if(!response){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000731",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_USER",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: fapiTokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(response.oidcTokenResponse.refresh_token){
+        const newRefreshData: RefreshData = {
+            clientId: refreshTokenData.clientId,
+            refreshCount: refreshTokenData.refreshCount + 1,
+            refreshToken: generateHash(response.oidcTokenResponse.refresh_token),
+            refreshTokenClientType: refreshTokenData.refreshTokenClientType,
+            tenantId: refreshTokenData.tenantId,
+            userId: refreshTokenData.userId,
+            scope: refreshTokenData.scope,
+            redirecturi: refreshTokenData.redirecturi,
+            codeChallenge: refreshTokenData.codeChallenge,
+            codeChallengeMethod: refreshTokenData.codeChallengeMethod,
+            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000), // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            certificateThumbprint: refreshTokenData.certificateThumbprint
+        }
+        await authDao.saveRefreshData(newRefreshData);
+    };
+    await authDao.deleteRefreshDataByRefreshToken(hashedRefreshToken);
+
+
+    
+    return res.status(200).json(response.oidcTokenResponse);
+
+
+
+
+}
 async function handleFapiAuthorizationCodeGrant(
         clientCertificate: string, 
         clientCertificateVerify: string, 
@@ -861,7 +1047,8 @@ async function handleFapiAuthorizationCodeGrant(
             redirecturi: authorizationCodeData.redirectUri,
             codeChallenge: authorizationCodeData.codeChallenge ? authorizationCodeData.codeChallenge : null,
             codeChallengeMethod: authorizationCodeData.codeChallengeMethod ? authorizationCodeData.codeChallengeMethod : null,
-            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000), // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            certificateThumbprint: parsedClientCertificate.certificateThumbprint
         }
         await authDao.saveRefreshData(refreshData);
     };
@@ -1090,7 +1277,8 @@ async function handleDeviceCodeGrant(tokenData: TokenData, res: NextApiResponse)
                 redirecturi: "",
                 codeChallenge: null,
                 codeChallengeMethod: null,
-                expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+                expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000), // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+                certificateThumbprint: null
             }
             await authDao.deleteAuthorizationDeviceCodeData(deviceCodeData.deviceCodeId);
             await authDao.saveRefreshData(refreshData);

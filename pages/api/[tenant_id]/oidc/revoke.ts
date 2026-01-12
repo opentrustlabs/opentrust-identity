@@ -2,13 +2,17 @@ import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import JwtService from '@/lib/service/jwt-service-utils';
 import AuthDao from '@/lib/dao/auth-dao';
-import { base64Decode, generateHash } from '@/utils/dao-utils';
+import { base64Decode, generateHash, getParsedFapiClientCertificate, ParsedClientCertificate } from '@/utils/dao-utils';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
 import { RefreshData } from '@/graphql/generated/graphql-types';
 import { JWTPrincipal } from '@/lib/models/principal';
 import { logWithDetails } from '@/lib/logging/logger';
+import ClientDao from '@/lib/dao/client-dao';
+import { Client } from '@/graphql/generated/graphql-types';
+import { FAPI_CLIENT_CERTIFICATE_HEADER, FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER } from '@/utils/consts';
 
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const jwtService: JwtService = new JwtService();
 const clientAuthValidationService: ClientAuthValidationService = new ClientAuthValidationService();
 
@@ -21,27 +25,27 @@ const clientAuthValidationService: ClientAuthValidationService = new ClientAuthV
 // A note on implementation:
 // =========================
 // The specification for revocation says that private clients should pass their client id and
-// client secret either as basic auth credentials or in the request body. 
-// 
+// client secret either as basic auth credentials or in the request body.
+//
 // However, there may be public clients which do not have a client secret value and which
-// have used the PKCE exntension to generate auth and refresh tokens. How do these
+// have used the PKCE extension to generate auth and refresh tokens. How do these
 // clients guarantee their identity? In the revocation process there is no way for
 // them to provide any type of code challenge with the initial request followed by
 // the verifier during the authorization code exchange, as is done with authentication.
 //
 // A public client can just delete the access token and refresh token from its local store,
 // but that leaves a refresh token just kind-of dangling out there in the database.
-// 
+//
 // What kinds of attacks are possible if no client_secret value is present, and what
 // are the security implications (beyond the annoyance of having to log in again, over
-// and over....). An attacker would need to know the client id (easy to obtain 
-// because it is public and is transmitted in the URI of every authorization request), 
-// and would need to know the user's access token or refresh token (harder to obtain, since 
-// the attacker would need access to the local data store of the device, such as the browser's 
+// and over....). An attacker would need to know the client id (easy to obtain
+// because it is public and is transmitted in the URI of every authorization request),
+// and would need to know the user's access token or refresh token (harder to obtain, since
+// the attacker would need access to the local data store of the device, such as the browser's
 // cookies or local storage, and would imply that the attacker either has access to the user's
-// device or has injected a malicious script into the application). 
-// 
-// But if the attacker has access to the refresh or access token, why would they 
+// device or has injected a malicious script into the application).
+//
+// But if the attacker has access to the refresh or access token, why would they
 // choose to revoke the tokens rather than use them? (Again, constantly logging somebody
 // out of their sessions would be annoying, but not necessarily a security vulnerability
 // of the IAM tool since the IAM tool cannot protect the user from a poorly protected
@@ -49,11 +53,12 @@ const clientAuthValidationService: ClientAuthValidationService = new ClientAuthV
 //
 // The revocation endpoint, therefore, is implemented as follows:
 //
-// 1.   ONLY private clients will be able to invoke this endpoint, since a 
-//      client_secret is required.
-// 2.   Clients can either use Basic Authorization (Base64 encoded client_id:client_secret)
-//      or can send the client_id and client_secret as part of the request body.
-// 3.   Regardless of whether the token type hint is a refresh token or an access token
+// 1.   PRIVATE clients (using client_secret) and FAPI clients (using mTLS) can invoke this endpoint.
+//      For private clients: client_secret is required via Basic Authorization or request body.
+//      For FAPI clients: mTLS client authentication via certificate is required.
+// 2.   For FAPI clients with certificate-bound tokens, the certificate thumbprint is validated
+//      to ensure the client revoking the token is the same client that obtained it.
+// 3.   Regardless of whether the token type hint is a refresh token or an access token,
 //      ONLY the session related to the tenant ID will be revoked. The user may have
 //      other sessions with other tenants, and these will be unaffected.
 // 4.   PUBLIC clients will only be able to delete the access token and refresh token from their
@@ -66,7 +71,6 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-
 
     // read the tenant id from the query params (in this case, the path params) in the request
     const {
@@ -109,71 +113,133 @@ export default async function handler(
             return;
         }
     }
-    
+
+    // Extract FAPI client certificate headers for mTLS client authentication
+    const clientCertificate = req.headers[FAPI_CLIENT_CERTIFICATE_HEADER]
+        ? req.headers[FAPI_CLIENT_CERTIFICATE_HEADER] as string
+        : null;
+    const clientCertificateVerify = req.headers[FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER]
+        ? req.headers[FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER] as string
+        : null;
 
     let clientId: string | null = null;
     let clientSecret: string | null = null;
+    let authenticatedClient: Client | null = null;
+    let isFapiClient: boolean = false;
+    let certificateThumbprint: string | null = null;
 
-    const authHeader = req.headers.authorization;
-    if(authHeader){
-        const credentials = authHeader.replace(/Basic\s+/, "");
-        [clientId, clientSecret] = base64Decode(credentials).split(":");
+    // Try FAPI mTLS authentication first
+    if(clientCertificate && clientCertificateVerify === 'SUCCESS'){
+        const parsedClientCertificate: ParsedClientCertificate = getParsedFapiClientCertificate(clientCertificate);
 
+        if(parsedClientCertificate.error === null && parsedClientCertificate.sanUri){
+            authenticatedClient = await clientDao.getClientByFapiIdentifier(parsedClientCertificate.sanUri);
+
+            if(authenticatedClient && authenticatedClient.enabled === true && authenticatedClient.markForDelete !== true && authenticatedClient.fapiEnabled === true){
+                isFapiClient = true;
+                clientId = authenticatedClient.clientId;
+                certificateThumbprint = parsedClientCertificate.certificateThumbprint;
+            }
+        }
     }
-    else if(client_id && client_secret){
-        clientId = client_id;
-        clientSecret = clientSecret;
+
+    // If not FAPI authenticated, try standard client_secret authentication
+    if(!isFapiClient){
+        const authHeader = req.headers.authorization;
+        if(authHeader){
+            const credentials = authHeader.replace(/Basic\s+/, "");
+            [clientId, clientSecret] = base64Decode(credentials).split(":");
+        }
+        else if(client_id && client_secret){
+            clientId = client_id;
+            clientSecret = clientSecret;
+        }
+
+        if(!clientId || !clientSecret){
+            res.status(403).end();
+            return;
+        }
+
+        const isValidCredentials = await clientAuthValidationService.validateClientAuthCredentials(clientId, clientSecret);
+        if(!isValidCredentials){
+            res.status(403).end();
+            return;
+        }
     }
 
-    if(!clientId || !clientSecret){
+    // At this point, the client is authenticated (either via mTLS or client_secret)
+    if(!clientId){
         res.status(403).end();
         return;
     }
-    else{
-        try{
-            const isValidCredentials = await clientAuthValidationService.validateClientAuthCredentials(clientId, clientSecret);
-            if(!isValidCredentials){
+
+    try{
+        const t: string = token as string;
+        const hashedToken = generateHash(t);
+        const refreshData: RefreshData | null = await authDao.getRefreshData(hashedToken);
+        let principal: JWTPrincipal | null = null;
+
+        if(t.indexOf(".") > 0){
+            try{
+                principal = await jwtService.validateJwt(t);
+            }
+            catch(err: unknown){
+                const e = err as Error
+                logWithDetails("error", "Error revoking a user refresh token. Could not create a principal object from the supplied token", {e});
                 res.status(403).end();
                 return;
             }
-            
-            const t: string = token as string;
-            const hashedToken = generateHash(t);
-            const refreshData: RefreshData | null = await authDao.getRefreshData(hashedToken);
-            let principal: JWTPrincipal | null = null;
-            if(t.indexOf(".") > 0){
-                try{
-                    principal = await jwtService.validateJwt(t);
-                }
-                catch(err: unknown){
-                    const e = err as Error
-                    logWithDetails("error", "Error revoking a user refresh token. Could not create a principal object from the supplied token", {e});                    
+        }
+
+        // For FAPI clients, validate certificate-bound tokens
+        if(isFapiClient && certificateThumbprint){
+            // If this is a certificate-bound access token, verify thumbprint matches
+            if(principal && principal.cnf && principal.cnf['x5t#S256']){
+                if(principal.cnf['x5t#S256'] !== certificateThumbprint){
+                    logWithDetails("error", "FAPI revocation failed: certificate thumbprint mismatch for access token", {
+                        expectedThumbprint: principal.cnf['x5t#S256'],
+                        actualThumbprint: certificateThumbprint
+                    });
                     res.status(403).end();
                     return;
                 }
             }
-            if(refreshData !== null){
-                if(refreshData.tenantId !== tenant_id){
+
+            // If this is a certificate-bound refresh token, verify thumbprint matches
+            if(refreshData && refreshData.certificateThumbprint){
+                if(refreshData.certificateThumbprint !== certificateThumbprint){
+                    logWithDetails("error", "FAPI revocation failed: certificate thumbprint mismatch for refresh token", {
+                        expectedThumbprint: refreshData.certificateThumbprint,
+                        actualThumbprint: certificateThumbprint
+                    });
                     res.status(403).end();
                     return;
                 }
-                await authDao.deleteRefreshDataByRefreshToken(hashedToken);
-            }
-            else if(principal !== null){
-                if(principal.tenant_id !== tenant_id){
-                    res.status(403).end();
-                    return;
-                }
-                await authDao.deleteRefreshData(principal.sub, principal.tenant_id, principal.client_id);
             }
         }
-        catch(err){
-            const e = err as Error
-            logWithDetails("error", "Error revoking a user refresh token. Encountered an unexpected error.", {e});  
-            res.status(403).end();
-            return;
-        }        
+
+        if(refreshData !== null){
+            if(refreshData.tenantId !== tenant_id){
+                res.status(403).end();
+                return;
+            }
+            await authDao.deleteRefreshDataByRefreshToken(hashedToken);
+        }
+        else if(principal !== null){
+            if(principal.tenant_id !== tenant_id){
+                res.status(403).end();
+                return;
+            }
+            await authDao.deleteRefreshData(principal.sub, principal.tenant_id, principal.client_id);
+        }
     }
+    catch(err){
+        const e = err as Error
+        logWithDetails("error", "Error revoking a user refresh token. Encountered an unexpected error.", {e});
+        res.status(403).end();
+        return;
+    }
+
     res.status(200).end();
-    
+
 }

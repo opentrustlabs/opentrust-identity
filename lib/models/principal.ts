@@ -81,7 +81,10 @@ export interface JWTPrincipal {
     client_name: string,
     client_type: string,
     principal_type: string,
-    nonce: string | null
+    nonce: string | null,
+    cnf?: {
+        'x5t#S256'?: string
+    }
 }
 
 /**

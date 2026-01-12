@@ -115,7 +115,11 @@ export default async function handler(
             userinfo_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`,
             jwks_uri: `${AUTH_DOMAIN}/api/${tenantId}/oidc/keys`,
             token_endpoint_auth_methods_supported: TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED,
-            response_modes_supported: [
+            response_modes_supported: FAPI_MTLS_AUTH_DOMAIN ? [
+                "query",
+                "fragment",
+                "form_post.jwt"
+            ] : [
                 "query",
                 "fragment"
             ],
@@ -150,12 +154,14 @@ export default async function handler(
                 "S256"
             ],
             tls_client_certificate_bound_access_tokens: FAPI_MTLS_AUTH_DOMAIN ? true : undefined,
+            pushed_authorization_request_endpoint: FAPI_MTLS_AUTH_DOMAIN ? `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/par` : undefined,
+            require_pushed_authorization_requests: FAPI_MTLS_AUTH_DOMAIN ? false : undefined,
+            authorization_response_iss_parameter_supported: FAPI_MTLS_AUTH_DOMAIN ? true : undefined,
             mtls_endpoint_aliases: FAPI_MTLS_AUTH_DOMAIN ? {
                 token_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/token`,
-                // revocation_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/revoke`,
-                // userinfo_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`
+                revocation_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/revoke`,
+                userinfo_endpoint: `${FAPI_MTLS_AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`
             } : undefined
-
         });
     }
 }
