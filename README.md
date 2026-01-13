@@ -819,7 +819,7 @@ tenant-restriction rules (described above) apply to these clients as they do for
 ### FAPI (Financial-grade API Security Profile) 2.0
 
 This tool has a FAPI 2.0 implementation using mTLS only. It does not support the DPoP (Demonstrating Proof
-of Possession) mechanism for binding tokens to a client key certificate.
+of Possession) mechanism for binding tokens to a client certificate.
 
 The implementation requires the use of the SAN:URI value in the list of subject-alternative-names 
 in the certificate. A client certificate must have exactly one value of this type in its certificate 
