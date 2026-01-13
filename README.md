@@ -9,7 +9,7 @@ as it is now known) or Okta, and access control. It supports multi-factor authen
 time-based one-time-passwords and hardware security keys such as Yubikey or Titan
 or any key which supports the FIDO2 standard. 
 
-In addition, the tool support for FAPI (Financial-grade API Security Profile) 2.0. See the 
+In addition, the tool has support for FAPI (Financial-grade API Security Profile) 2.0. See the 
 section below for more details on the implementation and future development work.
 
 This tool is designed to support a variety of backend data stores, both SQL and NoSQL. At the moment, those include:
