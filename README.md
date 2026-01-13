@@ -10,7 +10,7 @@ time-based one-time-passwords and hardware security keys such as Yubikey or Tita
 or any key which supports the FIDO2 standard. 
 
 In addition, the tool has support for FAPI (Financial-grade API Security Profile) 2.0. See the 
-section below for more details on the implementation and future development work.
+section below for more details on the implementation.
 
 This tool is designed to support a variety of backend data stores, both SQL and NoSQL. At the moment, those include:
 
