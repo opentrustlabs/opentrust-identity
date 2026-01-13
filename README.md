@@ -9,7 +9,7 @@ as it is now known) or Okta, and access control. It supports multi-factor authen
 time-based one-time-passwords and hardware security keys such as Yubikey or Titan
 or any key which supports the FIDO2 standard. 
 
-In addition, the tool support baseline FAPI (Financial-grade API Security Profile). See the 
+In addition, the tool support for FAPI (Financial-grade API Security Profile) 2.0. See the 
 section below for more details on the implementation and future development work.
 
 This tool is designed to support a variety of backend data stores, both SQL and NoSQL. At the moment, those include:
@@ -816,14 +816,15 @@ The service clients that you use for programmatic access to the GraphQL API will
 assigned to them as a normal user would for each of the functions you want to invoke. The same
 tenant-restriction rules (described above) apply to these clients as they do for normal users.
 
-### FAPI (Financial-grade API Security Profile)
+### FAPI (Financial-grade API Security Profile) 2.0
 
-This tool has a baseline FAPI implementation for the `/token` endpoint with the 
-`client_credentials` grant using mTLS. It does not support advanced FAPI, but 
-that implementation is on the roadmap. The implementation requires the use of the SAN:URI
-value in the list of subject-alternative-names in the certificate. A client certificate must
-have exactly one value of this type in its certificate and it must map to exactly
-one client. The FAPI flag is set on clients at client creation and cannot be changed.
+This tool has a FAPI 2.0 implementation using mTLS only. It does not support the DPoP (Demonstrating Proof
+of Possession) mechanism for binding tokens to a client key certificate.
+
+The implementation requires the use of the SAN:URI value in the list of subject-alternative-names 
+in the certificate. A client certificate must have exactly one value of this type in its certificate 
+and it must map to exactly one client. The FAPI flag is set on clients at client creation time 
+and cannot be changed.
 
 For mTLS, the web server needs to be configured with either an additional domain or a
 different port on the same domain. Typically, implementations will use a different domain
@@ -851,6 +852,19 @@ The value of `$ssl_client_verify` will either be `SUCCESS` or will start with `F
 
 You will also need to set the value of the `FAPI_MTLS_AUTH_DOMAIN` in the `.env` file (see
 the `env.example` for more details on this environment setting.)
+
+One important thing to note is that the management of any root and intermediate certificates
+that are needed for validating client certificates is outside the scope of this tool. If
+you are using a WAF such as Akamai, they have a feature where you can manage your trusted root
+and intermediates. 
+
+If you are using Nginx to terminate the mTLS connection then you will need to manage the 
+trust store file configured with the Nginx `ssl_client_certificate` declaration.
+One option, if you do not have a vault or PKI system, might be to store the root and intermediate 
+certificates in a dedicated repo and use build scripts or a CI/CD pipeline to build a
+single pem file which can then be deployed on Nginx. As part of the build process 
+you would want to check for certificate expiration, CA constraints, duplicate subjects, 
+and deprecated hash algorithms.
 
 
 ### License
