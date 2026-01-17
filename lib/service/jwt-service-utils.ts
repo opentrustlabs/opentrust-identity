@@ -1,5 +1,5 @@
 import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData, PreAuthenticationState } from "@/graphql/generated/graphql-types";
-import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
+import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
@@ -16,7 +16,6 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import { logWithDetails } from "../logging/logger";
-import { PushedAuthRequest } from "../entities/pushed-auth-request.entity";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {

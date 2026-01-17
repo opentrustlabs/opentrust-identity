@@ -5,8 +5,7 @@ import ScopeDao from '@/lib/dao/scope-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { PushedAuthRequest } from '@/lib/entities/pushed-auth-request.entity';
-import { OIDCErrorResponseBody } from '@/lib/models/error';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, FAPI_CLIENT_CERTIFICATE_HEADER, FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER, OIDC_PAR_REQUEST_URI_PREFIX } from '@/utils/consts';
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, OIDC_PAR_REQUEST_URI_PREFIX } from '@/utils/consts';
 import { generateRandomToken, hasValidLoopbackRedirectUri } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -62,16 +61,16 @@ async function handleStandardAuthorizationRequest(req: NextApiRequest, res: Next
         nonce,
     } = req.query;
 
-    let tenantId = tenant_id as string;
-    let clientId = client_id as string;
-    let redirectUri = redirect_uri as string;
-    let oidcScope = scope as string;
-    let oidcState = state as string;
-    let codeChallenge = code_challenge as string;
-    let codeChallengeMethod = code_challenge_method as string;
-    let responseType = response_type as string;
+    const tenantId = tenant_id as string;
+    const clientId = client_id as string;
+    const redirectUri = redirect_uri as string;
+    const oidcScope = scope as string;
+    const oidcState = state as string;
+    const codeChallenge = code_challenge as string;
+    const codeChallengeMethod = code_challenge_method as string;
+    const responseType = response_type as string;
     let responseMode = response_mode as string;
-    let oidcNonce = nonce as string;
+    const oidcNonce = nonce as string;
 
     // Default to query if not present or set to something else besides fragment
     if (responseMode !== "fragment") {

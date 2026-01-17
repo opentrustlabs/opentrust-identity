@@ -730,6 +730,16 @@ no common or public tenants.
 /api/{tenant_id}/oidc/devicecode
 ```
 
+###### Par (pushed authentication request) endpoint
+
+Note that this FAPI 2.0 endpoint can only be used if the server is set up for mTLS and correctly
+passes the URI-encoded certificate in the `x-client-certificate` header and the certificate verification
+value from the server in the `x-client-certificate-verify` header.
+
+```bash
+/api/{tenant_id}/oidc/par
+```
+
 ## Additional utility endpoints
 
 In addition to the standard OIDC endpoints there are several utility endpoints which clients can invoke.

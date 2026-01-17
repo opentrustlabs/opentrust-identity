@@ -1,19 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { randomUUID, X509Certificate } from 'crypto';
+import { randomUUID } from 'crypto';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import TenantDao from '@/lib/dao/tenant-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import { Client, ClientScopeRel, Scope, Tenant } from '@/graphql/generated/graphql-types';
 import {
     ALL_OIDC_SUPPORTED_SCOPE_VALUES,
-    CLIENT_TYPE_DEVICE,
     CLIENT_TYPE_USER_DELEGATED_PERMISSIONS,
     FAPI_CLIENT_CERTIFICATE_HEADER,
     FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER,
     OIDC_PAR_REQUEST_URI_PREFIX,
     OIDC_TOKEN_ERROR_INVALID_CLIENT
 } from '@/utils/consts';
-import { generateHash, getParsedFapiClientCertificate, hasValidLoopbackRedirectUri, ParsedClientCertificate } from '@/utils/dao-utils';
+import { getParsedFapiClientCertificate, hasValidLoopbackRedirectUri, ParsedClientCertificate } from '@/utils/dao-utils';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import { PushedAuthRequest } from '@/lib/entities/pushed-auth-request.entity';
 import { logWithDetails } from '@/lib/logging/logger';
@@ -114,8 +113,6 @@ export default async function handler(
     // 2. private_key_jwt - via client_assertion (not implemented)
 
     let client: Client | null = null;
-    let certificateThumbprint: string | null = null;
-    let clientCertificateSanUri: string | null = null;
 
     // Method 1: mTLS authentication
     if(!clientCertificate || !clientCertificateVerify){

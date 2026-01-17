@@ -7,7 +7,7 @@ import ClientAuthValidationService from '@/lib/service/client-auth-validation-se
 import { CLIENT_TYPE_SERVICE_ACCOUNT, FAPI_CLIENT_CERTIFICATE_HEADER, FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_DEVICE_CODE, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS, OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED, OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING, OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE, OIDC_TOKEN_ERROR_EXPIRED_TOKEN, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, REFRESH_TOKEN_CLIENT_TYPE_DEVICE, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
 import { base64Decode, generateHash, getParsedFapiClientCertificate, ParsedClientCertificate } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { randomUUID, X509Certificate } from 'crypto';
+import { randomUUID } from 'crypto';
 import JwtService from '@/lib/service/jwt-service-utils';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import OIDCServiceUtils from '@/lib/service/oidc-service-utils';
