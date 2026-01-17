@@ -1157,18 +1157,8 @@ class IdentityService {
     }
  
 
-    protected async generateAuthorizationCode(userId: string, preAuthToken: string): Promise<AuthorizationReturnUri> {
-                
-        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
-        if(preAuthenticationState === null){
-            throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
-        }
-        await authDao.deletePreAuthenticationState(preAuthToken);
-        if(preAuthenticationState.expiresAtMs < Date.now()){
-            await authDao.deletePreAuthenticationState(preAuthToken);
-            throw new GraphQLError(ERROR_CODES.EC00183.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00183}});
-        }
-
+    protected async generateAuthorizationCode(userId: string, preAuthenticationState: PreAuthenticationState): Promise<AuthorizationReturnUri> {
+        
         const authorizationCodeData: AuthorizationCodeData = {
             clientId: preAuthenticationState.clientId,
             code: generateRandomToken(32, "hex"),
@@ -1178,7 +1168,7 @@ class IdentityService {
             tenantId: preAuthenticationState.tenantId,
             userId: userId,
             codeChallenge: preAuthenticationState.codeChallenge,
-            codeChallengeMethod: preAuthenticationState.codeChallengeMethod            
+            codeChallengeMethod: preAuthenticationState.codeChallengeMethod
         }
         await authDao.saveAuthorizationCodeData(authorizationCodeData);
 

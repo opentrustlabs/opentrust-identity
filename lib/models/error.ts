@@ -1179,8 +1179,8 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
     },
     EC00231: {
         errorCode: "EC00231",
-        errorKey: "ERROR_FAPI_CONFIGURATION_ONLY_ALLOWED_FOR_SERVICE_CLIENTS",
-        errorMessage: "FAPI Configuration is only allowed for service clients."
+        errorKey: "ERROR_FAPI_CONFIGURATION_NOT_ALLOWED_FOR_DEVICE_CLIENTS",
+        errorMessage: "FAPI Configuration is not allowed for device clients."
     }
 }
 

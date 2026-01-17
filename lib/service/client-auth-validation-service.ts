@@ -12,19 +12,35 @@ const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 
 class ClientAuthValidationService {
 
+    validateClientAuthCredentials(client: string, clientSecret: string): Promise<boolean>;
+    validateClientAuthCredentials(client: Client, clientSecret: string): Promise<boolean>;
+    
 
     /**
      * @param clientId 
      * @param clientSecret 
      * @returns 
      */
-    public async validateClientAuthCredentials(clientId: string, clientSecret: string): Promise<boolean> {
-        const client: Client | null = await clientDao.getClientById(clientId);
-        if(!client){
-            return Promise.resolve(false);
+    public async validateClientAuthCredentials(client: string | Client, clientSecret: string): Promise<boolean> {
+
+        let encryptedClientSecret: string | null = null;
+
+        if(typeof client === "string"){
+            const c: Client | null = await clientDao.getClientById(client);
+            if(!c){
+                return Promise.resolve(false);
+            }
+            encryptedClientSecret = await kms.decrypt(c.clientSecret);
         }
+        else{
+            encryptedClientSecret = await kms.decrypt(client.clientSecret);
+        }
+        if(encryptedClientSecret === null){
+            return false;
+        }
+        
         try{
-            const decryptedClientSecret: string | null = await kms.decrypt(client.clientSecret);
+            const decryptedClientSecret: string | null = await kms.decrypt(encryptedClientSecret);
             if(!decryptedClientSecret){
                 return Promise.resolve(false);
             }

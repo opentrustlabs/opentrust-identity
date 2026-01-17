@@ -112,13 +112,11 @@ class ClientService {
         if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)){
             throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
         }
-        if(client.fapiEnabled === true && (client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT)){
+        if(client.fapiEnabled === true && (client.clientType === CLIENT_TYPE_DEVICE)){
             throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
         }
 
         if(client.fapiEnabled === true){
-            client.oidcEnabled = false;
-            client.pkceEnabled = false;
             client.fapiEnabledAtMs = Date.now();
         }
 
@@ -170,7 +168,7 @@ class ClientService {
         if(clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (clientUpdateInput.oidcEnabled === true || clientUpdateInput.pkceEnabled === true)){
             throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
         }
-        if(clientToUpdate.fapiEnabled === true && (clientUpdateInput.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT)){
+        if(clientToUpdate.fapiEnabled === true && (clientUpdateInput.clientType === CLIENT_TYPE_DEVICE)){
             throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
         }
 
@@ -191,14 +189,10 @@ class ClientService {
         clientToUpdate.maxRefreshTokenCount = clientUpdateInput.maxRefreshTokenCount;
         clientToUpdate.userTokenTTLSeconds = clientUpdateInput.userTokenTTLSeconds;
         clientToUpdate.audience = clientUpdateInput.audience;
-
-        // Only allow these updates to the client when the FAPI flag is not true
-        if(clientToUpdate.fapiEnabled !== true){
-            clientToUpdate.oidcEnabled = clientUpdateInput.oidcEnabled;
-            // Only allow the pkce entension when oidc (i.e. SSO) is enabled.
-            clientToUpdate.pkceEnabled = clientUpdateInput.oidcEnabled === false ? false : clientUpdateInput.pkceEnabled;            
-            clientToUpdate.clientType = clientUpdateInput.clientType;
-        }
+        clientToUpdate.oidcEnabled = clientUpdateInput.oidcEnabled;
+        // Only allow the pkce entension when oidc (i.e. SSO) is enabled.
+        clientToUpdate.pkceEnabled = clientUpdateInput.oidcEnabled === false ? false : clientUpdateInput.pkceEnabled;            
+        clientToUpdate.clientType = clientUpdateInput.clientType;        
 
         await clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
@@ -377,8 +371,8 @@ class ClientService {
         if(!client){
             return null;
         }
-        // At the moment, we are only implementing baseline FAPI (client_credentials grant, limited to service accounts)
-        if(client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT){
+        // We have FAPI 2.0 support for all client types except for device clients
+        if(client.clientType === CLIENT_TYPE_DEVICE){
             throw new GraphQLError(ERROR_CODES.EC00231.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00231}});
         }
 

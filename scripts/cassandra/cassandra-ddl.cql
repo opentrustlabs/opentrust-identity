@@ -567,11 +567,33 @@ create TABLE pre_authentication_state (
     scope TEXT,
     tenantid UUID,
     clientid UUID,
-    expiresatms BIGINT
+    expiresatms BIGINT,
+    nonce TEXT,
+    certificatethumbprint TEXT,
+    preauthenticationstateprotocol TEXT,
+    userauthenticated BOOLEAN,
+    authenticateduserid TEXT
+);
+
+create TABLE pushed_auth_request (
+	requesturi TEXT PRIMARY KEY,
+	clientid UUID,
+	tenantid UUID,
+	responsetype TEXT,
+	redirecturi TEXT,
+	scope TEXT,
+	nonce TEXT,
+	codechallenge TEXT,
+	codechallengemethod TEXT,
+	responsemode TEXT,
+    certificatethumbprint TEXT,
+    state TEXT,
+	createdatms BIGINT,
+	expiresatms BIGINT
 );
 
 create TABLE authorization_code_data (
-    code TEXT  PRIMARY KEY,
+    code TEXT PRIMARY KEY,
     redirecturi TEXT,
     tenantid TEXT,
     clientid TEXT,
@@ -579,7 +601,9 @@ create TABLE authorization_code_data (
     codechallenge TEXT,
     codechallengemethod TEXT,
     userid TEXT,
-    expiresatms BIGINT    
+    expiresatms BIGINT,
+    nonce TEXT,
+    certificatethumbprint TEXT
 );
 
 
@@ -635,6 +659,7 @@ create TABLE refresh_data (
     codechallenge TEXT,
     codechallengemethod TEXT,
     expiresatms BIGINT,
+    certificatethumbprint TEXT,
     PRIMARY KEY (refreshtoken, userid)
 );
 
@@ -650,6 +675,7 @@ create TABLE refresh_data_by_user_id (
     codechallenge TEXT,
     codechallengemethod TEXT,
     expiresatms BIGINT,
+    certificatethumbprint TEXT,
     PRIMARY KEY (userid, refreshtoken)
 );
 

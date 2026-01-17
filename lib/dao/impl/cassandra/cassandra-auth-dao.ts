@@ -1,6 +1,7 @@
 import { PreAuthenticationState, AuthorizationCodeData, RefreshData, AuthorizationDeviceCodeData, FederatedOidcAuthorizationRel, FederatedAuthTest } from "@/graphql/generated/graphql-types";
 import AuthDao, { AuthorizationCodeType } from "../../auth-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
+import { PushedAuthRequest } from "@/lib/entities/pushed-auth-request.entity";
 
 class CassandraAuthDao extends AuthDao {
     
@@ -146,6 +147,28 @@ class CassandraAuthDao extends AuthDao {
         const mapper = await CassandraDriver.getInstance().getModelMapper("federated_auth_test");
         await mapper.remove({authState: state});
         return;
+    }
+
+    public async saveParData(pushedAuthRequest: PushedAuthRequest): Promise<PushedAuthRequest> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("pushed_auth_request");
+        const ttlSeconds =  Math.floor( (pushedAuthRequest.expiresAtMs - Date.now()) / 1000);
+        await mapper.insert(pushedAuthRequest, {ttl: ttlSeconds});
+        return pushedAuthRequest;
+    }
+        
+    public async getParData(requestUri: string): Promise<PushedAuthRequest | null> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("pushed_auth_request");
+        return mapper.get({
+            requestUri: requestUri
+        });
+
+    }
+
+    public async deleteParData(requestUri: string): Promise<void> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("pushed_auth_request");
+        await mapper.remove({
+            requestUri: requestUri
+        })
     }
 
 }

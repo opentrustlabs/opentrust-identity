@@ -71,6 +71,12 @@ const RefreshDataEntity = new EntitySchema({
             primary: false,
             nullable: false,
             name: "expiresatms"
+        },
+        certificateThumbprint: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "certificatethumbprint"
         }
     },
     tableName: "refresh_data",

@@ -175,7 +175,9 @@ export const AUTHORIZATION_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.M
                 toModel(columnValue) {
                     return columnValue.toString();
                 }
-            }
+            },
+            "nonce": "nonce",
+            "certificatethumbprint": "certificateThumbprint"
         }
     }
 };
@@ -649,7 +651,11 @@ export const PRE_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.
 			"responsemode": "responseMode",
 			"responsetype": "responseType",
 			"scope": "scope",
-			"state": "state"
+			"state": "state",
+            "nonce": "nonce",
+            "preauthenticationstateprotocol": "preAuthenticationStateProtocol",
+            "userauthenticated": "userAuthenticated",
+            "authenticateduserid": "authenticatedUserId"
         }
     }
 };
@@ -709,7 +715,8 @@ export const REFRESH_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 			"scope": "scope",
 			"codechallenge": "codeChallenge",
 			"codechallengemethod": "codeChallengeMethod",
-			"expiresatms": "expiresAtMs"
+			"expiresatms": "expiresAtMs",
+            "certificatethumbprint": "certificateThumbprint"
         }
     }
 };
@@ -1492,3 +1499,34 @@ export const CLIENT_FAPI_CONFIGURATION_MODEL: {[key: string]: cassandra.mapping.
     
 }
 
+export const PUSHED_AUTH_REQUEST_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
+    "pushed_auth_request": {
+        tables: ["pushed_auth_request"],
+        columns: {
+            "requesturi": "requestUri",
+            "clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+            "responsetype": "responseType",
+            "redirecturi": "redirectUri",
+            "scope": "scope",
+            "nonce": "nonce",
+            "codechallenge": "codeChallenge",
+            "codechallengemethod": "codeChallengeMethod",
+            "responsemode": "responseMode",
+            "certificatethumbprint": "certificateThumbprint",
+            "state": "state",
+            "createdatms": "createdAtMs",
+            "expiresatms": "expiresAtMs",
+        }
+    }
+}

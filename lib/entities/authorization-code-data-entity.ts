@@ -61,6 +61,18 @@ const AuthorizationCodeDataEntity = new EntitySchema({
             primary: false,
             nullable: false,
             name: "userid"
+        },
+        nonce: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "nonce"
+        },
+        certificateThumbprint: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "certificatethumbprint"
         }
     }
 });

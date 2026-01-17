@@ -1,5 +1,5 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData } from "@/graphql/generated/graphql-types";
-import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData, PreAuthenticationState } from "@/graphql/generated/graphql-types";
+import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
@@ -411,7 +411,7 @@ class JwtServiceUtils {
      * @param tenantId 
      * @param scope 
      */
-    public async signUserJwt(userId: string, clientId: string, tenantId: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
+    public async signUserJwt(userId: string, clientId: string, tenantId: string, certificateThumbprint?: string, nonce?: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user || user.enabled === false || user.markForDelete === true || user.locked === true){
             return Promise.resolve(null);
@@ -461,6 +461,13 @@ class JwtServiceUtils {
             client_type: client.clientType,
             principal_type: PRINCIPAL_TYPE_END_USER
         };
+
+        if(certificateThumbprint){
+            principal["cnf"] = {"x5t#S256": certificateThumbprint}
+        }
+        if(nonce){
+            principal.nonce = nonce;
+        }
 
         const idToken: string | null = await this.signJwt(principal);
         if(idToken === null){
@@ -523,7 +530,7 @@ class JwtServiceUtils {
      * @param clientId  
      * @param tenantId 
      */
-    public async signClientJwt(client: Client, tenant: Tenant, pemEncodedClientCert?: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
+    public async signClientJwt(client: Client, tenant: Tenant, certificateThumbprint?: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
 
         const now = Date.now();
         const principal: JWTPayload = {
@@ -556,13 +563,8 @@ class JwtServiceUtils {
             principal_type: PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN
         };
 
-        if(pemEncodedClientCert){
-            const derEncoded: Buffer = Buffer.from(
-                pemEncodedClientCert.replace(/-----BEGIN CERTIFICATE-----/, "").replace(/-----END CERTIFICATE-----/, "").replace(/\s+/g, ""),
-                "base64"
-            );
-            const thumbPrint = generateHash(derEncoded, "sha256", "base64url");
-            principal["cnf"] = {"x5t#S256": thumbPrint}
+        if(certificateThumbprint){            
+            principal["cnf"] = {"x5t#S256": certificateThumbprint}
         }
         
         const s: string | null = await this.signJwt(principal);
@@ -579,6 +581,26 @@ class JwtServiceUtils {
         }
         
         return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
+    }
+
+    public async signFapiResponse(client: Client, authCode: string, preAuthenticationState: PreAuthenticationState): Promise<string | null>{
+        const now = Date.now();
+        const principal: JWTPayload = {
+            exp: Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
+            iss: `${AUTH_DOMAIN}/api/${client.tenantId}`,
+            aud: `${client.clientId}`,
+            iat: Math.floor( now / 1000),
+            state: preAuthenticationState.state,
+            jti: randomUUID().toString(),
+            tenant_id: client.tenantId,
+            code: authCode
+        };
+        if(preAuthenticationState.nonce){
+            principal.nonce = preAuthenticationState.nonce;
+        }
+
+        const s: string | null = await this.signJwt(principal);
+        return s;
     }
 
 

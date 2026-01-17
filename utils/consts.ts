@@ -70,7 +70,9 @@ export const OIDC_TOKEN_ERROR_INVALID_SCOPE = "invalid_scope";
 export const OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING="authorization_pending";
 export const OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED="authorization_declined";
 export const OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE="bad_verification_code";
-export const OIDC_TOKEN_ERROR_EXPIRED_TOKEN="expired_token"
+export const OIDC_TOKEN_ERROR_EXPIRED_TOKEN="expired_token";
+// For PAR requests
+export const OIDC_PAR_REQUEST_URI_PREFIX="urn:ietf:params:oauth:request_uri:";
 
 
 export type OidcTokenErrorType = typeof OIDC_TOKEN_ERROR_INVALID_REQUEST | typeof OIDC_TOKEN_ERROR_INVALID_CLIENT |

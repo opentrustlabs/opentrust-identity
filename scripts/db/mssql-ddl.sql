@@ -357,8 +357,30 @@ create TABLE pre_authentication_state (
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
     expiresatms BIGINT NOT NULL,
+    nonce VARCHAR(128),
+    certificatethumbprint VARCHAR(128),
+    preauthenticationstateprotocol VARCHAR(16) NOT NULL,
+    userauthenticated BIT NOT NULL,
+    authenticateduserid VARCHAR(64),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
+);
+
+create TABLE pushed_auth_request (
+	requesturi VARCHAR(128) PRIMARY KEY,
+	clientid VARCHAR(64) NOT NULL,
+	tenantid VARCHAR(64) NOT NULL,
+	responsetype VARCHAR(32) NOT NULL,
+	redirecturi VARCHAR(256) NOT NULL,
+	scope VARCHAR(512) NOT NULL,
+	nonce VARCHAR(128) NOT NULL,
+	codechallenge VARCHAR(128) NOT NULL,
+	codechallengemethod VARCHAR(16) NOT NULL,
+	responsemode VARCHAR(32) NOT NULL,
+    state VARCHAR(128) NOT NULL,
+    certificatethumbprint VARCHAR(128) NOT NULL,
+	createdatms BIGINT NOT NULL,
+	expiresatms BIGINT NOT NULL
 );
 
 create TABLE authorization_code_data (
@@ -371,6 +393,8 @@ create TABLE authorization_code_data (
     codechallengemethod VARCHAR(32),
     userid VARCHAR(64) NOT NULL,
     expiresatms BIGINT NOT NULL,
+    nonce VARCHAR(128),
+    certificatethumbprint VARCHAR(128),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES users(userid)
@@ -406,6 +430,7 @@ create TABLE refresh_data (
     codechallenge VARCHAR(256),
     codechallengemethod VARCHAR(32),
     expiresatms BIGINT NOT NULL,
+    certificatethumbprint VARCHAR(128),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES users(userid)

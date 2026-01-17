@@ -698,6 +698,11 @@ type UserScopeRel {
     scopeId: String!
 }
 
+enum PreAuthenticationStateProtocolType {
+    OIDC,
+    FAPI
+}
+
 type PreAuthenticationState {
     token: String!
     state: String
@@ -710,6 +715,11 @@ type PreAuthenticationState {
     tenantId: String!
     clientId: String!
     expiresAtMs: Float!
+    preAuthenticationStateProtocol: PreAuthenticationStateProtocolType!
+    nonce: String
+    certificateThumbprint: String
+    userAuthenticated: Boolean!
+    authenticatedUserId: String
 }
 
 type AuthorizationCodeData {
@@ -722,6 +732,8 @@ type AuthorizationCodeData {
     codeChallenge: String
     userId: String!
     expiresAtMs: Float!
+    nonce: String
+    certificateThumbprint: String
 }
 
 enum DeviceCodeAuthorizationStatus {
@@ -775,6 +787,7 @@ type RefreshData {
     refreshCount: Int!
     scope: String!
     expiresAtMs: Float!
+    certificateThumbprint: String
 }
 
 enum FederatedOIDCAuthorizationRelType {
