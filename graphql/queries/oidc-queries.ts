@@ -806,4 +806,14 @@ export const CLIENT_FAPI_CONFIGURATION_QUERY = gql(`
             identifierType
         }
     }
-`)
+`);
+
+export const SCOPE_TRANSLATIONS_QUERY = gql(`
+    query getScopeTranslations($scopeId: String!){
+        getScopeTranslations(scopeId: $scopeId) {
+            scopeId
+            languageCode
+            translation
+        }
+    }
+`);

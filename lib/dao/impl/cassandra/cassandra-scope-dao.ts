@@ -1,11 +1,11 @@
-import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel } from "@/graphql/generated/graphql-types";
+import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel, ScopeTranslation, ScopeTranslationInput } from "@/graphql/generated/graphql-types";
 import ScopeDao from "../../scope-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
 import { types } from "cassandra-driver";
+import { isNullableType } from "graphql";
 
 class CassandraScopeDao extends ScopeDao {
-
 
     public async getScope(tenantId?: string, scopeIds?: Array<string>): Promise<Array<Scope>> {
         
@@ -264,6 +264,61 @@ class CassandraScopeDao extends ScopeDao {
             scopeId: types.Uuid.fromString(scopeId)
         });
         return;
+    }
+
+    public async getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope_translation");
+        const translations: Array<ScopeTranslation> = (await mapper.find({
+            scopeId: scopeId
+        })).toArray();
+        return translations;
+    }
+
+    public async getScopeTranslation(scopeId: string, languageCode: string): Promise<ScopeTranslation | null> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope_translation");
+        const result = await mapper.find({
+            scopeId: scopeId,
+            languageCode: languageCode
+        });
+        if(!result){
+            return null;
+        }
+        const arr = result.toArray();
+        if(arr.length === 1){
+            return arr[0];
+        }
+        return null;
+
+    }
+
+    public async createScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope_translation");
+        const scopeTranslation: ScopeTranslation = {
+            scopeId: scopeTranslationInput.scopeId,
+            languageCode: scopeTranslationInput.languageCode,
+            translation: scopeTranslationInput.translation
+        }
+        await mapper.insert(scopeTranslation);
+        return scopeTranslation;
+    }
+
+    public async updateScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope_translation");
+        const scopeTranslation: ScopeTranslation = {
+            scopeId: scopeTranslationInput.scopeId,
+            languageCode: scopeTranslationInput.languageCode,
+            translation: scopeTranslationInput.translation
+        }
+        await mapper.update(scopeTranslation);
+        return scopeTranslation;
+    }
+
+    public async deleteScopeTranslation(scopeId: string, languageCode: string): Promise<void> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope_translation");
+        await mapper.remove({
+            scopeId: types.Uuid.fromString(scopeId),
+            languageCode: languageCode
+        })
     }
 
 }

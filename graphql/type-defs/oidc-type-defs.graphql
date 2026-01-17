@@ -54,6 +54,8 @@ type Query {
     getAuthorizationGroupScopes(groupId: String!): [Scope!]!
     getUserScopes(userId: String!, tenantId: String!): [Scope!]!
     getAuthorizationScopeApprovalData(preAuthToken: String!): AuthorizationScopeApprovalData!
+    getScopeTranslations(scopeId: String!): [ScopeTranslation!]!
+    getScopeTranslation(scopeId: String!, languageCode: String!): ScopeTranslation
 
 
     ## Scope constraints
@@ -231,6 +233,9 @@ type Mutation {
     assignScopeToUser(userId: String!, tenantId: String!, scopeId: String!): UserScopeRel
     bulkAssignScopeToUser(userId: String!, tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [UserScopeRel!]!
     removeScopeFromUser(userId: String!, tenantId: String!, scopeId: String!): String
+    createScopeTranslation(scopeTranslationInput: ScopeTranslationInput!): ScopeTranslation!
+    updateScopeTranslation(scopeTranslationInput: ScopeTranslationInput!): ScopeTranslation!
+    deleteScopeTranslation(scopeId: String!, languageCode: String!): String!
 
     ## Scope constraint schemas
     createScopeAccessRuleSchema(scopeAccessRuleSchemaInput: ScopeAccessRuleSchemaCreateInput!): ScopeAccessRuleSchema
@@ -1278,6 +1283,12 @@ type ClientFapiConfiguration {
     identifierType: String!
 }
 
+type ScopeTranslation {
+    scopeId: String!
+    languageCode: String!
+    translation: String!
+}
+
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
@@ -1745,4 +1756,10 @@ input ClientFapiConfigurationInput {
     clientId: String!
     identifierValue: String!
     identifierType: String!
+}
+
+input ScopeTranslationInput {
+    scopeId: String!
+    languageCode: String!
+    translation: String!
 }

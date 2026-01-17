@@ -1,4 +1,4 @@
-import { AccessRule, AuthorizationGroup, AuthorizationGroupScopeRel, BulkScopeInput, Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, Scope, ScopeFilterCriteria, SearchResultType, Tenant, TenantAvailableScope, User, UserScopeRel, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthorizationGroup, AuthorizationGroupScopeRel, BulkScopeInput, Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, Scope, ScopeFilterCriteria, ScopeTranslation, ScopeTranslationInput, SearchResultType, Tenant, TenantAvailableScope, User, UserScopeRel, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import ScopeDao from "../dao/scope-dao";
@@ -745,6 +745,54 @@ class ScopeService {
             data: JSON.stringify({tenantId, userId, scopeId})
         });
         return scopeDao.removeScopeFromUser(tenantId, userId, scopeId);
+    }
+
+    public async getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>>{
+        
+
+        return scopeDao.getScopeTranslations(scopeId);
+    }
+    
+    public async getScopeTranslation(scopeId: string, languageCode: string): Promise<ScopeTranslation | null>{
+        
+        
+        return scopeDao.getScopeTranslation(scopeId, languageCode);
+    }
+    
+    public async createScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>{
+
+
+
+        const scope: Scope | null = await this.getScopeById(scopeTranslationInput.scopeId);
+        if(scope === null){
+            throw new GraphQLError("SCOPE_NOT_FOUND");
+        }
+        // ONLY allow translations for scope that is defined for applications,
+        // not IAM management itself.
+        if(scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
+            throw new GraphQLError("ERROR_TRANSLATE_ONLY_AVAILABLE_FOR_APPLICATION_SCOPE");
+        }
+
+        const existing: ScopeTranslation | null = await scopeDao.getScopeTranslation(scopeTranslationInput.scopeId, scopeTranslationInput.languageCode);
+        if(existing){
+            return scopeDao.updateScopeTranslation(scopeTranslationInput);
+        }
+
+        return scopeDao.createScopeTranslation(scopeTranslationInput);
+    }
+    
+    public async updateScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>{
+
+        const existing: ScopeTranslation | null = await scopeDao.getScopeTranslation(scopeTranslationInput.scopeId, scopeTranslationInput.languageCode);
+        if(existing){
+            return scopeDao.updateScopeTranslation(scopeTranslationInput);
+        }
+        return this.createScopeTranslation(scopeTranslationInput);
+    }
+    
+    public async  deleteScopeTranslation(scopeId: string, languageCode: string): Promise<void>{
+        await scopeDao.deleteScopeTranslation(scopeId, languageCode);
+        return;
     }
     
 

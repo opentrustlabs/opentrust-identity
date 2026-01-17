@@ -59,10 +59,11 @@ import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-ch
 import UserAuthenticationHistoryEntity, { UserAuthenticationHistory } from "../entities/user-authentication-history-entity";
 import FederatedAuthTestEntity from "../entities/federated-auth-test-entity";
 import ClientFapiConfigurationEntity from "../entities/client-fapi-configuration-entity";
+import ScopeTranslationEntity from "../entities/scope-translation-entity";
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
 
 import { DataSource, DefaultNamingStrategy, NamingStrategyInterface, Repository } from "typeorm";
-import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, ScopeTranslation, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 import PushedAuthRequestEntity, { PushedAuthRequest } from "../entities/pushed-auth-request.entity";
 
 class OracleUpperNamingStrategy
@@ -166,7 +167,8 @@ const entities = [
     UserAuthenticationHistoryEntity,
     FederatedAuthTestEntity,
     ContactEntity,
-    PushedAuthRequestEntity
+    PushedAuthRequestEntity,
+    ScopeTranslationEntity
 ]
 
 
@@ -235,6 +237,7 @@ class RDBDriver {
     federatedAuthTestRepository: Repository<FederatedAuthTest>;
     contactRepository: Repository<Contact>;
     pushedAuthRequestRespository: Repository<PushedAuthRequest>;
+    scopeTransationRepository: Repository<ScopeTranslation>;
 
 
     private constructor() {
@@ -808,6 +811,13 @@ class RDBDriver {
             RDBDriver.instance.pushedAuthRequestRespository = driver.getRepository("pushedAuthRequest");
         }
         return RDBDriver.instance.pushedAuthRequestRespository;
+    }
+    public async getScopeTransationRepository(): Promise<Repository<ScopeTranslation>> {
+        if (!RDBDriver.instance.scopeTransationRepository) {
+            const driver = await RDBDriver.getConnection();
+            RDBDriver.instance.scopeTransationRepository = driver.getRepository("scopeTranslation");
+        }
+        return RDBDriver.instance.scopeTransationRepository;
     }
 
 }

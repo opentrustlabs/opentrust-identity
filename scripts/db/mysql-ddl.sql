@@ -774,3 +774,11 @@ CREATE TABLE client_fapi_configuration (
     identifiertype VARCHAR(32) NOT NULL,
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
+
+create TABLE scope_translation (
+    scopeid VARCHAR(64) NOT NULL,
+    languagecode VARCHAR(8) NOT NULL,
+    translation VARCHAR(1024) NOT NULL,
+    PRIMARY KEY (scopeid, languagecode),
+    FOREIGN KEY (scopeid) references scope(scopeid)
+);
