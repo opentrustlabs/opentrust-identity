@@ -15,13 +15,13 @@ import { SCOPE_UPDATE_SCOPE, SUPPORTED_LANGUAGES, TRANSLATED_LANGUAGES } from "@
 import { useIntl } from "react-intl";
 
 export interface ScopeTranslationConfigurationProps {
-    scopeId: string,
+    scope: Scope,
     onUpdateStart: () => void,
     onUpdateEnd: (success: boolean) => void,
 }
 
 const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps> = ({
-    scopeId,
+    scope,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -34,7 +34,7 @@ const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps
 
     // STATE VARIABLES
     const initInput: ScopeTranslationInput = {
-        scopeId: scopeId,
+        scopeId: scope.scopeId,
         languageCode: "en",
         translation: ""
     }
@@ -49,7 +49,7 @@ const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps
     // GRAPHQL FUNCTIONS
     const {data, loading, error, refetch} = useQuery(SCOPE_TRANSLATIONS_QUERY, {
         variables: {
-            scopeId: scopeId
+            scopeId: scope.scopeId
         }
     });
 
@@ -127,7 +127,7 @@ const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps
                     maxWidth="sm"
                     fullWidth={true}
                 >
-                    <DialogTitle>Add translation</DialogTitle>
+                    <DialogTitle>Add translation - <span style={{fontWeight: "bold"}}>{scope.scopeDescription}</span></DialogTitle>
                     <DialogContent>                        
                         <Grid2 marginTop={"8px"} container size={12} spacing={1}>
                             <Grid2 size={3}>
@@ -217,7 +217,7 @@ const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps
                                 setShowDeletionConfirmDialog(false);
                                 scopeTranslationDeleteMutation({
                                     variables: {
-                                        scopeId: scopeId,
+                                        scopeId: scope.scopeId,
                                         languageCode: languageCodeToDelete
                                     }
                                 });

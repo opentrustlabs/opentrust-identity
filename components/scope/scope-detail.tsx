@@ -346,7 +346,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                     </AccordionSummary>
                                     <AccordionDetails>
                                         <ScopeTranslationConfiguration 
-                                            scopeId={scope.scopeId}
+                                            scope={scope}
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);
                                             }} 

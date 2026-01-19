@@ -748,7 +748,7 @@ class ScopeService {
     }
 
     public async getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>>{        
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], null);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
@@ -756,7 +756,7 @@ class ScopeService {
     }
     
     public async getScopeTranslation(scopeId: string, languageCode: string): Promise<ScopeTranslation | null>{
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], null);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }        
