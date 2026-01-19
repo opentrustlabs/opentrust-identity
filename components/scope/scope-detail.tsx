@@ -333,7 +333,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                             </Accordion>
                         </Grid2> */}
                         <Grid2 size={12} marginBottom={"16px"}>
-                            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && !isMarkedForDelete && scope.scopeUse === SCOPE_USE_APPLICATION_MANAGEMENT &&
+                            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && !isMarkedForDelete &&
                                 <Accordion defaultExpanded={true}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}

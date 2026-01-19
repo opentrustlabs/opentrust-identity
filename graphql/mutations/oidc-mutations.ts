@@ -1262,6 +1262,6 @@ export const SCOPE_TRANSLATION_UPDATE_MUTATION = gql(`
 
 export const SCOPE_TRANSLATION_DELETE_MUTATION = gql(`
     mutation deleteScopeTranslation($scopeId: String!, $languageCode: String!){
-        deleteScopeTranslation(scopeId: $scopeId, languageCode: $scopeId)
+        deleteScopeTranslation(scopeId: $scopeId, languageCode: $languageCode)
     }
 `);

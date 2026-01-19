@@ -82,6 +82,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
             setErrorMessage(null);
         },
         onError(error) {
+            onUpdateEnd(false);
             setErrorMessage(intl.formatMessage({ id: error.message }));
         },
         refetchQueries: [TENANTS_QUERY]
@@ -97,7 +98,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
             setErrorMessage(null);
         },
         onError(error) {
-            onUpdateEnd(true);
+            onUpdateEnd(false);
             setErrorMessage(intl.formatMessage({ id: error.message }));
         },
         refetchQueries: [TENANTS_QUERY]

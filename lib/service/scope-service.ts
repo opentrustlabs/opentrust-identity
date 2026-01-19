@@ -747,32 +747,33 @@ class ScopeService {
         return scopeDao.removeScopeFromUser(tenantId, userId, scopeId);
     }
 
-    public async getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>>{
-        
-
+    public async getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>>{        
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
         return scopeDao.getScopeTranslations(scopeId);
     }
     
     public async getScopeTranslation(scopeId: string, languageCode: string): Promise<ScopeTranslation | null>{
-        
-        
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }        
         return scopeDao.getScopeTranslation(scopeId, languageCode);
     }
     
     public async createScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>{
-
-
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
 
         const scope: Scope | null = await this.getScopeById(scopeTranslationInput.scopeId);
-        if(scope === null){
-            throw new GraphQLError("SCOPE_NOT_FOUND");
+        if(scope === null){         
+            throw new GraphQLError(ERROR_CODES.EC00071.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00071}});
         }
-        // ONLY allow translations for scope that is defined for applications,
-        // not IAM management itself.
-        if(scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
-            throw new GraphQLError("ERROR_TRANSLATE_ONLY_AVAILABLE_FOR_APPLICATION_SCOPE");
-        }
-
+        
         const existing: ScopeTranslation | null = await scopeDao.getScopeTranslation(scopeTranslationInput.scopeId, scopeTranslationInput.languageCode);
         if(existing){
             return scopeDao.updateScopeTranslation(scopeTranslationInput);
@@ -783,6 +784,10 @@ class ScopeService {
     
     public async updateScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>{
 
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
         const existing: ScopeTranslation | null = await scopeDao.getScopeTranslation(scopeTranslationInput.scopeId, scopeTranslationInput.languageCode);
         if(existing){
             return scopeDao.updateScopeTranslation(scopeTranslationInput);
@@ -791,6 +796,10 @@ class ScopeService {
     }
     
     public async  deleteScopeTranslation(scopeId: string, languageCode: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
         await scopeDao.deleteScopeTranslation(scopeId, languageCode);
         return;
     }
