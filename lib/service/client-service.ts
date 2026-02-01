@@ -1,4 +1,4 @@
-import { AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ClientUpdateInput, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthenticationRequestedScope, AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ClientUpdateInput, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
@@ -319,7 +319,7 @@ class ClientService {
             clientId: "",
             clientName: "",
             requestedScope: [],
-            requiresUserApproval: false
+            requiresUserApproval: false,            
         };
         const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);        
         if(preAuthenticationState === null){
@@ -336,7 +336,17 @@ class ClientService {
         const scopes = await scopeDao.getScope(undefined, ids);
         approvalData.clientId = client.clientId;
         approvalData.clientName = client.clientName;
-        approvalData.requestedScope = scopes;
+        
+        for(let i = 0; i < scopes.length; i++){
+            const translations = await scopeDao.getScopeTranslations(scopes[i].scopeId) || [];
+            approvalData.requestedScope.push({
+                scopeId: scopes[i].scopeId,
+                scopeName: scopes[i].scopeName,
+                scopeDescription: scopes[i].scopeDescription,
+                scopeTranslations: translations
+            });
+        }
+        
         approvalData.requiresUserApproval = client.clientType === CLIENT_TYPE_DEVICE || client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS
         return approvalData;
     }

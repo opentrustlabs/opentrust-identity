@@ -775,7 +775,12 @@ export const GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY = gql(`
                 scopeId
                 scopeName
                 scopeDescription
-            }
+                scopeTranslations {
+                    scopeId
+                    languageCode
+                    translation
+                }
+            }            
         }
     }
 `);

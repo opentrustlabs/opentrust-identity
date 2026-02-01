@@ -121,6 +121,76 @@ const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps
                     <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
                 </Grid2>
             }
+            {showUpdateDialog &&
+                <Dialog
+                    open={showUpdateDialog}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogTitle>Edit translation - <span style={{fontWeight: "bold"}}>{scope.scopeDescription}</span></DialogTitle>
+                    <DialogContent>
+                        <Grid2 marginTop={"8px"} container size={12} spacing={1}>
+                            <Grid2 size={3}>
+                                <TextField
+                                    select
+                                    disabled={true}
+                                    label="Language"
+                                    fullWidth={true}
+                                    value={scopeTranslationInput.languageCode}
+                                    name="languageCode"
+                                    onChange={(evt) => {
+                                        scopeTranslationInput.languageCode = evt.target.value;
+                                        setScopeTranslationInput({...scopeTranslationInput});
+                                    }}
+                                
+                                >
+                                    <MenuItem
+                                        value={scopeTranslationInput.languageCode}
+                                    >
+                                        {TRANSLATED_LANGUAGES.get(scopeTranslationInput.languageCode)}
+                                    </MenuItem>
+                                </TextField>
+                            </Grid2>
+                            <Grid2 size={9}>
+                                <TextField
+                                    rows={2}
+                                    fullWidth={true}
+                                    value={scopeTranslationInput.translation || ""}
+                                    name="translatedValue"
+                                    onChange={(evt) => {
+                                        scopeTranslationInput.translation = evt.target.value;
+                                        setScopeTranslationInput({...scopeTranslationInput});
+                                    }}                                        
+                                />
+                            </Grid2>                                    
+                        </Grid2>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => {
+                                setShowUpdateDialog(false);
+                                setScopeTranslationInput({...initInput});
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={scopeTranslationInput.translation === null || scopeTranslationInput.translation === ""}
+                            onClick={() => {
+                                setShowUpdateDialog(false);
+                                onUpdateStart();
+                                scopeTranslationUpdateMutation({
+                                    variables: {
+                                        scopeTranslationInput: scopeTranslationInput
+                                    }
+                                })
+                            }}
+                        >
+                            Submit
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
             {showCreateDialog &&
                 <Dialog
                     open={showCreateDialog}
