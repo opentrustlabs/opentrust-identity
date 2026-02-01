@@ -1239,3 +1239,29 @@ export const DELETE_CLIENT_FAPI_CONFIGURATION_MUTATION = gql(`
         deleteClientFapiConfiguration(clientId: $clientId)
     }
 `);
+
+export const SCOPE_TRANSLATION_CREATE_MUTATION = gql(`
+    mutation createScopeTranslation($scopeTranslationInput: ScopeTranslationInput!){
+        createScopeTranslation(scopeTranslationInput: $scopeTranslationInput){
+            scopeId
+            languageCode
+            translation
+        }
+    }
+`);
+
+export const SCOPE_TRANSLATION_UPDATE_MUTATION = gql(`
+    mutation updateScopeTranslation($scopeTranslationInput: ScopeTranslationInput!){
+        updateScopeTranslation(scopeTranslationInput: $scopeTranslationInput){
+            scopeId
+            languageCode
+            translation
+        }
+    }
+`);
+
+export const SCOPE_TRANSLATION_DELETE_MUTATION = gql(`
+    mutation deleteScopeTranslation($scopeId: String!, $languageCode: String!){
+        deleteScopeTranslation(scopeId: $scopeId, languageCode: $languageCode)
+    }
+`);

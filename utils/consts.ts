@@ -1181,3 +1181,33 @@ export const FAPI_ID_TYPES=[
 
 export const FAPI_CLIENT_CERTIFICATE_HEADER="x-client-certificate";
 export const FAPI_CLIENT_CERTIFICATE_VERIFY_HEADER="x-client-certificate-verify";
+
+
+// ************************************************************************** //
+// 
+//                  LANGUAGE-RELATED CONSTANTS
+// 
+// ************************************************************************** //
+export const DEFAULT_LANGUAGE="en";
+export const SUPPORTED_LANGUAGES = ["zh", "cs", "da", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "nl", "no", "pl", "pt", "ru", "sv", "fi", "vi"];
+export const TRANSLATED_LANGUAGES = new Map<string, string>([
+    ["zh", "中國人"],
+    ["cs", "český"],
+    ["da", "Dansk"],
+    ["de", "Deutsch"],
+    ["en", "English"],
+    ["es", "Español"],
+    ["fr", "Français"],
+    ["hi", "हिंदी"],
+    ["it", "Italiano"],
+    ["ja", "日本語"],
+    ["ko", "한국인"],
+    ["pt", "Português"], 
+    ["nl", "Nederlands"],
+    ["no", "Norsk"],
+    ["pl", "Polski"],
+    ["ru", "Русский"],
+    ["sv", "Svenska"],
+    ["fi", "Suomi"],    
+    ["vi", "Tiếng Việt"]
+]);

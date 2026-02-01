@@ -2,7 +2,7 @@
 import { MarkForDeleteObjectType, PortalUserProfile, Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { DEFAULT_BACKGROUND_COLOR, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_DELETE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_DELETE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -14,6 +14,7 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import LanguageIcon from '@mui/icons-material/Language';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -25,6 +26,7 @@ import { SCOPE_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
 import { SCOPE_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import ScopeTenantConfiguration from "./scope-tenant-configuration";
+import ScopeTranslationConfiguration from "./scope-translation-configuration";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
@@ -330,7 +332,35 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2> */}
-
+                        <Grid2 size={12} marginBottom={"16px"}>
+                            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && !isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"scope-translation-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <LanguageIcon /><div style={{marginLeft: "8px"}}>Translations</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ScopeTranslationConfiguration 
+                                            scope={scope}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            }} 
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }   
+                        </Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             {!isMarkedForDelete &&
                                 <Accordion defaultExpanded={true}  >
@@ -338,7 +368,6 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         expandIcon={<ExpandMoreIcon />}
                                         id={"scope-tenant-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
-
                                     >
                                         <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                             <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>

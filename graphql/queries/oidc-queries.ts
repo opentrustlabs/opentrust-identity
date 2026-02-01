@@ -775,7 +775,12 @@ export const GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY = gql(`
                 scopeId
                 scopeName
                 scopeDescription
-            }
+                scopeTranslations {
+                    scopeId
+                    languageCode
+                    translation
+                }
+            }            
         }
     }
 `);
@@ -806,4 +811,14 @@ export const CLIENT_FAPI_CONFIGURATION_QUERY = gql(`
             identifierType
         }
     }
-`)
+`);
+
+export const SCOPE_TRANSLATIONS_QUERY = gql(`
+    query getScopeTranslations($scopeId: String!){
+        getScopeTranslations(scopeId: $scopeId) {
+            scopeId
+            languageCode
+            translation
+        }
+    }
+`);

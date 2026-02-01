@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, Scope } from "@/graphql/generated/graphql-types";
+import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, Scope, AuthenticationRequestedScope, ScopeTranslation } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -371,6 +371,21 @@ const Login: React.FC<LoginProps>= ({
         }
     }
 
+    const getScopeTranslation = (requestedScope: AuthenticationRequestedScope): string => {
+        console.log("locale from intl is: " + intl.locale);
+        let desc = requestedScope.scopeDescription;
+        if(requestedScope.scopeTranslations.length > 0){
+            const langCode = intl.locale;
+            const translation = requestedScope.scopeTranslations.find(
+                (v: ScopeTranslation) => v.languageCode === langCode
+            );
+            if(translation){
+                desc = translation.translation;
+            }
+        }
+        return desc;
+    }
+
     if (tenantBean.getTenantMetaData()) {
         return (
             <Paper
@@ -574,8 +589,8 @@ const Login: React.FC<LoginProps>= ({
                                             <Grid2 size={{xs: 12}}>
                                                 <ul style={{ paddingLeft: "32px", marginBottom: "8px" }}>
                                                     {authorizationScopeApprovalData.requestedScope.map(
-                                                        (scope: Scope) => (
-                                                            <li key={scope.scopeId}>{scope.scopeDescription}</li>
+                                                        (requestedScope: AuthenticationRequestedScope) => (
+                                                            <li key={requestedScope.scopeId}>{getScopeTranslation(requestedScope)}</li>
                                                         )
                                                     )}
                                                 </ul>

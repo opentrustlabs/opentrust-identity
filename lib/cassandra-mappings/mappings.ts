@@ -1507,13 +1507,13 @@ export const PUSHED_AUTH_REQUEST_MODEL: {[key: string]: cassandra.mapping.ModelO
             "clientid": {
                 name: "clientId",
                 toModel(columnValue) {
-                    return columnValue.toString()
+                    return columnValue.toString();
                 }
             },
             "tenantid": {
                 name: "tenantId",
                 toModel(columnValue) {
-                    return columnValue.toString()
+                    return columnValue.toString();
                 }
             },
             "responsetype": "responseType",
@@ -1530,3 +1530,19 @@ export const PUSHED_AUTH_REQUEST_MODEL: {[key: string]: cassandra.mapping.ModelO
         }
     }
 }
+
+export const SCOPE_TRANSLATION_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
+    "scope_translation": {
+        tables: ["scope_translation"],
+        columns: {
+            "scopeid": {
+                name: "scopeId",
+                toModel(columnValue){
+                    return columnValue.toString();
+                }
+            },
+            "languagecode": "languageCode",
+            "translation": "translation"
+        }
+    }
+};

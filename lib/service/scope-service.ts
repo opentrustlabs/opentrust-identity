@@ -1,4 +1,4 @@
-import { AccessRule, AuthorizationGroup, AuthorizationGroupScopeRel, BulkScopeInput, Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, Scope, ScopeFilterCriteria, SearchResultType, Tenant, TenantAvailableScope, User, UserScopeRel, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthorizationGroup, AuthorizationGroupScopeRel, BulkScopeInput, Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, Scope, ScopeFilterCriteria, ScopeTranslation, ScopeTranslationInput, SearchResultType, Tenant, TenantAvailableScope, User, UserScopeRel, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import ScopeDao from "../dao/scope-dao";
@@ -745,6 +745,63 @@ class ScopeService {
             data: JSON.stringify({tenantId, userId, scopeId})
         });
         return scopeDao.removeScopeFromUser(tenantId, userId, scopeId);
+    }
+
+    public async getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>>{        
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        return scopeDao.getScopeTranslations(scopeId);
+    }
+    
+    public async getScopeTranslation(scopeId: string, languageCode: string): Promise<ScopeTranslation | null>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }        
+        return scopeDao.getScopeTranslation(scopeId, languageCode);
+    }
+    
+    public async createScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+
+        const scope: Scope | null = await this.getScopeById(scopeTranslationInput.scopeId);
+        if(scope === null){         
+            throw new GraphQLError(ERROR_CODES.EC00071.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00071}});
+        }
+        
+        const existing: ScopeTranslation | null = await scopeDao.getScopeTranslation(scopeTranslationInput.scopeId, scopeTranslationInput.languageCode);
+        if(existing){
+            return scopeDao.updateScopeTranslation(scopeTranslationInput);
+        }
+
+        return scopeDao.createScopeTranslation(scopeTranslationInput);
+    }
+    
+    public async updateScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>{
+
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        const existing: ScopeTranslation | null = await scopeDao.getScopeTranslation(scopeTranslationInput.scopeId, scopeTranslationInput.languageCode);
+        if(existing){
+            return scopeDao.updateScopeTranslation(scopeTranslationInput);
+        }
+        return this.createScopeTranslation(scopeTranslationInput);
+    }
+    
+    public async  deleteScopeTranslation(scopeId: string, languageCode: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        await scopeDao.deleteScopeTranslation(scopeId, languageCode);
+        return;
     }
     
 

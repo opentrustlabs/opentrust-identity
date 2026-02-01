@@ -1044,3 +1044,10 @@ create TABLE client_fapi_configuration_by_client_id (
     identifiertype     TEXT,
     PRIMARY KEY (clientid, identifiervalue)
 );
+
+create TABLE scope_translation (
+    scopeid         UUID,
+    languagecode    TEXT,
+    translation     TEXT,
+    PRIMARY KEY (scopeid, languagecode)    
+);

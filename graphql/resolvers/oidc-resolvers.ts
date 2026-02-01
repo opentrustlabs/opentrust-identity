@@ -228,6 +228,10 @@ const resolvers: Resolvers = {
         getClientFapiConfiguration: (_: any, { clientId }, oidcContext) => {
             const service: ClientService = new ClientService(oidcContext);
             return service.getClientFapiConfiguration(clientId);
+        },
+        getScopeTranslations: (_: any, { scopeId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getScopeTranslations(scopeId);
         }
     },
     Mutation: {        
@@ -1041,8 +1045,20 @@ const resolvers: Resolvers = {
             const service: ClientService = new ClientService(oidcContext);
             await service.deleteClientFapiConfiguration(clientId);
             return clientId;
+        },        
+        createScopeTranslation: async(_: any, { scopeTranslationInput }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.createScopeTranslation(scopeTranslationInput);            
+        },
+        updateScopeTranslation: async(_: any, { scopeTranslationInput }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.updateScopeTranslation(scopeTranslationInput);
+        },
+        deleteScopeTranslation: async(_: any, { scopeId, languageCode }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            await service. deleteScopeTranslation(scopeId, languageCode);
+            return scopeId;
         }
-
     },
     PortalUserProfile: {
         recoveryEmail: async(profile: PortalUserProfile, _: any, oidcContext: OIDCContext) => {

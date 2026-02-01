@@ -1,10 +1,10 @@
-import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel } from "@/graphql/generated/graphql-types";
+import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel, ScopeTranslation, ScopeTranslationInput } from "@/graphql/generated/graphql-types";
 import ScopeDao from "../../scope-dao";
 import RDBDriver from "@/lib/data-sources/rdb";
 import { In } from "typeorm";
 
 class DBScopeDao extends ScopeDao {
-
+    
     public async getTenantAvailableScope(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>> {
         return this.getTenantScopeRel(tenantId, scopeId);
     }
@@ -250,6 +250,64 @@ class DBScopeDao extends ScopeDao {
             scopeId: scopeId
         });
         return Promise.resolve();
+    }
+
+    public async getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>> {
+        const scopeTransRepo = await RDBDriver.getInstance().getScopeTransationRepository();
+        const result = await scopeTransRepo.find({
+            where: {
+                scopeId: scopeId
+            }
+        });
+        return result;
+    }
+
+    public async getScopeTranslation(scopeId: string, languageCode: string): Promise<ScopeTranslation | null> {
+        const scopeTransRepo = await RDBDriver.getInstance().getScopeTransationRepository();
+        const scopeTranslation: ScopeTranslation | null = await scopeTransRepo.findOne({
+            where: {
+                scopeId: scopeId,
+                languageCode: languageCode
+            }
+        });
+        return scopeTranslation;
+    }
+
+    public async createScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation> {
+        const scopeTransRepo = await RDBDriver.getInstance().getScopeTransationRepository();
+        const scopeTranslation: ScopeTranslation = {
+            scopeId: scopeTranslationInput.scopeId,
+            languageCode: scopeTranslationInput.languageCode,
+            translation: scopeTranslationInput.translation
+        };
+        await scopeTransRepo.insert(scopeTranslation);
+        return scopeTranslation;
+    }
+
+    public async updateScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation> {
+        const scopeTransRepo = await RDBDriver.getInstance().getScopeTransationRepository();
+        const scopeTranslation: ScopeTranslation = {
+            scopeId: scopeTranslationInput.scopeId,
+            languageCode: scopeTranslationInput.languageCode,
+            translation: scopeTranslationInput.translation
+        };
+        await scopeTransRepo.update(
+            {
+                scopeId: scopeTranslationInput.scopeId,
+                languageCode: scopeTranslationInput.languageCode
+            },
+            scopeTranslation
+        );
+        return scopeTranslation;
+    }
+
+    public async deleteScopeTranslation(scopeId: string, languageCode: string): Promise<void> {
+        const scopeTransRepo = await RDBDriver.getInstance().getScopeTransationRepository();
+        await scopeTransRepo.delete({
+            scopeId: scopeId,
+            languageCode: languageCode
+        });
+        return;
     }
 
 }

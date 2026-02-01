@@ -8,30 +8,8 @@ import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import LanguageIcon from '@mui/icons-material/Language';
 import { useIntl } from 'react-intl';
+import { SUPPORTED_LANGUAGES, TRANSLATED_LANGUAGES } from "@/utils/consts";
 
-
-const SUPPORTED_LANGUAGES = ["zh", "cs", "da", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "nl", "no", "pl", "pt", "ru", "sv", "fi", "vi"];
-const TRANSLATED_LANGUAGES = new Map<string, string>([
-    ["zh", "中國人"],
-    ["cs", "český"],
-    ["da", "Dansk"],
-    ["de", "Deutsch"],
-    ["en", "English"],
-    ["es", "Español"],
-    ["fr", "Français"],
-    ["hi", "हिंदी"],
-    ["it", "Italiano"],
-    ["ja", "日本語"],
-    ["ko", "한국인"],
-    ["pt", "Português"], 
-    ["nl", "Nederlands"],
-    ["no", "Norsk"],
-    ["pl", "Polski"],
-    ["ru", "Русский"],
-    ["sv", "Svenska"],
-    ["fi", "Suomi"],    
-    ["vi", "Tiếng Việt"]
-]);
 
 export interface SelectLanguageProps {
     allowCancel?: boolean,

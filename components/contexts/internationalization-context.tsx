@@ -22,7 +22,7 @@ import svMessages from "../../locales/sv.json";
 import viMessages from "../../locales/vi.json";
 import zhMessages from "../../locales/zh.json";
 
-import { SELECTED_LANUGAGE_CODE_STORAGE_KEY } from "@/utils/consts";
+import { DEFAULT_LANGUAGE, SELECTED_LANUGAGE_CODE_STORAGE_KEY } from "@/utils/consts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const messages: Record<string, any> = {
@@ -47,7 +47,6 @@ const messages: Record<string, any> = {
     zh: zhMessages
 };
 
-const DEFAULT_LANGUAGE="en";
 
 interface I18NProps {
     hasSelectedLanguage: () => boolean,

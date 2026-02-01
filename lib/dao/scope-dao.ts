@@ -1,4 +1,4 @@
-import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel } from "@/graphql/generated/graphql-types";
+import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel, ScopeTranslation, ScopeTranslationInput } from "@/graphql/generated/graphql-types";
 
 
 
@@ -47,6 +47,16 @@ abstract class ScopeDao {
         abstract assignScopeToUser(tenantId: string, userId: string, scopeId: string): Promise<UserScopeRel>;
 
         abstract removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void>;
+
+        abstract getScopeTranslations(scopeId: string): Promise<Array<ScopeTranslation>>;
+
+        abstract getScopeTranslation(scopeId: string, languageCode: string): Promise<ScopeTranslation | null>;
+
+        abstract createScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>;
+
+        abstract updateScopeTranslation(scopeTranslationInput: ScopeTranslationInput): Promise<ScopeTranslation>;
+
+        abstract deleteScopeTranslation(scopeId: string, languageCode: string): Promise<void>;
         
 }
 
