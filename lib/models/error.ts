@@ -1181,6 +1181,11 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00231",
         errorKey: "ERROR_FAPI_CONFIGURATION_NOT_ALLOWED_FOR_DEVICE_CLIENTS",
         errorMessage: "FAPI Configuration is not allowed for device clients."
+    },
+    EC00232: {
+        errorCode: "EC00232",
+        errorKey: "ERROR_INVALID_CLIENT_TYPE_FOR_TOKEN_ENRICHMENT_CALLBACK",
+        errorMessage: "The client type is not valid for the token enrichment callback."
     }
 }
 

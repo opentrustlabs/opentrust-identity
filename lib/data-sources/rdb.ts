@@ -826,7 +826,7 @@ class RDBDriver {
     public async getClientTokenEnrichmentConfigurationEntity(): Promise<Repository<TokenEnrichmentConfiguration>>{
         if (!RDBDriver.instance.clientTokenEnrichmentConfigurationEntity) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.scopeTransationRepository = driver.getRepository("clientTokenEnrichmentConfiguration");
+            RDBDriver.instance.clientTokenEnrichmentConfigurationEntity = driver.getRepository("clientTokenEnrichmentConfiguration");
         }
         return RDBDriver.instance.clientTokenEnrichmentConfigurationEntity;
     }

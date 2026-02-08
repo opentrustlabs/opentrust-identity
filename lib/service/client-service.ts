@@ -5,7 +5,7 @@ import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CHANGE_EVENT_TYPE_UPDATE_REL, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CHANGE_EVENT_TYPE_UPDATE_REL, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_IDENTITY, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -467,10 +467,47 @@ class ClientService {
 
 
     public async setClientTokenEnrichmentConfiguration(enrichmentInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration> {
+        // Be a little generous if the calling app tried to set an out-of-bound timeout value
+        // and just set to the max allowed - do not throw an error.
+        if(enrichmentInput.timeoutMs > MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS || enrichmentInput.timeoutMs < 0){
+            enrichmentInput.timeoutMs = MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS
+        }
         const client: Client | null = await clientDao.getClientById(enrichmentInput.clientId);
         if(!client){
             throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
         }
+        if(client.clientType !== CLIENT_TYPE_USER_DELEGATED_PERMISSIONS && client.clientType !== CLIENT_TYPE_IDENTITY){
+            throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00232}});
+        }
+                
+        try{
+            const callbackURL = new URL(enrichmentInput.uri);
+            if(callbackURL.protocol !== "https"){
+                // TODO - new error code
+                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00232}});
+            }
+            const hostname = callbackURL.hostname.toLowerCase();            
+            if(hostname === "localhost"){
+                // TODO - new error code
+                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00232}});
+            }
+            // Block bare IP addresses (both v4 an v6)
+            if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+                // TODO - new error code
+                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00232}});
+            }
+
+            // Block IPv6 addresses
+            if (/^\[?[a-f0-9:]+\]?$/.test(hostname)) {
+                // TODO - new error code
+                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00232}});
+            }            
+        }
+        catch(e){
+            // TODO - new error code
+            throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00232}});
+        }
+
         const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
