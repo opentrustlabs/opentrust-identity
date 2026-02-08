@@ -3,7 +3,6 @@ import ScopeDao from "../../scope-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
 import { types } from "cassandra-driver";
-import { isNullableType } from "graphql";
 
 class CassandraScopeDao extends ScopeDao {
 
