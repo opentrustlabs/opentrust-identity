@@ -768,3 +768,19 @@ CREATE TABLE client_fapi_configuration (
     identifiertype     VARCHAR2(32) NOT NULL,
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
+
+create TABLE scope_translation (
+    scopeid VARCHAR2(64) NOT NULL,
+    languagecode VARCHAR2(8) NOT NULL,
+    translation VARCHAR2(1024) NOT NULL,
+    PRIMARY KEY (scopeid, languagecode),
+    FOREIGN KEY (scopeid) references scope(scopeid)
+);
+
+create TABLE client_token_enrichment_configuration (
+    clientid VARCHAR2(64) PRIMARY KEY,
+    uri VARCHAR2(256) NOT NULL,
+    failuremode VARCHAR2(32) NOT NULL,
+    timeoutms INT NOT NULL,
+    FOREIGN KEY (clientid) REFERENCES client(clientid)
+);

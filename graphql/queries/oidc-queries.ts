@@ -822,3 +822,14 @@ export const SCOPE_TRANSLATIONS_QUERY = gql(`
         }
     }
 `);
+
+export const CLIENT_TOKEN_ENRICHMENT_QUERY = gql(`
+    query getTokenEnrichmentConfiguration($clientId: String!) {
+        getTokenEnrichmentConfiguration(clientId: $clientId) {
+            clientId
+            uri
+            failureMode
+            timeoutMs
+        }
+    }
+`);

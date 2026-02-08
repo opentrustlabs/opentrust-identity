@@ -782,3 +782,11 @@ create TABLE scope_translation (
     PRIMARY KEY (scopeid, languagecode),
     FOREIGN KEY (scopeid) references scope(scopeid)
 );
+
+create TABLE client_token_enrichment_configuration (
+    clientid VARCHAR(64) PRIMARY KEY,
+    uri VARCHAR(256) NOT NULL,
+    failuremode VARCHAR(32) NOT NULL,
+    timeoutms INT NOT NULL,
+    FOREIGN KEY (clientid) REFERENCES client(clientid)
+);  

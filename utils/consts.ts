@@ -1137,7 +1137,14 @@ export const MARK_FOR_DELETE_LOCK_NAME_PREFIX="DELETE_MARK_FOR_DELETE";
 export const HTTP_HEADER_X_IP_ADDRESS="x-ip-address";
 export const HTTP_HEADER_X_GEO_LOCATION="x-geo-location";
 
+// ************************************************************************** //
+// 
+//                  HTTP-RELATED CONSTS
+// 
+// ************************************************************************** //
 export const DEFAULT_HTTP_TIMEOUT_MS=60000;
+export const MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS=50000
+export const MAX_TOKEN_ENRICHMENT_RESPONSE_SIZE_BYTES=1000;
 
 // ************************************************************************** //
 // 

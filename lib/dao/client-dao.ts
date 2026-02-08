@@ -1,4 +1,4 @@
-import { Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput, TokenEnrichmentConfiguration, TokenEnrichmentConfigurationInput } from "@/graphql/generated/graphql-types";
 
 export type ClientFapiConfigurationLookupType = "clientid" | "identifiervalue";
 abstract class ClientDao {
@@ -36,6 +36,14 @@ abstract class ClientDao {
         abstract updateClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput): Promise<ClientFapiConfiguration>;
 
         abstract deleteClientFapiConfiguration(clientId: string): Promise<void>;
+
+        abstract getTokenEnrichmentConfiguration(clientId: string): Promise<TokenEnrichmentConfiguration | null>;
+        
+        abstract createTokenEnrichmentConfiguration(configuartionInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration>;
+
+        abstract updateTokenEnrichmentConfiguration(configuartionInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration>;
+
+        abstract deleteTokenEnrichmentConfiguration(clientId: string): Promise<void>;
         
 }
 

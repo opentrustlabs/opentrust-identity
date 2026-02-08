@@ -1,4 +1,4 @@
-import { Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput, RefreshData } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput, RefreshData, TokenEnrichmentConfiguration, TokenEnrichmentConfigurationInput } from "@/graphql/generated/graphql-types";
 import ClientDao, { ClientFapiConfigurationLookupType } from "@/lib/dao/client-dao";
 import { ClientRedirectUriRel } from "@/lib/entities/client-redirect-uri-rel-entity";
 import RDBDriver from "@/lib/data-sources/rdb";
@@ -122,6 +122,11 @@ class DBClientDao extends ClientDao {
             clientId: clientId
         });
         
+        const clientTokenEnrichmentRepo = await RDBDriver.getInstance().getClientTokenEnrichmentConfigurationEntity();
+        await clientTokenEnrichmentRepo.delete({
+            clientId: clientId
+        });
+
         const clientRepo = await RDBDriver.getInstance().getClientRepository();
         await clientRepo.delete({
             clientId: clientId
@@ -252,6 +257,55 @@ class DBClientDao extends ClientDao {
         await clientFapiConfigRepo.delete({
             clientId: clientId
         })
+    }
+
+    public async getTokenEnrichmentConfiguration(clientId: string): Promise<TokenEnrichmentConfiguration | null>{
+        const clientTokenEnrichmentRepo = await RDBDriver.getInstance().getClientTokenEnrichmentConfigurationEntity();
+        const result = await clientTokenEnrichmentRepo.findOne({
+            where: {
+                clientId: clientId
+            }
+        });
+        return result;
+    }
+            
+    public async createTokenEnrichmentConfiguration(configuartionInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration>{
+
+        const config: TokenEnrichmentConfiguration = {
+            clientId: configuartionInput.clientId,
+            failureMode: configuartionInput.failureMode,
+            timeoutMs: configuartionInput.timeoutMs,
+            uri: configuartionInput.uri
+        }
+        const clientTokenEnrichmentRepo = await RDBDriver.getInstance().getClientTokenEnrichmentConfigurationEntity();
+        await clientTokenEnrichmentRepo.insert(config);
+        return config;
+
+    }
+    
+    public async updateTokenEnrichmentConfiguration(configuartionInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration>{
+        const config: TokenEnrichmentConfiguration = {
+            clientId: configuartionInput.clientId,
+            failureMode: configuartionInput.failureMode,
+            timeoutMs: configuartionInput.timeoutMs,
+            uri: configuartionInput.uri
+        }
+        const clientTokenEnrichmentRepo = await RDBDriver.getInstance().getClientTokenEnrichmentConfigurationEntity();
+        await clientTokenEnrichmentRepo.update(
+            {
+                clientId: configuartionInput.clientId
+            },
+            config
+        );
+        return config;
+    }
+    
+    public async deleteTokenEnrichmentConfiguration(clientId: string): Promise<void>{
+        const clientTokenEnrichmentRepo = await RDBDriver.getInstance().getClientTokenEnrichmentConfigurationEntity();
+        await clientTokenEnrichmentRepo.delete({
+            clientId: clientId            
+        });
+        return;
     }
 
 }

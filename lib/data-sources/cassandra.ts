@@ -67,7 +67,8 @@ import {
     CLIENT_FAPI_CONFIGURATION_MODEL,
     USER_FAILED_PASSWORD_RESET_ATTEMPTS_MODEL,
     PUSHED_AUTH_REQUEST_MODEL,
-    SCOPE_TRANSLATION_MODEL
+    SCOPE_TRANSLATION_MODEL,
+    CLIENT_TOKEN_ENRICHMENT_CONFIG_MODEL
 } from "../cassandra-mappings/mappings";
 import { logWithDetails } from "../logging/logger";
 
@@ -183,7 +184,8 @@ class CassandraDriver {
                         ...USER_VERIFICATION_TOKEN_MODEL,
                         ...CLIENT_FAPI_CONFIGURATION_MODEL,
                         ...PUSHED_AUTH_REQUEST_MODEL,
-                        ...SCOPE_TRANSLATION_MODEL
+                        ...SCOPE_TRANSLATION_MODEL,
+                        ...CLIENT_TOKEN_ENRICHMENT_CONFIG_MODEL
                     }
                 }
             );

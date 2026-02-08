@@ -1265,3 +1265,20 @@ export const SCOPE_TRANSLATION_DELETE_MUTATION = gql(`
         deleteScopeTranslation(scopeId: $scopeId, languageCode: $languageCode)
     }
 `);
+
+export const CLIENT_TOKEN_ENRICHMENT_SET_MUTATION = gql(`
+    mutation setClientTokenEnrichmentConfiguration($enrichmentInput: TokenEnrichmentConfigurationInput!) {
+        setClientTokenEnrichmentConfiguration(enrichmentInput: $enrichmentInput) {
+            clientId
+            uri
+            failureMode
+            timeoutMs
+        }
+    }
+`);
+
+export const CLIENT_TOKEN_ENRICHMENT_DELETE_MUTATION = gql(`
+    mutation deleteTokenEnrichmentConfiguration($clientId: String!) {
+        deleteTokenEnrichmentConfiguration(clientId: $clientId)
+    }
+`);

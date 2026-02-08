@@ -1,4 +1,4 @@
-import { AuthenticationGroupClientRel, Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, Contact } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroupClientRel, Client, ClientAuthHistory, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, Contact, TokenEnrichmentConfiguration, TokenEnrichmentConfigurationInput } from "@/graphql/generated/graphql-types";
 import ClientDao, { ClientFapiConfigurationLookupType } from "../../client-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
@@ -103,6 +103,7 @@ class CassandraClientDao extends ClientDao {
         }
 
         await this.deleteClientFapiConfiguration(clientId);
+        await this.deleteTokenEnrichmentConfiguration(clientId);
 
         const mapper = await CassandraDriver.getInstance().getModelMapper("client");
         await mapper.remove({
@@ -227,6 +228,47 @@ class CassandraClientDao extends ClientDao {
                 identifierValue: config.identifierValue
             });
         }
+    }
+
+    public async getTokenEnrichmentConfiguration(clientId: string): Promise<TokenEnrichmentConfiguration | null>{
+        const enrichmentMapper: cassandra.mapping.ModelMapper<TokenEnrichmentConfiguration> = await CassandraDriver.getInstance().getModelMapper("client_token_enrichment_configuration");
+        const result = await enrichmentMapper.get({
+            clientId: types.Uuid.fromString(clientId),
+        });
+        return result;
+    }
+            
+    public async createTokenEnrichmentConfiguration(configuartionInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration>{
+        const config: TokenEnrichmentConfiguration = {
+            clientId: configuartionInput.clientId,
+            failureMode: configuartionInput.failureMode,
+            timeoutMs: configuartionInput.timeoutMs,
+            uri: configuartionInput.uri
+        };
+        const enrichmentMapper: cassandra.mapping.ModelMapper<TokenEnrichmentConfiguration> = await CassandraDriver.getInstance().getModelMapper("client_token_enrichment_configuration");
+        await enrichmentMapper.insert(config);
+        return config;
+
+    }
+    
+    public async updateTokenEnrichmentConfiguration(configuartionInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration>{
+        const config: TokenEnrichmentConfiguration = {
+            clientId: configuartionInput.clientId,
+            failureMode: configuartionInput.failureMode,
+            timeoutMs: configuartionInput.timeoutMs,
+            uri: configuartionInput.uri
+        };
+        const enrichmentMapper: cassandra.mapping.ModelMapper<TokenEnrichmentConfiguration> = await CassandraDriver.getInstance().getModelMapper("client_token_enrichment_configuration");
+        await enrichmentMapper.update(config);
+        return config;
+    }
+    
+    public async deleteTokenEnrichmentConfiguration(clientId: string): Promise<void>{
+        const enrichmentMapper: cassandra.mapping.ModelMapper<TokenEnrichmentConfiguration> = await CassandraDriver.getInstance().getModelMapper("client_token_enrichment_configuration");
+        await enrichmentMapper.remove({
+            clientId: types.Uuid.fromString(clientId),
+        });
+        return;
     }
 
 }
