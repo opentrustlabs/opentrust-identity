@@ -3,7 +3,7 @@ import { PortalUserProfile, Scope, ScopeTranslation, ScopeTranslationInput } fro
 import { SCOPE_TRANSLATION_CREATE_MUTATION, SCOPE_TRANSLATION_DELETE_MUTATION, SCOPE_TRANSLATION_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { SCOPE_TRANSLATIONS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import { Alert, Button, DialogActions, DialogContent, DialogTitle, Divider, Grid2, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent, DialogTitle, Divider, Grid2, MenuItem, TextField, Typography } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import React, { useContext } from "react";
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -216,6 +216,7 @@ const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps
                                     {getRemainingLanguages().map(
                                         (languageCode: string) => (
                                             <MenuItem
+                                                key={languageCode}
                                                 value={languageCode}
                                             >
                                                 {TRANSLATED_LANGUAGES.get(languageCode)}
