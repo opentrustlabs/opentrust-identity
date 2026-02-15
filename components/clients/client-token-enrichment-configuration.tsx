@@ -17,7 +17,7 @@ import MenuItem from "@mui/material/MenuItem";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS } from "@/utils/consts";
 import { CLIENT_TOKEN_ENRICHMENT_DELETE_MUTATION, CLIENT_TOKEN_ENRICHMENT_SET_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { Token } from "graphql";
+import { useIntl } from "react-intl";
 
 export interface ClientTokenEnrichmentConfigurationProps {
     clientId: string,
@@ -32,15 +32,10 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
     onUpdateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
     // STATE VARIABLES
-    const initInput: TokenEnrichmentConfigurationInput = {
-        clientId: clientId,
-        failureMode: TokenEnrichmentFailureMode.FailClosed,
-        timeoutMs: 0,
-        uri: ""
-    };
-
-
     const [enrichmentUri, setEnrichmentUri] = React.useState<string>("");
     const [timeoutMs, setTimeoutMs] = React.useState<string>("");
     const [failureMode, setFailureMode] = React.useState<string>("");
@@ -91,7 +86,7 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({ id: error.message }));
         },
         
     });
@@ -115,7 +110,7 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({ id: error.message }));
         },
         
     })
