@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 // const cspHeader = `
 //     default-src 'self';
 //     script-src 'self' 'unsafe-eval' 'unsafe-inline';
@@ -13,6 +15,28 @@ import type { NextConfig } from "next";
 //     upgrade-insecure-requests;
 // `
 
+const CONTENT_SECURITY_POLICY = isDev
+  ? `
+      default-src 'self';
+      script-src 'self' 'unsafe-eval' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' https://flagcdn.com data: blob:;
+      connect-src 'self';
+    `
+  : `
+      default-src 'self';
+      script-src 'self';
+      style-src 'self';
+      img-src 'self' https://flagcdn.com data:;
+      connect-src 'self';
+      font-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      frame-ancestors 'none';
+      form-action 'self';
+      upgrade-insecure-requests;
+    `;
+
 const nextConfig: NextConfig = {
   
   /* config options here */  
@@ -24,20 +48,20 @@ const nextConfig: NextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: false,
   },
-  output: "standalone"
-//   async headers () {
-//     return [
-//         {
-//             source: '/(.*)',
-//             headers: [
-//               {
-//                 key: 'Content-Security-Policy',
-//                 value: cspHeader.replace(/\n/g, ''),
-//               },
-//             ],
-//           }
-//     ]
-//   }
+  output: "standalone",
+  async headers () {
+    return [
+        {
+            source: '/(.*)',
+            headers: [
+              {
+                key: 'Content-Security-Policy',
+                value: CONTENT_SECURITY_POLICY.replace(/\n/g, ''),
+              },
+            ],
+          }
+    ]
+  }
   
 
 };

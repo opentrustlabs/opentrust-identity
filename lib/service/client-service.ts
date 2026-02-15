@@ -484,27 +484,27 @@ class ClientService {
             const callbackURL = new URL(enrichmentInput.uri);
             const hostname = callbackURL.hostname.toLowerCase();            
             if(callbackURL.protocol !== "https"){
-                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
             }
             
             if(hostname === "localhost"){
-                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
             }
             // Block bare IP addresses (both v4 an v6)
             if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
                 // TODO - new error code
-                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
             }
 
             // Block IPv6 addresses
             if (/^\[?[a-f0-9:]+\]?$/.test(hostname)) {
                 // TODO - new error code
-                throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
             }            
         }
         catch(e){
             // TODO - new error code
-            throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+            throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
         }
 
         const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);

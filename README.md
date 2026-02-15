@@ -740,6 +740,35 @@ value from the server in the `x-client-certificate-verify` header.
 /api/{tenant_id}/oidc/par
 ```
 
+### Token enrichment callback
+
+What is token enrichment and why have it? Token enrichment is a callback service which you can optionally define on a 
+per-client basis. If defined, it will be called for every `/token` request for clients which are configured as 
+having either _identity_ or _delegated permissions_ client types.
+
+The reason why you might want to implement a callback is to add domin-specific data from your
+application to the basic JWT issued by the IAM tool - that is, information which is not part of
+the IAM tool itself. What kind of domain-specific data? This could be organization
+IDs or names to which the user belongs, their security profile within the application, and
+so on. 
+
+Depending on your requirements, if the token enrichment callback fails, you can either have the
+`/token` endpoint fail or succeed without adding the enrichment data.
+
+Here are the rules for defining and using the callback;
+
+1. The URI must be https.
+2. The callback must accept a POST request.
+3. The payload will be a JSON body containing the IAM user ID and email, formatted as follows:  `{"userId": "12345", "email": "myname@mydomain.com"}`
+4. The service must complete in a configurable timeout, with a maximum of 3000 ms.
+5. If the service times-out, no retry will be performed.
+6. The size of the response should be reasonably small, on the order of several hundred bytes, so that the size of the Authorization header does not exceed limits that are set at firewalls.
+7. The format of the response should be a JSON object, which can contain arbitrary property values.
+8. The response will be set as-is on the JWT in the property: `exts`
+9. The `exts` will be part of the response from both the OIDC `userinfo` endpoint and the `/users/me` endpoint.
+
+
+
 ## Additional utility endpoints
 
 In addition to the standard OIDC endpoints there are several utility endpoints which clients can invoke.

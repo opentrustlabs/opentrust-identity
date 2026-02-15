@@ -357,5 +357,7 @@
     "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group.",
     "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT": "The tenant has restricted its authentication to domains that do not include this user.",
     "ERROR_CLIENT_CERTIFICATE_IDENTIFIER_ALREADY_ASSIGNED_TO_CLIENT": "The client certificate identifier is already assigned to a client.",
-    "ERROR_FAPI_CONFIGURATION_NOT_ALLOWED_FOR_DEVICE_CLIENTS": "FAPI Configuration is not allowed for device clients."
+    "ERROR_FAPI_CONFIGURATION_NOT_ALLOWED_FOR_DEVICE_CLIENTS": "FAPI Configuration is not allowed for device clients.",
+    "ERROR_INVALID_CLIENT_TYPE_FOR_TOKEN_ENRICHMENT_CALLBACK": "The client type is not valid for the token enrichment callback.",
+    "ERROR_INVALID_URI_FOR_TOKEN_ENRICHMENT_CALLBACK": "The URI is not valid for the token enrichment callback."
 }
