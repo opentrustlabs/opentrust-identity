@@ -63,8 +63,9 @@ import ScopeTranslationEntity from "../entities/scope-translation-entity";
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
 
 import { DataSource, DefaultNamingStrategy, NamingStrategyInterface, Repository } from "typeorm";
-import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, ScopeTranslation, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, ScopeTranslation, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, TokenEnrichmentConfiguration, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 import PushedAuthRequestEntity, { PushedAuthRequest } from "../entities/pushed-auth-request.entity";
+import ClientTokenEnrichmentConfigurationEntity from "../entities/client-token-enrichment-configuration-entity";
 
 class OracleUpperNamingStrategy
     extends DefaultNamingStrategy
@@ -168,7 +169,8 @@ const entities = [
     FederatedAuthTestEntity,
     ContactEntity,
     PushedAuthRequestEntity,
-    ScopeTranslationEntity
+    ScopeTranslationEntity,
+    ClientTokenEnrichmentConfigurationEntity
 ]
 
 
@@ -238,6 +240,7 @@ class RDBDriver {
     contactRepository: Repository<Contact>;
     pushedAuthRequestRespository: Repository<PushedAuthRequest>;
     scopeTransationRepository: Repository<ScopeTranslation>;
+    clientTokenEnrichmentConfigurationEntity: Repository<TokenEnrichmentConfiguration>;
 
 
     private constructor() {
@@ -818,6 +821,14 @@ class RDBDriver {
             RDBDriver.instance.scopeTransationRepository = driver.getRepository("scopeTranslation");
         }
         return RDBDriver.instance.scopeTransationRepository;
+    }
+
+    public async getClientTokenEnrichmentConfigurationEntity(): Promise<Repository<TokenEnrichmentConfiguration>>{
+        if (!RDBDriver.instance.clientTokenEnrichmentConfigurationEntity) {
+            const driver = await RDBDriver.getConnection();
+            RDBDriver.instance.clientTokenEnrichmentConfigurationEntity = driver.getRepository("clientTokenEnrichmentConfiguration");
+        }
+        return RDBDriver.instance.clientTokenEnrichmentConfigurationEntity;
     }
 
 }

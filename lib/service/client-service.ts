@@ -1,11 +1,11 @@
-import { AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ClientUpdateInput, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthorizationScopeApprovalData, Client, ClientFapiConfiguration, ClientFapiConfigurationInput, ClientScopeRel, ClientUpdateInput, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant, TokenEnrichmentConfiguration, TokenEnrichmentConfigurationInput } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CHANGE_EVENT_TYPE_UPDATE_REL, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_FAPI_CONFIGURATION, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CHANGE_EVENT_TYPE_UPDATE_REL, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_IDENTITY, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, FAPI_ID_TYPE_SAN_URI, MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -451,7 +451,89 @@ class ClientService {
                 data: JSON.stringify({clientId})
             });
     }
-    
+
+    public async getTokenEnrichmentConfiguration(clientId: string): Promise<TokenEnrichmentConfiguration | null> {
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(!client){
+            return null;
+        }
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE], client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+        const config = await clientDao.getTokenEnrichmentConfiguration(clientId);
+        return config;
+    }
+
+
+    public async setClientTokenEnrichmentConfiguration(enrichmentInput: TokenEnrichmentConfigurationInput): Promise<TokenEnrichmentConfiguration> {
+        // Be a little generous if the calling app tried to set an out-of-bound timeout value
+        // and just set to the max allowed - do not throw an error.
+        if(enrichmentInput.timeoutMs > MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS || enrichmentInput.timeoutMs < 0){
+            enrichmentInput.timeoutMs = MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS
+        }
+        const client: Client | null = await clientDao.getClientById(enrichmentInput.clientId);
+        if(!client){
+            throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
+        }
+        if(client.clientType !== CLIENT_TYPE_USER_DELEGATED_PERMISSIONS && client.clientType !== CLIENT_TYPE_IDENTITY){
+            throw new GraphQLError(ERROR_CODES.EC00232.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00232}});
+        }
+                
+        try{
+            const callbackURL = new URL(enrichmentInput.uri);
+            const hostname = callbackURL.hostname.toLowerCase();            
+            if(callbackURL.protocol !== "https"){
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+            }
+            
+            if(hostname === "localhost"){
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+            }
+            // Block bare IP addresses (both v4 an v6)
+            if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+                // TODO - new error code
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+            }
+
+            // Block IPv6 addresses
+            if (/^\[?[a-f0-9:]+\]?$/.test(hostname)) {
+                // TODO - new error code
+                throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+            }            
+        }
+        catch(e){
+            // TODO - new error code
+            throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
+        }
+
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+        const existing = await clientDao.getTokenEnrichmentConfiguration(enrichmentInput.clientId);
+        if(existing){
+            const result = await clientDao.updateTokenEnrichmentConfiguration(enrichmentInput);
+            return result;
+        }
+        else{
+            const result = await clientDao.createTokenEnrichmentConfiguration(enrichmentInput);
+            return result;
+        }
+    }
+
+    public async deleteTokenEnrichmentConfiguration(clientId: string): Promise<void> {
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(!client){
+            throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
+        }
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+        await clientDao.deleteTokenEnrichmentConfiguration(clientId);
+    }
+        
 }
 
 export default ClientService;

@@ -1546,3 +1546,20 @@ export const SCOPE_TRANSLATION_MODEL: {[key: string]: cassandra.mapping.ModelOpt
         }
     }
 };
+
+export const CLIENT_TOKEN_ENRICHMENT_CONFIG_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
+    "client_token_enrichment_configuration": {
+        tables: ["client_token_enrichment_configuration"],
+        columns: {
+            "clientid": {
+                name: "clientid",
+                toModel(columnValue){
+                    return columnValue.toString();
+                }
+            },
+            "uri": "uri",
+            "failuremode": "failureMode",
+            "timeoutms": "timeoutMs"
+        }
+    }
+};

@@ -1751,6 +1751,10 @@ class AuthenticateUserService extends IdentityService {
                     await authDao.savePreAuthenticationState(preAuthenticationState);
                     response.uri = `/api/${preAuthenticationState.tenantId}/fapi/authorize?${QUERY_PARAM_PREAUTHN_TOKEN}=${token}`;
                 }
+                // If there is an existing refresh token assigned to this user + tenant + client, then clear it out.
+                // This should not happen often. The deletion will happen before the client can call the
+                // token endpoint to issue a new access token/refresh token based on the same user/tenant/client
+                authDao.deleteRefreshData(userAuthenticationState.userId, userAuthenticationState.tenantId, preAuthenticationState.clientId);
             }
             catch(err: unknown){
                 const e = err as Error;

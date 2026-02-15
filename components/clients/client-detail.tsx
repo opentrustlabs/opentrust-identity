@@ -36,6 +36,7 @@ import { containsScope } from "@/utils/authz-utils";
 import { ERROR_CODES } from "@/lib/models/error";
 import { useIntl } from 'react-intl';
 import ClientFapiConfigurationComponent from "./client-fapi-configuration";
+import ClientTokenEnrichmentConfiguration from "./client-token-enrichment-configuration";
 
 
 export interface ClientDetailProps {
@@ -690,6 +691,38 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 }
                             </Box>
                         }
+                        <Box>
+                            <Accordion>
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    id="client-token-enrichment-configuration"
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                                >
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <PaymentOutlinedIcon />
+                                        <div style={{ marginLeft: "8px" }}>
+                                            Token Enrichment Configuration
+                                        </div>
+                                    </div>
+                                    
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <ClientTokenEnrichmentConfiguration
+                                        clientId={client.clientId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if (success) {
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);
+                                        }}
+                                        readOnly={false}
+                                    />
+                                </AccordionDetails>
+                            </Accordion>
+                        </Box>
                     </Stack>
                 </Grid2>
 

@@ -25,6 +25,7 @@ type Query {
     getClientById(clientId: String!): Client
     getRedirectURIs(clientId: String!): [String!]!
     getClientFapiConfiguration(clientId: String!): ClientFapiConfiguration
+    getTokenEnrichmentConfiguration(clientId: String!): TokenEnrichmentConfiguration
 
     ## Users
     getUsers(tenantId: String): [User!]!
@@ -143,6 +144,8 @@ type Mutation {
     removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
     setClientFapiConfiguration(fapiConfigurationInput: ClientFapiConfigurationInput!): ClientFapiConfiguration
     deleteClientFapiConfiguration(clientId: String!): String
+    setClientTokenEnrichmentConfiguration(enrichmentInput: TokenEnrichmentConfigurationInput!): TokenEnrichmentConfiguration!
+    deleteTokenEnrichmentConfiguration(clientId: String!): String
 
     ## Users
     createUser(tenantId: String!, userInput: UserCreateInput!): User!    
@@ -1297,6 +1300,18 @@ type ScopeTranslation {
     translation: String!
 }
 
+enum TokenEnrichmentFailureMode {
+    FAIL_CLOSED
+    FAIL_OPEN
+}
+
+type TokenEnrichmentConfiguration {
+    clientId: String!
+    uri: String!
+    failureMode: TokenEnrichmentFailureMode!
+    timeoutMs: Int!
+}
+
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
@@ -1770,4 +1785,11 @@ input ScopeTranslationInput {
     scopeId: String!
     languageCode: String!
     translation: String!
+}
+
+input TokenEnrichmentConfigurationInput {
+    clientId: String!
+    uri: String!
+    failureMode: TokenEnrichmentFailureMode!
+    timeoutMs: Int!
 }

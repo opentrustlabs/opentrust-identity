@@ -1051,3 +1051,10 @@ create TABLE scope_translation (
     translation     TEXT,
     PRIMARY KEY (scopeid, languagecode)    
 );
+
+create TABLE client_token_enrichment_configuration (
+    clientid UUID PRIMARY KEY,
+    uri TEXT,
+    failuremode TEXT,
+    timeoutms INT
+);

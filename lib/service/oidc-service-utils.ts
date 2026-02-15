@@ -363,6 +363,7 @@ class OIDCServiceUtils extends ServiceClientConfig {
             });
         }        
     }
+
 }
 
 export default OIDCServiceUtils;

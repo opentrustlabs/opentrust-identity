@@ -232,6 +232,10 @@ const resolvers: Resolvers = {
         getScopeTranslations: (_: any, { scopeId }, oidcContext) => {
             const service: ScopeService = new ScopeService(oidcContext);
             return service.getScopeTranslations(scopeId);
+        },
+        getTokenEnrichmentConfiguration: (_: any, { clientId }, oidcContext) => {
+            const service: ClientService = new ClientService(oidcContext);
+            return service.getTokenEnrichmentConfiguration(clientId);
         }
     },
     Mutation: {        
@@ -1058,6 +1062,15 @@ const resolvers: Resolvers = {
             const service: ScopeService = new ScopeService(oidcContext);
             await service. deleteScopeTranslation(scopeId, languageCode);
             return scopeId;
+        },
+        setClientTokenEnrichmentConfiguration: async(_: any, { enrichmentInput }, oidcContext) => {
+            const service: ClientService = new ClientService(oidcContext);
+            return service.setClientTokenEnrichmentConfiguration(enrichmentInput);
+        },
+        deleteTokenEnrichmentConfiguration: async(_: any, { clientId }, oidcContext) => {
+            const service: ClientService = new ClientService(oidcContext);
+            await service.deleteTokenEnrichmentConfiguration(clientId);
+            return clientId;
         }
     },
     PortalUserProfile: {

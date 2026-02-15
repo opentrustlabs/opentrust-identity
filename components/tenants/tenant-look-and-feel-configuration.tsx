@@ -187,7 +187,6 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         </Button>
                     </DialogActions>
                 </Dialog>
-
             }
             <Dialog 
                 onClose={() => setBackgroundColorPickerOpen(false)}
