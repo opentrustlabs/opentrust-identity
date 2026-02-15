@@ -320,6 +320,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, req: NextApiRe
             return res.status(400).json(error);
         }
         let credentialIsValid: boolean = false;
+        
         if(tokenData.clientSecret){
             credentialIsValid = await clientAuthValidationService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }

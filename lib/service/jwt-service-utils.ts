@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData, PreAuthenticationState } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData, PreAuthenticationState, TokenEnrichmentConfiguration, TokenEnrichmentFailureMode } from "@/graphql/generated/graphql-types";
 import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -16,6 +16,8 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import { logWithDetails } from "../logging/logger";
+import ServiceClientConfig from "./service-client-config";
+
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -33,6 +35,7 @@ const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+const serviceClientConfig: ServiceClientConfig = new ServiceClientConfig();
 
 const {
     AUTH_DOMAIN,
@@ -136,7 +139,8 @@ class JwtServiceUtils {
                 addressLine1: null,
                 city: null,
                 postalCode: null,
-                stateRegionProvince: null
+                stateRegionProvince: null,
+                exts: principal.exts
             }
         }
         else if(principal.principal_type === PRINCIPAL_TYPE_ANONYMOUS_USER){            
@@ -178,7 +182,8 @@ class JwtServiceUtils {
                 addressLine1: null,
                 city: null,
                 postalCode: null,
-                stateRegionProvince: null
+                stateRegionProvince: null,
+                exts: principal.exts
             }
         }
         else{            
@@ -252,7 +257,8 @@ class JwtServiceUtils {
                 addressLine1: user.addressLine1 || null,
                 city: user.city || null,
                 postalCode: user.postalCode || null,
-                stateRegionProvince: user.stateRegionProvince || null
+                stateRegionProvince: user.stateRegionProvince || null,
+                exts: principal.exts
             }
         }            
         
@@ -425,6 +431,16 @@ class JwtServiceUtils {
             return Promise.resolve(null);
         }
 
+        // Check for enrichment configuration. If anything fails here, return null;        
+        let exts: Record<string, unknown> | null = null;
+        const tokenEnrichmentConfig: TokenEnrichmentConfiguration | null = await clientDao.getTokenEnrichmentConfiguration(clientId);
+        if(tokenEnrichmentConfig !== null){            
+            exts = await this.tokenEnrichment(tokenEnrichmentConfig, client, tenant, user);
+            if(!exts && tokenEnrichmentConfig.failureMode === TokenEnrichmentFailureMode.FailClosed){
+                return Promise.resolve(null);
+            }            
+        }
+
         const now = Date.now();
         const principal: JWTPayload = {
             sub: user.userId,
@@ -462,6 +478,9 @@ class JwtServiceUtils {
             principal_type: PRINCIPAL_TYPE_END_USER
         };
 
+        if(exts){
+            principal["exts"] = exts;
+        }
         if(certificateThumbprint){
             principal["cnf"] = {"x5t#S256": certificateThumbprint}
         }
@@ -475,6 +494,7 @@ class JwtServiceUtils {
         }
         
         principal.aud = client.audience || JWT_DEFAULT_AUDIENCE;
+
         const accessToken = await this.signJwt(principal);
         if(accessToken === null){
             return Promise.resolve(null);
@@ -984,6 +1004,49 @@ class JwtServiceUtils {
         return arrScope;
     }
 
+
+    /**
+     * The enrichment callback must return a success response of 200 along with some data. Even if that
+     * data is just an empty object.
+     * @param url 
+     * @param userId 
+     * @param email 
+     * @param timeoutMs 
+     * @param authToken 
+     * @returns 
+     */
+    public async tokenEnrichment(tokenEnrichmentConfig: TokenEnrichmentConfiguration, client: Client, tenant: Tenant, user: User): Promise<Record<string, unknown> | null> {
+        try{
+            const authToken: {oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null = await this.signClientJwt(client, tenant);
+            if(authToken === null){
+                return Promise.resolve(null);
+            }
+            const response = await serviceClientConfig.getAxiosInstance().post(
+                tokenEnrichmentConfig.uri,
+                {userId: user.userId, email: user.email},
+                {
+                    headers: {
+                        "Authorization": `Bearer ${authToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    timeout: tokenEnrichmentConfig.timeoutMs
+                }
+            );
+            if(response.status !== 200){
+                return null;
+            }
+            const d = response.data;            
+            if(!d){
+                return null;
+            }
+            return d;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(error: any) {
+            logWithDetails("error", `Error invoking token enrichment call to ${tokenEnrichmentConfig.uri}. ${error.message}`, {...error});
+            return null;
+        }
+    }
     
 
 }

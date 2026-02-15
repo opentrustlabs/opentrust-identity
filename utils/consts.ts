@@ -1143,7 +1143,7 @@ export const HTTP_HEADER_X_GEO_LOCATION="x-geo-location";
 // 
 // ************************************************************************** //
 export const DEFAULT_HTTP_TIMEOUT_MS=60000;
-export const MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS=50000
+export const MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS=3000
 export const MAX_TOKEN_ENRICHMENT_RESPONSE_SIZE_BYTES=1000;
 
 // ************************************************************************** //

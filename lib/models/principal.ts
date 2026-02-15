@@ -44,7 +44,8 @@ export interface MyUserProfile {
     clientName: string,
     expiresAtMs: number,
     authorizationGroups: Array<ProfileAuthorizationGroup>,
-    principalType: string
+    principalType: string,
+    exts: Record<string, unknown> | null
 };
 
 
@@ -84,7 +85,8 @@ export interface JWTPrincipal {
     nonce: string | null,
     cnf?: {
         'x5t#S256'?: string
-    }
+    },
+    exts: Record<string, unknown> | null
 }
 
 /**

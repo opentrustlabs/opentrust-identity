@@ -372,7 +372,7 @@ const Login: React.FC<LoginProps>= ({
     }
 
     const getScopeTranslation = (requestedScope: AuthenticationRequestedScope): string => {
-        console.log("locale from intl is: " + intl.locale);
+        
         let desc = requestedScope.scopeDescription;
         if(requestedScope.scopeTranslations.length > 0){
             const langCode = intl.locale;

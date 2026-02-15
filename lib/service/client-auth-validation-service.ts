@@ -23,27 +23,23 @@ class ClientAuthValidationService {
      */
     public async validateClientAuthCredentials(client: string | Client, clientSecret: string): Promise<boolean> {
 
-        let encryptedClientSecret: string | null = null;
+        let decryptedClientSecret: string | null = null;
 
         if(typeof client === "string"){
             const c: Client | null = await clientDao.getClientById(client);
             if(!c){
                 return Promise.resolve(false);
             }
-            encryptedClientSecret = await kms.decrypt(c.clientSecret);
+            decryptedClientSecret = await kms.decrypt(c.clientSecret);
         }
         else{
-            encryptedClientSecret = await kms.decrypt(client.clientSecret);
+            decryptedClientSecret = await kms.decrypt(client.clientSecret);
         }
-        if(encryptedClientSecret === null){
+        if(decryptedClientSecret === null){
             return false;
         }
         
-        try{
-            const decryptedClientSecret: string | null = await kms.decrypt(encryptedClientSecret);
-            if(!decryptedClientSecret){
-                return Promise.resolve(false);
-            }
+        try{            
             const areEqual: boolean = timingSafeEqual(Buffer.from(clientSecret), Buffer.from(decryptedClientSecret));
             if(!areEqual){
                 return Promise.resolve(false);

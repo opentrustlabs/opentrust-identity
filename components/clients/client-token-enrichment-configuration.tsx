@@ -1,10 +1,10 @@
 "use client";
 import { CLIENT_TOKEN_ENRICHMENT_QUERY } from "@/graphql/queries/oidc-queries";
-import { useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { TokenEnrichmentConfigurationInput, TokenEnrichmentFailureMode } from "@/graphql/generated/graphql-types";
+import { TokenEnrichmentConfiguration, TokenEnrichmentConfigurationInput, TokenEnrichmentFailureMode } from "@/graphql/generated/graphql-types";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import DialogContent from "@mui/material/DialogContent";
@@ -15,6 +15,9 @@ import Alert from "@mui/material/Alert";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS } from "@/utils/consts";
+import { CLIENT_TOKEN_ENRICHMENT_DELETE_MUTATION, CLIENT_TOKEN_ENRICHMENT_SET_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { Token } from "graphql";
 
 export interface ClientTokenEnrichmentConfigurationProps {
     clientId: string,
@@ -41,7 +44,7 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
     const [enrichmentUri, setEnrichmentUri] = React.useState<string>("");
     const [timeoutMs, setTimeoutMs] = React.useState<string>("");
     const [failureMode, setFailureMode] = React.useState<string>("");
-
+    const [revertToInput, setRevertToInput] = React.useState<TokenEnrichmentConfiguration>();
     const [showConfirmDeleteConfiguration, setShowConfirmDeleteConfiguration] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
@@ -54,8 +57,68 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
         onCompleted(data) {
             // TODO
             // UPDATE THE INPUT VALUES
+            if(data && data.getTokenEnrichmentConfiguration){
+                const config = data.getTokenEnrichmentConfiguration as TokenEnrichmentConfiguration;
+                setEnrichmentUri(config.uri);
+                setFailureMode(config.failureMode);
+                setTimeoutMs(config.timeoutMs.toString());
+                setRevertToInput({
+                    clientId: clientId,
+                    uri: config.uri,
+                    failureMode: config.failureMode,
+                    timeoutMs: config.timeoutMs
+                });
+            }
         },
     });
+
+    const [tokenEnrichmentSetMutation] = useMutation(CLIENT_TOKEN_ENRICHMENT_SET_MUTATION, {
+
+        onCompleted(data) {
+            onUpdateEnd(true);
+            const config = data.setClientTokenEnrichmentConfiguration as TokenEnrichmentConfiguration;
+            setEnrichmentUri(config.uri);
+            setFailureMode(config.failureMode);
+            setTimeoutMs(config.timeoutMs.toString());
+            setRevertToInput({
+                clientId: clientId,
+                uri: config.uri,
+                failureMode: config.failureMode,
+                timeoutMs: config.timeoutMs
+            });
+            setMarkDirty(false);
+
+        },
+        onError(error) {
+            onUpdateEnd(false);
+            setErrorMessage(error.message);
+        },
+        
+    });
+
+    const [tokenEnrichmentDeleteMutation] = useMutation(CLIENT_TOKEN_ENRICHMENT_DELETE_MUTATION, {
+        variables: {
+            clientId: clientId
+        },
+        onCompleted() {
+            onUpdateEnd(true);
+            setEnrichmentUri("");
+            setFailureMode("");
+            setTimeoutMs("");
+            setMarkDirty(false);
+            setRevertToInput({
+                clientId: clientId,
+                uri: "",
+                failureMode: TokenEnrichmentFailureMode.FailClosed,
+                timeoutMs: 0
+            });
+        },
+        onError(error) {
+            onUpdateEnd(false);
+            setErrorMessage(error.message);
+        },
+        
+    })
 
     if(loading) return <DataLoading dataLoadingSize="md" color={null}/>
 
@@ -84,7 +147,7 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
                             onClick={() => {
                                 setShowConfirmDeleteConfiguration(false);
                                 onUpdateStart();
-                                //removeTenantLookAndFeelMutation();
+                                tokenEnrichmentDeleteMutation()
                             }}
                         >
                             Confirm
@@ -103,8 +166,6 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
                         disabled={false}
                         value={enrichmentUri}
                         onChange={(evt) => { 
-                            //tenantLookAndFeelInput.authenticationheaderbackgroundcolor = evt.target.value; 
-                            //setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); 
                             setEnrichmentUri(evt.target.value)
                             setMarkDirty(true); 
                         }}
@@ -119,7 +180,10 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
                         fullWidth={true}
                         value={failureMode}
                         label="Failure Mode"
-
+                        onChange={(evt) => {
+                            setFailureMode(evt.target.value);
+                            setMarkDirty(true);
+                        }}
                     >
                         <MenuItem value="">Select...</MenuItem>
                         <MenuItem value={TokenEnrichmentFailureMode.FailOpen}>Issue a token if the service fails</MenuItem>
@@ -130,26 +194,50 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
                     <TextField
                         name="timeoutMs"
                         fullWidth={true}
-                        label={"Callback timeout in milliseconds - between 50 and 5000"}
+                        label={"Callback timeout in milliseconds - maximum of 3000"}
                         type="number"
                         value={timeoutMs}
+                        onChange={(evt) => {
+                            let v = 0;
+                            try{
+                                v = parseInt(evt.target.value);
+                                if(v < 0 || v > MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS){
+                                    v = MAX_TOKEN_ENRICHMENT_REQUEST_TIMEOUT_MS;                                    
+                                }
+                                setTimeoutMs(v.toString());
+                            }
+                            catch{
+                                setTimeoutMs(v.toString());
+                            }
+                        }}
                     />
                 </Grid2>
             </Grid2>
             <DetailSectionActionHandler
                 onDiscardClickedHandler={() => {
-                    //setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
+                    setEnrichmentUri(revertToInput?.uri || "");
+                    setFailureMode(revertToInput?.failureMode || TokenEnrichmentFailureMode.FailClosed);
+                    setTimeoutMs(revertToInput?.timeoutMs.toString() || "");
                     setMarkDirty(false);
                 }}
                 onUpdateClickedHandler={() => {
-                    // onUpdateStart(); 
-                    //mutateTenantLookAndFeel();
+                    onUpdateStart(); 
+                    tokenEnrichmentSetMutation({
+                        variables: {
+                            enrichmentInput: {
+                                clientId: clientId,
+                                failureMode: failureMode,
+                                timeoutMs: parseInt(timeoutMs),
+                                uri: enrichmentUri
+                            }
+                        }
+                    });
                 }}
                 markDirty={markDirty}
                 disableSubmit={false}
                 enableRestoreDefault={true}
                 restoreDefaultHandler={() => {
-                    // setShowConfirmRestoreLookAndFeelDefaultDialog(true);                    
+                    setShowConfirmDeleteConfiguration(true);
                 }}
             />
         </React.Fragment>
