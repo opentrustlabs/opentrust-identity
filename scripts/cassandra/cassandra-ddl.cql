@@ -746,9 +746,19 @@ create TABLE tenant_look_and_feel (
     authenticationheaderbackgroundcolor TEXT,
     authenticationheadertextcolor TEXT,    
     authenticationlogouri TEXT,
-    authenticationlogomimetype TEXT,
     authenticationheadertext TEXT,
-    authenticationlogo BLOB
+    authenticationbuttonbackgroundcolor TEXT,
+    authenticationbuttontextcolor TEXT,
+    authenticationinputbordercolor TEXT,
+    authenticationpagebackgroundcolor TEXT,
+    authenticationfooterbackgroundcolor TEXT,
+    authenticationfootertextcolor TEXT,
+    authenticationlinkcolor TEXT,
+    authenticationlayouttype TEXT,
+    authenticationbackgroundimageuri TEXT,
+    authenticationimagepanelposition TEXT,
+    buttonborderradius TEXT,
+    headerlogoposition TEXT
 );
 
 create TABLE footer_link (

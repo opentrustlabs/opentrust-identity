@@ -967,6 +967,20 @@ export const FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH = "/api/federated-auth/retu
 export const DEFAULT_BACKGROUND_COLOR = "#005288"; //#1976d2";
 export const DEFAULT_TEXT_COLOR = "white";
 
+export const LAYOUT_TYPE_SINGLE_COLUMN = "SINGLE_COLUMN";
+export const LAYOUT_TYPE_TWO_COLUMN = "TWO_COLUMN";
+export const LAYOUT_TYPES = [LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPE_TWO_COLUMN];
+
+export const IMAGE_PANEL_LEFT = "LEFT";
+export const IMAGE_PANEL_RIGHT = "RIGHT";
+export const IMAGE_PANEL_POSITIONS = [IMAGE_PANEL_LEFT, IMAGE_PANEL_RIGHT];
+
+export const LOGO_HEADER_POSITION_LEFT = "LEFT";
+export const LOGO_HEADER_POSITION_CENTER = "CENTER";
+export const LOGO_HEADER_POSITION_RIGHT = "RIGHT";
+export const LOGO_HEADER_POSITIONS = [LOGO_HEADER_POSITION_LEFT, LOGO_HEADER_POSITION_CENTER, LOGO_HEADER_POSITION_RIGHT];
+
+
 // ************************************************************************** //
 // 
 //                  DEFAULT TENANT CONSTANTS
@@ -980,8 +994,20 @@ export const DEFAULT_TENANT_LOOK_AND_FEEL: TenantLookAndFeel = {
     adminheadertext: "",
     authenticationheaderbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
     authenticationheadertextcolor: "white",
-    authenticationlogo: null,
     authenticationheadertext: "",
+    authenticationbuttonbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
+    authenticationbuttontextcolor: "white",
+    authenticationinputbordercolor: null,
+    authenticationpagebackgroundcolor: null,
+    authenticationfooterbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
+    authenticationfootertextcolor: "white",
+    authenticationlinkcolor: null,
+    authenticationlayouttype: LAYOUT_TYPE_SINGLE_COLUMN,
+    authenticationbackgroundimageuri: null,
+    authenticationimagepanelposition: IMAGE_PANEL_LEFT,
+    authenticationlogouri: "",
+    buttonborderradius: "4px",
+    headerlogoposition: LOGO_HEADER_POSITION_LEFT,    
     footerlinks: []
 };
 

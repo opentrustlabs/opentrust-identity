@@ -231,6 +231,7 @@ const ClientTokenEnrichmentConfiguration: React.FC<ClientTokenEnrichmentConfigur
                 markDirty={markDirty}
                 disableSubmit={false}
                 enableRestoreDefault={true}
+                tooltipTitle="Delete token enrichment configuration"
                 restoreDefaultHandler={() => {
                     setShowConfirmDeleteConfiguration(true);
                 }}

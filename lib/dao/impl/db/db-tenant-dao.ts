@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory, UserTenantRel, RefreshData, ClientAuthHistory } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory, UserTenantRel, RefreshData, ClientAuthHistory, FooterLink } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import RDBDriver from "@/lib/data-sources/rdb";
@@ -245,7 +245,30 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
-    
+    public async getFooterLinks(tenantId: string): Promise<FooterLink[]> {
+        const footerLinkRepo = await RDBDriver.getInstance().getFooterLinkRepository();
+        return footerLinkRepo.find({
+            where: {
+                tenantid: tenantId
+            }
+        });
+    }
+
+    public async createFooterLink(footerLink: FooterLink): Promise<FooterLink> {
+        const footerLinkRepo = await RDBDriver.getInstance().getFooterLinkRepository();
+        await footerLinkRepo.insert(footerLink);
+        return Promise.resolve(footerLink);
+    }
+
+    public async deleteFooterLinksByTenantId(tenantId: string): Promise<void> {
+        const footerLinkRepo = await RDBDriver.getInstance().getFooterLinkRepository();
+        await footerLinkRepo.delete({
+            tenantid: tenantId
+        });
+        return Promise.resolve();
+    }
+
+
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
         const tenantRestrictedDomainRelRepository = await RDBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelRepository();
         const entities = await tenantRestrictedDomainRelRepository.find({

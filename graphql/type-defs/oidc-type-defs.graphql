@@ -865,10 +865,20 @@ type TenantLookAndFeel {
     adminheadertext: String
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
-    authenticationlogo: String
     authenticationlogouri: String
-    authenticationlogomimetype: String
     authenticationheadertext: String
+    authenticationbuttonbackgroundcolor: String
+    authenticationbuttontextcolor: String
+    authenticationinputbordercolor: String
+    authenticationpagebackgroundcolor: String
+    authenticationfooterbackgroundcolor: String
+    authenticationfootertextcolor: String
+    authenticationlinkcolor: String
+    authenticationlayouttype: String
+    authenticationbackgroundimageuri: String
+    authenticationimagepanelposition: String
+    buttonborderradius: String
+    headerlogoposition: String
     footerlinks: [FooterLink]
 }
 
@@ -1493,10 +1503,20 @@ input TenantLookAndFeelInput {
     adminheadertext: String
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
-    authenticationlogo: String
     authenticationlogouri: String
-    authenticationlogomimetype: String
     authenticationheadertext: String
+    authenticationbuttonbackgroundcolor: String
+    authenticationbuttontextcolor: String
+    authenticationinputbordercolor: String
+    authenticationpagebackgroundcolor: String
+    authenticationfooterbackgroundcolor: String
+    authenticationfootertextcolor: String
+    authenticationlinkcolor: String
+    authenticationlayouttype: String
+    authenticationbackgroundimageuri: String
+    authenticationimagepanelposition: String
+    buttonborderradius: String
+    headerlogoposition: String
     footerlinks: [FooterLinkInput]
 }
 

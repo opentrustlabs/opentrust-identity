@@ -378,6 +378,10 @@ class TenantService {
         if(tenantLookAndFeel === null && tenantId !== this.oidcContext.rootTenant.tenantId){
             tenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId);
         }
+        if(tenantLookAndFeel){
+            const footerLinks = await tenantDao.getFooterLinks(tenantLookAndFeel.tenantid);
+            tenantLookAndFeel.footerlinks = footerLinks;
+        }
 
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
         // clear out the details of the system settings. Details are only for admin users with sufficient permissions
@@ -423,6 +427,10 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
+        if(tenantLookAndFeel){
+            const footerLinks = await tenantDao.getFooterLinks(tenantId);
+            tenantLookAndFeel.footerlinks = footerLinks;
+        }
         return Promise.resolve(tenantLookAndFeel);
     }
 
@@ -431,6 +439,10 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+
+        // Extract footer links before persisting the entity (footer links are in a separate table)
+        const footerLinks = tenantLookAndFeel.footerlinks || [];
+        delete tenantLookAndFeel.footerlinks;
 
         const existing: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
         if(!existing){
@@ -443,7 +455,7 @@ class TenantService {
                 changeTimestamp: Date.now(),
                 data: JSON.stringify(tenantLookAndFeel)
             });
-            return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
+            await tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
         }
         else {
             changeEventDao.addChangeEvent({
@@ -455,8 +467,26 @@ class TenantService {
                 changeTimestamp: Date.now(),
                 data: JSON.stringify(tenantLookAndFeel)
             });
-            return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
+            await tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
         }
+
+        // Save footer links (delete-then-reinsert)
+        await tenantDao.deleteFooterLinksByTenantId(tenantLookAndFeel.tenantid);
+        if(footerLinks.length > 0){
+            for(const link of footerLinks){
+                if(link){
+                    await tenantDao.createFooterLink({
+                        footerlinkid: link.footerlinkid || randomUUID().toString(),
+                        tenantid: tenantLookAndFeel.tenantid,
+                        linktext: link.linktext,
+                        uri: link.uri
+                    });
+                }
+            }
+        }
+
+        tenantLookAndFeel.footerlinks = footerLinks;
+        return tenantLookAndFeel;
     }
 
     public async removeTenantLookAndFeel(tenantId: string): Promise<void> {
@@ -464,6 +494,7 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        await tenantDao.deleteFooterLinksByTenantId(tenantId);
         await tenantDao.deleteTenantLookAndFeel(tenantId);
         changeEventDao.addChangeEvent({
             objectId: tenantId,
@@ -483,7 +514,7 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
-        
+
         changeEventDao.addChangeEvent({
             objectId: tenantId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
@@ -493,6 +524,7 @@ class TenantService {
             changeTimestamp: Date.now(),
             data: JSON.stringify({tenantId})
         });
+        await tenantDao.deleteFooterLinksByTenantId(tenantId);
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
 

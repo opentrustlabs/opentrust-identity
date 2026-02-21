@@ -122,7 +122,23 @@ export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
             authenticationheadertextcolor
             authenticationlogo
             authenticationlogomimetype
-            authenticationheadertext     
+            authenticationheadertext
+            authenticationbuttonbackgroundcolor
+            authenticationbuttontextcolor
+            authenticationinputbordercolor
+            authenticationpagebackgroundcolor
+            authenticationfooterbackgroundcolor
+            authenticationfootertextcolor
+            authenticationlinkcolor
+            authenticationlayouttype
+            authenticationbackgroundimageuri
+            authenticationimagepanelposition
+            footerlinks {
+                footerlinkid
+                tenantid
+                linktext
+                uri
+            }
         }
     }
 `);

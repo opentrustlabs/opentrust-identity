@@ -666,7 +666,7 @@ const resolvers: Resolvers = {
             await tenantService.removeTenantAnonymousUserConfig(tenantId);
             return tenantId;
         },
-        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {            
+        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             const tenantLookAndFeel: TenantLookAndFeel = {
                 tenantid: tenantLookAndFeelInput.tenantid,
@@ -678,7 +678,18 @@ const resolvers: Resolvers = {
                 adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
                 adminheadertext: tenantLookAndFeelInput.adminheadertext,
                 adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
-                authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri
+                authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri,
+                authenticationbuttonbackgroundcolor: tenantLookAndFeelInput.authenticationbuttonbackgroundcolor,
+                authenticationbuttontextcolor: tenantLookAndFeelInput.authenticationbuttontextcolor,
+                authenticationinputbordercolor: tenantLookAndFeelInput.authenticationinputbordercolor,
+                authenticationpagebackgroundcolor: tenantLookAndFeelInput.authenticationpagebackgroundcolor,
+                authenticationfooterbackgroundcolor: tenantLookAndFeelInput.authenticationfooterbackgroundcolor,
+                authenticationfootertextcolor: tenantLookAndFeelInput.authenticationfootertextcolor,
+                authenticationlinkcolor: tenantLookAndFeelInput.authenticationlinkcolor,
+                authenticationlayouttype: tenantLookAndFeelInput.authenticationlayouttype,
+                authenticationbackgroundimageuri: tenantLookAndFeelInput.authenticationbackgroundimageuri,
+                authenticationimagepanelposition: tenantLookAndFeelInput.authenticationimagepanelposition,
+                footerlinks: tenantLookAndFeelInput.footerlinks || []
             }
             await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
             return tenantLookAndFeel;

@@ -503,9 +503,19 @@ create TABLE tenant_look_and_feel (
     authenticationheaderbackgroundcolor VARCHAR2(32),
     authenticationheadertextcolor VARCHAR2(32),    
     authenticationlogouri VARCHAR2(256),
-    authenticationlogomimetype VARCHAR2(16),
     authenticationheadertext VARCHAR2(128),
-    authenticationlogo BLOB,
+    authenticationbuttonbackgroundcolor VARCHAR2(32),
+    authenticationbuttontextcolor VARCHAR2(32),
+    authenticationinputbordercolor VARCHAR2(32),
+    authenticationpagebackgroundcolor VARCHAR2(32),
+    authenticationfooterbackgroundcolor VARCHAR2(32),
+    authenticationfootertextcolor VARCHAR2(32),
+    authenticationlinkcolor VARCHAR2(32),
+    authenticationlayouttype VARCHAR2(32),
+    authenticationbackgroundimageuri VARCHAR2(256),
+    authenticationimagepanelposition VARCHAR2(16),
+    buttonborderradius VARCHAR2(16),
+    headerlogoposition VARCHAR2(16),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 

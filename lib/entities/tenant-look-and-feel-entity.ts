@@ -72,6 +72,66 @@ const TenantLookAndFeelEntity = new EntitySchema({
             nullable: true,
             name: "authenticationlogo",
             transformer: stringToBlobTransformer()
+        },
+        authenticationbuttonbackgroundcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationbuttonbackgroundcolor"
+        },
+        authenticationbuttontextcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationbuttontextcolor"
+        },
+        authenticationinputbordercolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationinputbordercolor"
+        },
+        authenticationpagebackgroundcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationpagebackgroundcolor"
+        },
+        authenticationfooterbackgroundcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationfooterbackgroundcolor"
+        },
+        authenticationfootertextcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationfootertextcolor"
+        },
+        authenticationlinkcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationlinkcolor"
+        },
+        authenticationlayouttype: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationlayouttype"
+        },
+        authenticationbackgroundimageuri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationbackgroundimageuri"
+        },
+        authenticationimagepanelposition: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationimagepanelposition"
         }
     },
     tableName: "tenant_look_and_feel",

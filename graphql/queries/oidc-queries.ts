@@ -39,6 +39,22 @@ export const TENANT_META_DATA_QUERY = gql(`
                 authenticationlogo
                 authenticationlogouri
                 authenticationheadertext
+                authenticationbuttonbackgroundcolor
+                authenticationbuttontextcolor
+                authenticationinputbordercolor
+                authenticationpagebackgroundcolor
+                authenticationfooterbackgroundcolor
+                authenticationfootertextcolor
+                authenticationlinkcolor
+                authenticationlayouttype
+                authenticationbackgroundimageuri
+                authenticationimagepanelposition
+                footerlinks {
+                    footerlinkid
+                    tenantid
+                    linktext
+                    uri
+                }
             }
             tenant {
                 tenantId
@@ -554,7 +570,23 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
             authenticationlogo
             authenticationlogouri
             authenticationlogomimetype
-            authenticationheadertext                      
+            authenticationheadertext
+            authenticationbuttonbackgroundcolor
+            authenticationbuttontextcolor
+            authenticationinputbordercolor
+            authenticationpagebackgroundcolor
+            authenticationfooterbackgroundcolor
+            authenticationfootertextcolor
+            authenticationlinkcolor
+            authenticationlayouttype
+            authenticationbackgroundimageuri
+            authenticationimagepanelposition
+            footerlinks {
+                footerlinkid
+                tenantid
+                linktext
+                uri
+            }
         }
     }
 `);

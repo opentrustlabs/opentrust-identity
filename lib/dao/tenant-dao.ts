@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory, FooterLink } from "@/graphql/generated/graphql-types";
 import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
 import NodeCache from "node-cache";
 
@@ -65,6 +65,12 @@ abstract class TenantDao {
     abstract updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>;
 
     abstract deleteTenantLookAndFeel(tenantId: string): Promise<void>;
+
+    abstract getFooterLinks(tenantId: string): Promise<FooterLink[]>;
+
+    abstract createFooterLink(footerLink: FooterLink): Promise<FooterLink>;
+
+    abstract deleteFooterLinksByTenantId(tenantId: string): Promise<void>;
 
     abstract assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
 

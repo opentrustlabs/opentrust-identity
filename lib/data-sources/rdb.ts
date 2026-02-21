@@ -4,6 +4,7 @@ import TenantAnonymousUserConfigurationEntity from "../entities/tenant-anonymous
 import TenantManagementDomainRelEntity from "../entities/tenant-management-domain-rel-entity";
 import TenantPasswordConfigEntity from "../entities/tenant-password-config-entity";
 import TenantLookAndFeelEntity from "../entities/tenant-look-and-feel-entity";
+import FooterLinkEntity from "../entities/footer-link-entity";
 import TenantLegacyUserMigrationConfigEntity from "../entities/tenant-legacy-user-migration-config-entity";
 import TenantRestrictedAuthenticationDomainRelEntity from "../entities/tenant-restricted-authentication-domain-rel-entity";
 import PreAuthenticationStateEntity from "../entities/pre-authentication-state-entity";
@@ -63,7 +64,7 @@ import ScopeTranslationEntity from "../entities/scope-translation-entity";
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
 
 import { DataSource, DefaultNamingStrategy, NamingStrategyInterface, Repository } from "typeorm";
-import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, ScopeTranslation, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, TokenEnrichmentConfiguration, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, FooterLink, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, ScopeTranslation, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, TokenEnrichmentConfiguration, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 import PushedAuthRequestEntity, { PushedAuthRequest } from "../entities/pushed-auth-request.entity";
 import ClientTokenEnrichmentConfigurationEntity from "../entities/client-token-enrichment-configuration-entity";
 
@@ -170,7 +171,8 @@ const entities = [
     ContactEntity,
     PushedAuthRequestEntity,
     ScopeTranslationEntity,
-    ClientTokenEnrichmentConfigurationEntity
+    ClientTokenEnrichmentConfigurationEntity,
+    FooterLinkEntity
 ]
 
 
@@ -241,6 +243,7 @@ class RDBDriver {
     pushedAuthRequestRespository: Repository<PushedAuthRequest>;
     scopeTransationRepository: Repository<ScopeTranslation>;
     clientTokenEnrichmentConfigurationEntity: Repository<TokenEnrichmentConfiguration>;
+    footerLinkRepository: Repository<FooterLink>;
 
 
     private constructor() {
@@ -829,6 +832,14 @@ class RDBDriver {
             RDBDriver.instance.clientTokenEnrichmentConfigurationEntity = driver.getRepository("clientTokenEnrichmentConfiguration");
         }
         return RDBDriver.instance.clientTokenEnrichmentConfigurationEntity;
+    }
+
+    public async getFooterLinkRepository(): Promise<Repository<FooterLink>> {
+        if (!RDBDriver.instance.footerLinkRepository) {
+            const driver = await RDBDriver.getConnection();
+            RDBDriver.instance.footerLinkRepository = driver.getRepository("footerLink");
+        }
+        return RDBDriver.instance.footerLinkRepository;
     }
 
 }
