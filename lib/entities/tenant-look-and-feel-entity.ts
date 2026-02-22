@@ -1,137 +1,114 @@
 import { EntitySchema } from 'typeorm';
-import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
-
-const {
-    RDB_DIALECT
-} = process.env;
-
-const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
-
 
 const TenantLookAndFeelEntity = new EntitySchema({
-
 
     columns: {
         tenantid: {
             type: String,
             primary: true,
             name: "tenantid"
-        },
-        adminheaderbackgroundcolor: {
+        },        
+        headerbackgroundcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "adminheaderbackgroundcolor"
+            name: "headerbackgroundcolor"
         },
-        adminheadertext: {
+        headertext: {
             type: String,
             primary: false,
             nullable: true,
-            name: "adminheadertext"
+            name: "headertext"
         },
-        adminheadertextcolor: {
+        headertextcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "adminheadertextcolor"
+            name: "headertextcolor"
         },
-        authenticationheaderbackgroundcolor: {
+        logouri: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationheaderbackgroundcolor"
-        },
-        authenticationheadertext: {
+            name: "logouri"
+        },        
+        buttonbackgroundcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationheadertext"
+            name: "buttonbackgroundcolor"
         },
-        authenticationheadertextcolor: {
+        buttontextcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationheadertextcolor"
+            name: "buttontextcolor"
         },
-
-        authenticationlogouri: {
+        inputbordercolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationlogouri"
+            name: "inputbordercolor"
         },
-        authenticationlogomimetype: {
+        pagebackgroundcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationlogomimetype"
+            name: "pagebackgroundcolor"
         },
-        authenticationlogo: {
-            type: blobType,
-            primary: false,
-            nullable: true,
-            name: "authenticationlogo",
-            transformer: stringToBlobTransformer()
-        },
-        authenticationbuttonbackgroundcolor: {
+        footerbackgroundcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationbuttonbackgroundcolor"
+            name: "footerbackgroundcolor"
         },
-        authenticationbuttontextcolor: {
+        footertextcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationbuttontextcolor"
+            name: "footertextcolor"
         },
-        authenticationinputbordercolor: {
+        linkcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationinputbordercolor"
+            name: "linkcolor"
         },
-        authenticationpagebackgroundcolor: {
+        layouttype: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationpagebackgroundcolor"
-        },
-        authenticationfooterbackgroundcolor: {
+            name: "layouttype"
+        },    
+        marketingimageuri: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationfooterbackgroundcolor"
+            name: "marketingimageuri"
         },
-        authenticationfootertextcolor: {
+        marketingtext: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationfootertextcolor"
+            name: "marketingtext"
         },
-        authenticationlinkcolor: {
+        imagepanelposition: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationlinkcolor"
+            name: "imagepanelposition"
         },
-        authenticationlayouttype: {
+        buttonborderradius: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationlayouttype"
+            name: "buttonborderradius"
         },
-        authenticationbackgroundimageuri: {
+        headerlogoposition: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationbackgroundimageuri"
-        },
-        authenticationimagepanelposition: {
-            type: String,
-            primary: false,
-            nullable: true,
-            name: "authenticationimagepanelposition"
+            name: "headerlogoposition"
         }
     },
     tableName: "tenant_look_and_feel",

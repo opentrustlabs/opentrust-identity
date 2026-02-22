@@ -1,5 +1,5 @@
 "use client";
-import { FooterLinkInput, PortalUserProfile, TenantLookAndFeel, TenantLookAndFeelInput } from "@/graphql/generated/graphql-types";
+import { FooterLink, FooterLinkInput, PortalUserProfile, TenantLookAndFeel, TenantLookAndFeelInput } from "@/graphql/generated/graphql-types";
 import { REMOVE_TENANT_LOOK_AND_FEEL_MUTATION, TENANT_LOOK_AND_FEEL_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TENANT_LOOK_AND_FEEL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
@@ -12,7 +12,7 @@ import TextField from "@mui/material/TextField";
 import ColorizeIcon from '@mui/icons-material/Colorize';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { Alert, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, IconButton, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material";
-import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, IMAGE_PANEL_LEFT, IMAGE_PANEL_POSITIONS, LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPES, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, IMAGE_PANEL_LEFT, IMAGE_PANEL_POSITIONS, LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPE_TWO_COLUMN, LAYOUT_TYPES, LOGO_HEADER_POSITION_LEFT, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { HexColorPicker } from "react-colorful";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -44,25 +44,23 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
 
     const initInput: TenantLookAndFeelInput = {
         tenantid: tenantId,
-        adminheaderbackgroundcolor: "",
-        adminheadertextcolor: "",
-        adminheadertext: "",
-        authenticationheaderbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
-        authenticationheadertextcolor: DEFAULT_TEXT_COLOR,
-        authenticationlogo: "",
-        authenticationlogouri: "",
-        authenticationlogomimetype: "",
-        authenticationheadertext: "",
-        authenticationbuttonbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
-        authenticationbuttontextcolor: "white",
-        authenticationinputbordercolor: "",
-        authenticationpagebackgroundcolor: "",
-        authenticationfooterbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
-        authenticationfootertextcolor: "white",
-        authenticationlinkcolor: "",
-        authenticationlayouttype: LAYOUT_TYPE_SINGLE_COLUMN,
-        authenticationbackgroundimageuri: "",
-        authenticationimagepanelposition: IMAGE_PANEL_LEFT,
+        headerbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
+        headertextcolor: DEFAULT_TEXT_COLOR,
+        logouri: "",
+        headertext: "",
+        buttonbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
+        buttontextcolor: "white",
+        inputbordercolor: "",
+        pagebackgroundcolor: "",
+        footerbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
+        footertextcolor: "white",
+        linkcolor: "",
+        layouttype: LAYOUT_TYPE_SINGLE_COLUMN,
+        imagepanelposition: IMAGE_PANEL_LEFT,
+        buttonborderradius: "4px",        
+        headerlogoposition: LOGO_HEADER_POSITION_LEFT,
+        marketingimageuri: "",
+        marketingtext: "",
         footerlinks: []
     }
 
@@ -106,24 +104,24 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 const config: TenantLookAndFeel = data.getTenantLookAndFeel as TenantLookAndFeel;
                 const input: TenantLookAndFeelInput = {
                     tenantid: tenantId,
-                    authenticationheaderbackgroundcolor: config.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
-                    authenticationheadertext: config.authenticationheadertext,
-                    authenticationheadertextcolor: config.authenticationheadertextcolor || "white",
-                    authenticationlogo: config.authenticationlogo,
-                    authenticationlogomimetype: config.authenticationlogomimetype || "",
-                    authenticationlogouri: config.authenticationlogouri || "",
-                    authenticationbuttonbackgroundcolor: config.authenticationbuttonbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
-                    authenticationbuttontextcolor: config.authenticationbuttontextcolor || "white",
-                    authenticationinputbordercolor: config.authenticationinputbordercolor || "",
-                    authenticationpagebackgroundcolor: config.authenticationpagebackgroundcolor || "",
-                    authenticationfooterbackgroundcolor: config.authenticationfooterbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
-                    authenticationfootertextcolor: config.authenticationfootertextcolor || "white",
-                    authenticationlinkcolor: config.authenticationlinkcolor || "",
-                    authenticationlayouttype: config.authenticationlayouttype || LAYOUT_TYPE_SINGLE_COLUMN,
-                    authenticationbackgroundimageuri: config.authenticationbackgroundimageuri || "",
-                    authenticationimagepanelposition: config.authenticationimagepanelposition || IMAGE_PANEL_LEFT,
+                    headerbackgroundcolor: config.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                    headertext: config.headertext,
+                    headertextcolor: config.headertextcolor || "white",                    
+                    logouri: config.logouri || "",
+                    buttonbackgroundcolor: config.buttonbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                    buttontextcolor: config.buttontextcolor || "white",
+                    inputbordercolor: config.inputbordercolor || "",
+                    pagebackgroundcolor: config.pagebackgroundcolor || "",
+                    footerbackgroundcolor: config.footerbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                    footertextcolor: config.footertextcolor || "white",
+                    linkcolor: config.linkcolor || "",
+                    layouttype: config.layouttype || LAYOUT_TYPE_SINGLE_COLUMN,
+                    marketingimageuri: config.marketingimageuri || "",
+                    imagepanelposition: config.imagepanelposition || IMAGE_PANEL_LEFT,
+                    buttonborderradius: config.buttonborderradius || "4px",
+                    headerlogoposition: config.headerlogoposition || LOGO_HEADER_POSITION_LEFT,
+                    marketingtext: config.marketingtext || "",
                     footerlinks: config.footerlinks?.map(fl => ({
-                        footerlinkid: fl?.footerlinkid || "",
                         tenantid: tenantId,
                         linktext: fl?.linktext || "",
                         uri: fl?.uri || ""
@@ -131,7 +129,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 }
                 setHasSystemDefaultLookAndFeel(false);
                 setTenantLookAndFeelInput(input);
-                setRevertToInput({...input, footerlinks: input.footerlinks?.map(fl => ({...fl}))});
+                setRevertToInput({...input, footerlinks: input.footerlinks || []});
             }
             else{
                 setHasSystemDefaultLookAndFeel(true);
@@ -173,32 +171,14 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         }
     });
 
-    const handleTemporaryFileUpload = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
-        const inputElement = changeEvent.target;
-        if(inputElement.files && inputElement.files?.length > 0){
-            const reader: FileReader = new FileReader();
-            reader.onloadend = (
-                ( ev: ProgressEvent<FileReader>) => {
-                    const result = ev.target?.result;
-                    if(result){
-                        if(tenantLookAndFeelInput){
-                            tenantLookAndFeelInput.authenticationlogo = result as string;
-                            setTenantLookAndFeelInput({...tenantLookAndFeelInput});
-                            setMarkDirty(true);
-                        }
-                    }
-                    else{
-                        setErrorMessage("Failed to read file");
-                    }
-                }
-            )
-            reader.readAsText(inputElement.files[0]);
-        }
-    }
-
     const handleAddFooterLink = () => {
         const links = [...(tenantLookAndFeelInput.footerlinks || [])];
-        links.push({ tenantid: tenantId, linktext: "", uri: "" });
+        const newLink: FooterLinkInput = {
+            linktext: "",
+            tenantid: tenantId,
+            uri: ""
+        };
+        links.push(newLink);
         setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, footerlinks: links });
         setMarkDirty(true);
     };
@@ -218,6 +198,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, footerlinks: links });
         setMarkDirty(true);
     };
+
 
     // Helper to render a color field with a color picker icon
     const renderColorField = (fieldKey: string, label: string, value: string | null | undefined) => (
@@ -315,8 +296,8 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     display={"flex"}
                     padding={"8px"}
                     sx={{
-                        backgroundColor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
-                        color: tenantLookAndFeelInput.authenticationheadertextcolor,
+                        backgroundColor: tenantLookAndFeelInput.headerbackgroundcolor,
+                        color: tenantLookAndFeelInput.headertextcolor,
                         fontWeight: "bold",
                         fontSize: "1.0em",
                         border: "solid 1px lightgrey"
@@ -324,21 +305,18 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 >
                     <Stack direction={"row"}>
                         <div style={{marginRight: "16px"}}>
-                            {tenantLookAndFeelInput.authenticationlogo &&
-                                <img style={{height: !breakPoints.isMedium ? "45px": "25px"}} src={`data:image/svg+xml;base64,${btoa(tenantLookAndFeelInput.authenticationlogo)}`}></img>
-                            }
-                            {tenantLookAndFeelInput.authenticationlogouri &&
-                                <img style={{height: !breakPoints.isMedium ? "45px": "25px"}} src={tenantLookAndFeelInput.authenticationlogouri} loading="lazy" alt="Authentication Header Logo"></img>
+                            {tenantLookAndFeelInput.logouri &&
+                                <img style={{height: !breakPoints.isMedium ? "45px": "25px"}} src={tenantLookAndFeelInput.logouri} alt=" Header Logo"></img>
                             }
                         </div>
                         <div style={{alignContent: "center", alignItems: "center"}}>
-                            {tenantLookAndFeelInput.authenticationheadertext}
+                            {tenantLookAndFeelInput.headertext}
                         </div>
                     </Stack>
                 </Grid2>
 
-                {/* ===== BUTTON PREVIEW ===== */}
-                <div style={{fontWeight: "bold", fontSize: "1.0em", textDecoration: "underline"}}>Button Preview</div>
+                {/* ===== INPUTS PREVIEW ===== */}
+                <div style={{fontWeight: "bold", fontSize: "1.0em", textDecoration: "underline"}}>Inputs Preview</div>
                 <Grid2
                     container
                     spacing={1}
@@ -352,6 +330,13 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 >
                     <Stack direction={"row"}>
                         <div style={{marginRight: "16px"}}>
+                            <TextField 
+                                name="example input"
+                                placeholder="example@example.com"
+                                fullWidth={true}
+                            />
+                        </div>
+                        <div style={{marginRight: "16px"}}>
                             <Button
                                 variant="contained"
                                 sx={{
@@ -359,8 +344,9 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                                     fontSize: "0.9em",
                                     height: "100%",
                                     padding: "8px 32px 8px 32px",
-                                    backgroundColor: tenantLookAndFeelInput.authenticationbuttonbackgroundcolor || tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
-                                    color: tenantLookAndFeelInput.authenticationbuttontextcolor || tenantLookAndFeelInput.authenticationheadertextcolor
+                                    backgroundColor: tenantLookAndFeelInput.buttonbackgroundcolor || tenantLookAndFeelInput.headerbackgroundcolor,
+                                    color: tenantLookAndFeelInput.buttontextcolor || tenantLookAndFeelInput.headertextcolor,
+                                    borderRadius: tenantLookAndFeelInput.buttonborderradius
                                 }}
                             >Cancel</Button>
                         </div>
@@ -372,8 +358,9 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                                     fontSize: "0.9em",
                                     height: "100%",
                                     padding: "8px 32px 8px 32px",
-                                    backgroundColor: tenantLookAndFeelInput.authenticationbuttonbackgroundcolor || tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
-                                    color: tenantLookAndFeelInput.authenticationbuttontextcolor || tenantLookAndFeelInput.authenticationheadertextcolor
+                                    backgroundColor: tenantLookAndFeelInput.buttonbackgroundcolor || tenantLookAndFeelInput.headerbackgroundcolor,
+                                    color: tenantLookAndFeelInput.buttontextcolor || tenantLookAndFeelInput.headertextcolor,
+                                    borderRadius: tenantLookAndFeelInput.buttonborderradius
                                 }}
                             >Submit</Button>
                         </div>
@@ -393,8 +380,8 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     display={"flex"}
                     padding={"8px"}
                     sx={{
-                        backgroundColor: tenantLookAndFeelInput.authenticationfooterbackgroundcolor || tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
-                        color: tenantLookAndFeelInput.authenticationfootertextcolor || tenantLookAndFeelInput.authenticationheadertextcolor,
+                        backgroundColor: tenantLookAndFeelInput.footerbackgroundcolor || tenantLookAndFeelInput.headerbackgroundcolor,
+                        color: tenantLookAndFeelInput.footertextcolor || tenantLookAndFeelInput.headertextcolor,
                         fontSize: "0.8em",
                         border: "solid 1px lightgrey"
                     }}
@@ -415,39 +402,26 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 <Grid2 size={12}>
                     <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Header</Typography></Divider>
                 </Grid2>
-                {renderColorField("authenticationheaderbackgroundcolor", "Header Background Color", tenantLookAndFeelInput.authenticationheaderbackgroundcolor)}
-                {renderColorField("authenticationheadertextcolor", "Header Text Color", tenantLookAndFeelInput.authenticationheadertextcolor)}
+                {renderColorField("headerbackgroundcolor", "Header Background Color", tenantLookAndFeelInput.headerbackgroundcolor)}
+                {renderColorField("headertextcolor", "Header Text Color", tenantLookAndFeelInput.headertextcolor)}
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <TextField name="headerText" id="headerText"
                         disabled={readOnly}
-                        value={tenantLookAndFeelInput.authenticationheadertext || ""}
-                        onChange={(evt) => { tenantLookAndFeelInput.authenticationheadertext = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
+                        value={tenantLookAndFeelInput.headertext || ""}
+                        onChange={(evt) => { tenantLookAndFeelInput.headertext = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
                         fullWidth={true}
                         label="Header Text"
                     />
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     {!readOnly &&
-                        <React.Fragment>
-                            <Grid2 container size={12}>
-                                <Grid2 size={11}>Logo (svg, no more than 45 pixels in height)</Grid2>
-                                <Grid2 size={1}>
-                                    <DeleteForeverOutlinedIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {tenantLookAndFeelInput.authenticationlogo = ""; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                                    />
-                                </Grid2>
-                            </Grid2>
-                            <Grid2 marginBottom={"8px"} size={12} paddingTop={"8px"}>
-                                <input type="file" accept="image/svg+xml, .svg" id="logoFile" onChange={(evt) => handleTemporaryFileUpload(evt)} />
-                            </Grid2>
-                            <Divider>OR</Divider>
+                        <React.Fragment>                            
                             <Grid2 marginTop={"8px"} container size={12}>
                                 <Grid2 size={12}>
                                     <TextField
                                         disabled={readOnly}
-                                        value={tenantLookAndFeelInput.authenticationlogouri}
-                                        onChange={(evt) => { tenantLookAndFeelInput.authenticationlogouri = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
+                                        value={tenantLookAndFeelInput.logouri}
+                                        onChange={(evt) => { tenantLookAndFeelInput.logouri = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
                                         fullWidth={true}
                                         label="Logo URI"
                                     />
@@ -461,23 +435,36 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 <Grid2 size={12}>
                     <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Buttons</Typography></Divider>
                 </Grid2>
-                {renderColorField("authenticationbuttonbackgroundcolor", "Button Background Color", tenantLookAndFeelInput.authenticationbuttonbackgroundcolor)}
-                {renderColorField("authenticationbuttontextcolor", "Button Text Color", tenantLookAndFeelInput.authenticationbuttontextcolor)}
+                {renderColorField("buttonbackgroundcolor", "Button Background Color", tenantLookAndFeelInput.buttonbackgroundcolor)}
+                {renderColorField("buttontextcolor", "Button Text Color", tenantLookAndFeelInput.buttontextcolor)}
+                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
+                    <TextField fullWidth={true} 
+                        name="buttonborderradius"
+                        onChange={(evt) => {
+                            tenantLookAndFeelInput.buttonborderradius = evt.target.value;
+                            setTenantLookAndFeelInput({...tenantLookAndFeelInput});
+                            setMarkDirty(true);
+                        }}                        
+                        label="Button Border Radius"
+                        value={tenantLookAndFeelInput.buttonborderradius}
+                    />
+                </Grid2>
+                {}
 
                 {/* ===== INPUT / PAGE COLORS ===== */}
                 <Grid2 size={12}>
                     <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Page &amp; Inputs</Typography></Divider>
                 </Grid2>
-                {renderColorField("authenticationpagebackgroundcolor", "Page Background Color", tenantLookAndFeelInput.authenticationpagebackgroundcolor)}
-                {renderColorField("authenticationinputbordercolor", "Input Border Color", tenantLookAndFeelInput.authenticationinputbordercolor)}
-                {renderColorField("authenticationlinkcolor", "Link Color", tenantLookAndFeelInput.authenticationlinkcolor)}
+                {renderColorField("pagebackgroundcolor", "Page Background Color", tenantLookAndFeelInput.pagebackgroundcolor)}
+                {renderColorField("inputbordercolor", "Input Border Color", tenantLookAndFeelInput.inputbordercolor)}
+                {renderColorField("linkcolor", "Link Color", tenantLookAndFeelInput.linkcolor)}
 
                 {/* ===== FOOTER COLORS ===== */}
                 <Grid2 size={12}>
                     <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Footer</Typography></Divider>
                 </Grid2>
-                {renderColorField("authenticationfooterbackgroundcolor", "Footer Background Color", tenantLookAndFeelInput.authenticationfooterbackgroundcolor)}
-                {renderColorField("authenticationfootertextcolor", "Footer Text Color", tenantLookAndFeelInput.authenticationfootertextcolor)}
+                {renderColorField("footerbackgroundcolor", "Footer Background Color", tenantLookAndFeelInput.footerbackgroundcolor)}
+                {renderColorField("footertextcolor", "Footer Text Color", tenantLookAndFeelInput.footertextcolor)}
 
                 {/* ===== LAYOUT ===== */}
                 <Grid2 size={12}>
@@ -488,47 +475,58 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         <InputLabel>Layout Type</InputLabel>
                         <Select
                             disabled={readOnly}
-                            value={tenantLookAndFeelInput.authenticationlayouttype || LAYOUT_TYPE_SINGLE_COLUMN}
+                            value={tenantLookAndFeelInput.layouttype || LAYOUT_TYPE_SINGLE_COLUMN}
                             label="Layout Type"
                             onChange={(evt) => {
-                                setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, authenticationlayouttype: evt.target.value });
+                                setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, layouttype: evt.target.value });
                                 setMarkDirty(true);
                             }}
-                        >
-                            {LAYOUT_TYPES.map((lt) => (
-                                <MenuItem key={lt} value={lt}>{lt}</MenuItem>
-                            ))}
+                        >                            
+                            <MenuItem key={LAYOUT_TYPE_SINGLE_COLUMN} value={LAYOUT_TYPE_SINGLE_COLUMN}>Classic</MenuItem>
+                            <MenuItem key={LAYOUT_TYPE_TWO_COLUMN} value={LAYOUT_TYPE_TWO_COLUMN}>Two Column</MenuItem>                            
                         </Select>
                     </FormControl>
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                     <FormControl fullWidth>
-                        <InputLabel>Image Panel Position</InputLabel>
+                        <InputLabel>Marketing Panel Position</InputLabel>
                         <Select
                             disabled={readOnly}
-                            value={tenantLookAndFeelInput.authenticationimagepanelposition || IMAGE_PANEL_LEFT}
+                            value={tenantLookAndFeelInput.imagepanelposition || IMAGE_PANEL_LEFT}
                             label="Image Panel Position"
                             onChange={(evt) => {
-                                setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, authenticationimagepanelposition: evt.target.value });
+                                setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, imagepanelposition: evt.target.value });
                                 setMarkDirty(true);
                             }}
                         >
                             {IMAGE_PANEL_POSITIONS.map((pos) => (
-                                <MenuItem key={pos} value={pos}>{pos}</MenuItem>
+                                <MenuItem key={pos} value={pos}>{pos.toWellFormed()}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
                 </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 12, xl: 12 }}>
+                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                     <TextField
-                        disabled={readOnly}
-                        value={tenantLookAndFeelInput.authenticationbackgroundimageuri || ""}
+                        disabled={readOnly || tenantLookAndFeelInput.layouttype === LAYOUT_TYPE_SINGLE_COLUMN}
+                        value={tenantLookAndFeelInput.marketingimageuri || ""}
                         onChange={(evt) => {
-                            setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, authenticationbackgroundimageuri: evt.target.value });
+                            setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, marketingimageuri: evt.target.value });
                             setMarkDirty(true);
                         }}
                         fullWidth={true}
-                        label="Background Image URI"
+                        label="Marketing Image URI"
+                    />
+                </Grid2>
+                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
+                    <TextField
+                        disabled={readOnly}
+                        value={tenantLookAndFeelInput.marketingtext || ""}
+                        onChange={(evt) => {
+                            setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, marketingtext: evt.target.value });
+                            setMarkDirty(true);
+                        }}
+                        fullWidth={true}
+                        label="Marketing Text"
                     />
                 </Grid2>
 

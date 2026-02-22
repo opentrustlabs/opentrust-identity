@@ -31,24 +31,23 @@ export const TENANT_META_DATA_QUERY = gql(`
         getTenantMetaData(tenantId: $tenantId) {
             tenantLookAndFeel {
                 tenantid
-                adminheaderbackgroundcolor
-                adminheadertextcolor
-                adminheadertext
-                authenticationheaderbackgroundcolor
-                authenticationheadertextcolor
-                authenticationlogo
-                authenticationlogouri
-                authenticationheadertext
-                authenticationbuttonbackgroundcolor
-                authenticationbuttontextcolor
-                authenticationinputbordercolor
-                authenticationpagebackgroundcolor
-                authenticationfooterbackgroundcolor
-                authenticationfootertextcolor
-                authenticationlinkcolor
-                authenticationlayouttype
-                authenticationbackgroundimageuri
-                authenticationimagepanelposition
+                headerbackgroundcolor
+                headertextcolor
+                logouri
+                headertext
+                buttonbackgroundcolor
+                buttontextcolor
+                inputbordercolor
+                pagebackgroundcolor
+                footerbackgroundcolor
+                footertextcolor
+                linkcolor
+                layouttype
+                marketingimageuri
+                marketingtext
+                imagepanelposition
+                buttonborderradius
+                headerlogoposition                
                 footerlinks {
                     footerlinkid
                     tenantid
@@ -562,25 +561,23 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
     query getTenantLookAndFeel($tenantId: String!) {
         getTenantLookAndFeel(tenantId: $tenantId) {
             tenantid
-            adminheaderbackgroundcolor
-            adminheadertextcolor
-            adminheadertext
-            authenticationheaderbackgroundcolor
-            authenticationheadertextcolor
-            authenticationlogo
-            authenticationlogouri
-            authenticationlogomimetype
-            authenticationheadertext
-            authenticationbuttonbackgroundcolor
-            authenticationbuttontextcolor
-            authenticationinputbordercolor
-            authenticationpagebackgroundcolor
-            authenticationfooterbackgroundcolor
-            authenticationfootertextcolor
-            authenticationlinkcolor
-            authenticationlayouttype
-            authenticationbackgroundimageuri
-            authenticationimagepanelposition
+            headerbackgroundcolor
+            headertextcolor
+            logouri
+            headertext
+            buttonbackgroundcolor
+            buttontextcolor
+            inputbordercolor
+            pagebackgroundcolor
+            footerbackgroundcolor
+            footertextcolor
+            linkcolor
+            layouttype
+            marketingimageuri
+            marketingtext
+            imagepanelposition
+            buttonborderradius
+            headerlogoposition  
             footerlinks {
                 footerlinkid
                 tenantid

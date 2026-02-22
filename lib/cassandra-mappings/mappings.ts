@@ -925,24 +925,24 @@ export const TENANT_LOOK_AND_FEEL_MODEL:  {[key: string]: cassandra.mapping.Mode
                 toModel(columnValue) {
                     return columnValue.toString();
                 }
-            },
-			"adminheaderbackgroundcolor": "adminheaderbackgroundcolor",
-			"adminheadertext": "adminheadertext",
-			"adminheadertextcolor": "adminheadertextcolor",
-			"authenticationheaderbackgroundcolor": "authenticationheaderbackgroundcolor",
-			"authenticationheadertext": "authenticationheadertext",
-			"authenticationheadertextcolor": "authenticationheadertextcolor",
-			"authenticationlogouri": "authenticationlogouri",
-			"authenticationlogomimetype": "authenticationlogomimetype",
-			"authenticationlogo": {
-                name: "authenticationlogo",
-                toModel(columnValue) {
-                    return columnValue.toString();
-                },
-                fromModel(modelValue: string) {
-                    return Buffer.from(modelValue);
-                }
-            }
+            },			
+			"authenticationheaderbackgroundcolor": "headerbackgroundcolor",
+            "authenticationheadertextcolor": "headertextcolor",
+            "authenticationlogouri": "logouri",
+            "authenticationheadertext": "headertext",
+            "buttonbackgroundcolor": "buttonbackgroundcolor",
+            "buttontextcolor": "buttontextcolor",
+            "inputbordercolor": "inputbordercolor",
+            "pagebackgroundcolor": "pagebackgroundcolor",
+            "footerbackgroundcolor": "footerbackgroundcolor",
+            "footertextcolor": "footertextcolor",
+            "linkcolor": "linkcolor",
+            "layouttype": "layouttype",
+            "marketingimageuri": "marketingimageuri",
+            "marketingtext": "marketingtext",
+            "imagepanelposition": "imagepanelposition",
+            "buttonborderradius": "buttonborderradius",
+            "headerlogoposition": "headerlogoposition"
         }
     }
 };

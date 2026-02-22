@@ -667,31 +667,8 @@ const resolvers: Resolvers = {
             return tenantId;
         },
         setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);
-            const tenantLookAndFeel: TenantLookAndFeel = {
-                tenantid: tenantLookAndFeelInput.tenantid,
-                authenticationheaderbackgroundcolor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
-                authenticationheadertextcolor: tenantLookAndFeelInput.authenticationheadertextcolor,
-                authenticationheadertext: tenantLookAndFeelInput.authenticationheadertext,
-                authenticationlogo: tenantLookAndFeelInput.authenticationlogo,
-                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype,
-                adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
-                adminheadertext: tenantLookAndFeelInput.adminheadertext,
-                adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
-                authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri,
-                authenticationbuttonbackgroundcolor: tenantLookAndFeelInput.authenticationbuttonbackgroundcolor,
-                authenticationbuttontextcolor: tenantLookAndFeelInput.authenticationbuttontextcolor,
-                authenticationinputbordercolor: tenantLookAndFeelInput.authenticationinputbordercolor,
-                authenticationpagebackgroundcolor: tenantLookAndFeelInput.authenticationpagebackgroundcolor,
-                authenticationfooterbackgroundcolor: tenantLookAndFeelInput.authenticationfooterbackgroundcolor,
-                authenticationfootertextcolor: tenantLookAndFeelInput.authenticationfootertextcolor,
-                authenticationlinkcolor: tenantLookAndFeelInput.authenticationlinkcolor,
-                authenticationlayouttype: tenantLookAndFeelInput.authenticationlayouttype,
-                authenticationbackgroundimageuri: tenantLookAndFeelInput.authenticationbackgroundimageuri,
-                authenticationimagepanelposition: tenantLookAndFeelInput.authenticationimagepanelposition,
-                footerlinks: tenantLookAndFeelInput.footerlinks || []
-            }
-            await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
+            const tenantService: TenantService = new TenantService(oidcContext);            
+            const tenantLookAndFeel = await tenantService.setTenantLookAndFeel(tenantLookAndFeelInput);
             return tenantLookAndFeel;
         },
         removeTenantLookAndFeel: async(_: any, { tenantId }, oidcContext) => {

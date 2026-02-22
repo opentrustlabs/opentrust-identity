@@ -1,0 +1,88 @@
+1) Database schema changes:
+
+For MySQL and PostgreSQL:
+=========================
+alter table tenant_look_and_feel drop column adminheaderbackgroundcolor;
+alter table tenant_look_and_feel drop column adminheadertextcolor;
+alter table tenant_look_and_feel drop column adminlogo;
+alter table tenant_look_and_feel drop column adminheadertext;
+alter table tenant_look_and_feel drop column authenticationlogo;
+alter table tenant_look_and_feel drop column authenticationlogomimetype;
+
+alter table tenant_look_and_feel rename column authenticationheaderbackgroundcolor to headerbackgroundcolor;
+alter table tenant_look_and_feel rename column authenticationheadertextcolor to headertextcolor;
+alter table tenant_look_and_feel rename column authenticationheadertext to headertext;
+alter table tenant_look_and_feel rename column authenticationlogouri to logouri;
+
+alter TABLE tenant_look_and_feel ADD COLUMN buttonbackgroundcolor VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN buttontextcolor VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN inputbordercolor VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN pagebackgroundcolor VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN footerbackgroundcolor VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN footertextcolor VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN linkcolor VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN layouttype VARCHAR(32);
+alter TABLE tenant_look_and_feel ADD COLUMN marketingimageuri VARCHAR(256);
+alter TABLE tenant_look_and_feel ADD COLUMN marketingtext VARCHAR(1024);
+alter TABLE tenant_look_and_feel ADD COLUMN imagepanelposition VARCHAR(16);
+alter TABLE tenant_look_and_feel ADD COLUMN buttonborderradius VARCHAR(16);
+alter TABLE tenant_look_and_feel ADD COLUMN headerlogoposition VARCHAR(16);
+
+
+For Oracle:
+===========
+
+
+For MSSQL:
+==========
+
+
+
+
+
+
+For Cassandra:
+==============
+
+Note: Because the TenantLookAndFeel data model is changing with the following:
+
+1. Dropping properties that are not being used.
+2. Renaming of properties to better reflect their purpose.
+3. Addition of new properties
+
+With Cassandra, we can safely drop the columns that are no longer needed, but
+we cannot rename non-primary key columns. There are 2 choices here:
+
+1.  Create a new versioned table (_v2) with the correct names and all of the new columns,
+    then migrate the data using a cqlsh script.
+2.  Keep the existing table, add the new columns, but use the Datastax mapper to map the
+    existing column names to the new names of the object model.
+
+For this migration, we will choose option 2, even if there ends up being a slight drift
+in the naming convention (Cassandra schema vs Object properties)
+
+
+Drop the following columns:
+---------------------------
+alter table tenant_look_and_feel drop adminheaderbackgroundcolor;
+alter table tenant_look_and_feel drop adminheadertextcolor;
+alter table tenant_look_and_feel drop adminlogo;
+alter table tenant_look_and_feel drop adminheadertext;
+alter table tenant_look_and_feel drop authenticationlogo;
+alter table tenant_look_and_feel drop authenticationlogomimetype;
+
+Add the following columns:
+--------------------------
+alter TABLE tenant_look_and_feel ADD buttonbackgroundcolor TEXT;
+alter TABLE tenant_look_and_feel ADD buttontextcolor TEXT;
+alter TABLE tenant_look_and_feel ADD inputbordercolor TEXT;
+alter TABLE tenant_look_and_feel ADD pagebackgroundcolor TEXT;
+alter TABLE tenant_look_and_feel ADD footerbackgroundcolor TEXT;
+alter TABLE tenant_look_and_feel ADD footertextcolor TEXT;
+alter TABLE tenant_look_and_feel ADD linkcolor TEXT;
+alter TABLE tenant_look_and_feel ADD layouttype TEXT;
+alter TABLE tenant_look_and_feel ADD marketingimageuri TEXT;
+alter TABLE tenant_look_and_feel ADD marketingtext TEXT;
+alter TABLE tenant_look_and_feel ADD imagepanelposition TEXT;
+alter TABLE tenant_look_and_feel ADD buttonborderradius TEXT;
+alter TABLE tenant_look_and_feel ADD headerlogoposition TEXT;

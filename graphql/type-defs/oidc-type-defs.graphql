@@ -859,24 +859,22 @@ type ChangeEvent {
 }
 
 type TenantLookAndFeel {
-    tenantid: String!
-    adminheaderbackgroundcolor: String
-    adminheadertextcolor: String
-    adminheadertext: String
-    authenticationheaderbackgroundcolor: String
-    authenticationheadertextcolor: String
-    authenticationlogouri: String
-    authenticationheadertext: String
-    authenticationbuttonbackgroundcolor: String
-    authenticationbuttontextcolor: String
-    authenticationinputbordercolor: String
-    authenticationpagebackgroundcolor: String
-    authenticationfooterbackgroundcolor: String
-    authenticationfootertextcolor: String
-    authenticationlinkcolor: String
-    authenticationlayouttype: String
-    authenticationbackgroundimageuri: String
-    authenticationimagepanelposition: String
+    tenantid: String!    
+    headerbackgroundcolor: String
+    headertextcolor: String
+    logouri: String
+    headertext: String
+    buttonbackgroundcolor: String
+    buttontextcolor: String
+    inputbordercolor: String
+    pagebackgroundcolor: String
+    footerbackgroundcolor: String
+    footertextcolor: String
+    linkcolor: String
+    layouttype: String
+    marketingimageuri: String
+    marketingtext: String
+    imagepanelposition: String
     buttonborderradius: String
     headerlogoposition: String
     footerlinks: [FooterLink]
@@ -1490,31 +1488,28 @@ input TenantLegacyUserMigrationConfigInput {
 }
 
 input FooterLinkInput {
-    footerlinkid: String
     tenantid: String!
     linktext: String!
     uri: String!
 }
 
 input TenantLookAndFeelInput {
-    tenantid: String!
-    adminheaderbackgroundcolor: String
-    adminheadertextcolor: String
-    adminheadertext: String
-    authenticationheaderbackgroundcolor: String
-    authenticationheadertextcolor: String
-    authenticationlogouri: String
-    authenticationheadertext: String
-    authenticationbuttonbackgroundcolor: String
-    authenticationbuttontextcolor: String
-    authenticationinputbordercolor: String
-    authenticationpagebackgroundcolor: String
-    authenticationfooterbackgroundcolor: String
-    authenticationfootertextcolor: String
-    authenticationlinkcolor: String
-    authenticationlayouttype: String
-    authenticationbackgroundimageuri: String
-    authenticationimagepanelposition: String
+    tenantid: String!    
+    headerbackgroundcolor: String
+    headertextcolor: String
+    logouri: String
+    headertext: String
+    buttonbackgroundcolor: String
+    buttontextcolor: String
+    inputbordercolor: String
+    pagebackgroundcolor: String
+    footerbackgroundcolor: String
+    footertextcolor: String
+    linkcolor: String
+    layouttype: String
+    marketingimageuri: String
+    marketingtext: String
+    imagepanelposition: String
     buttonborderradius: String
     headerlogoposition: String
     footerlinks: [FooterLinkInput]
