@@ -31,8 +31,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
     let textColor = DEFAULT_TEXT_COLOR;
     let backgroundColor = DEFAULT_BACKGROUND_COLOR;
     if(authenticateToPortal !== "true"){
-        textColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
-        backgroundColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
+        textColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.headertextcolor || DEFAULT_TEXT_COLOR;
+        backgroundColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
     }
    
  

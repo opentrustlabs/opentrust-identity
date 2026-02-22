@@ -17,8 +17,8 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
     let backgroundColor = DEFAULT_BACKGROUND_COLOR;
     let textColor = DEFAULT_TEXT_COLOR;
     if(!isAuthenticateToPortal){
-        backgroundColor = tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
-        textColor = tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
+        backgroundColor = tenantMetaData.tenantLookAndFeel?.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
+        textColor = tenantMetaData.tenantLookAndFeel?.headertextcolor || DEFAULT_TEXT_COLOR;
     } 
 
     return (
@@ -40,29 +40,19 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                     direction={"row"}
                     justifyItems={"center"}
                     alignItems={"center"}                    
-                >
-                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.authenticationlogo &&
+                >                    
+                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.logouri &&
                         <div style={{verticalAlign: "center"}}>
                             <img 
                                 alt="tenant logo"
                                 style={{display: "block"}} 
-                                src={`/api/${tenantMetaData.tenant.tenantId}/logo`}
+                                src={tenantMetaData.tenantLookAndFeel?.logouri}
                                 height="48px" >
                             </img>
                         </div>
                     }
-                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.authenticationlogouri &&
-                        <div style={{verticalAlign: "center"}}>
-                            <img 
-                                alt="tenant logo"
-                                style={{display: "block"}} 
-                                src={tenantMetaData.tenantLookAndFeel?.authenticationlogouri}
-                                height="48px" >
-                            </img>
-                        </div>
-                    }
-                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
-                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
+                    {!isAuthenticateToPortal && tenantMetaData.tenantLookAndFeel?.headertext &&                        
+                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.headertext}</div>                        
                     }
                     {isAuthenticateToPortal &&
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>OpenTrust Identity</div>                        

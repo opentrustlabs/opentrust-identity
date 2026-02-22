@@ -633,6 +633,7 @@ const Login: React.FC<LoginProps>= ({
                             <Grid2 size={{ xs: 12 }}>
                                 <Stack
                                     direction={"row-reverse"}
+                                    spacing={2}
                                 >
                                     <Button
                                         disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
@@ -764,11 +765,11 @@ const Login: React.FC<LoginProps>= ({
                                                 "& .MuiOutlinedInput-root": {
                                                     "&.Mui-focused fieldset": {
                                                         borderColor:
-                                                            (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
-                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#FFFFFF" ||
-                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#ffffff") ?
+                                                            (tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor === "white" ||
+                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor === "#FFFFFF" ||
+                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor === "#ffffff") ?
                                                                 "lightgray" :
-                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
+                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor
                                                     }
                                                 },
                                                 "& .MuiFormLabel-root": {

@@ -18,8 +18,8 @@ const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
     let backgroundColor = DEFAULT_BACKGROUND_COLOR;
     let textColor = DEFAULT_TEXT_COLOR;
     if(!isAuthenticateToPortal){
-        backgroundColor = tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
-        textColor = tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR;
+        backgroundColor = tenantMetaData.tenantLookAndFeel?.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
+        textColor = tenantMetaData.tenantLookAndFeel?.headertextcolor || DEFAULT_TEXT_COLOR;
     } 
 
     return (

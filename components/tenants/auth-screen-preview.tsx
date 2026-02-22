@@ -2,6 +2,8 @@
 import React from "react";
 import { TenantLookAndFeelInput } from "@/graphql/generated/graphql-types";
 import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, IMAGE_PANEL_LEFT, LAYOUT_TYPE_TWO_COLUMN, LOGO_HEADER_POSITION_CENTER, LOGO_HEADER_POSITION_RIGHT } from "@/utils/consts";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 
 export interface AuthScreenPreviewProps {
     config: TenantLookAndFeelInput;
@@ -69,32 +71,39 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
                 </span>
             </div>
             {/* Buttons */}
-            <div style={{ display: "flex", gap: 8 }}>
-                <div style={{
-                    flex: 1,
-                    textAlign: "center",
-                    padding: "8px 16px",
-                    backgroundColor: "#e0e0e0",
-                    color: "#555",
-                    borderRadius: buttonRadius,
-                    fontSize: "0.8em",
-                    fontWeight: 600
-                }}>
+            <Stack
+                direction={"row-reverse"}
+                spacing={2}
+            >
+                <Button
+                    style={{                    
+                        textAlign: "center",
+                        padding: "8px 16px",
+                        backgroundColor: buttonBg,
+                        color: buttonText,
+                        borderRadius: buttonRadius,
+                        fontSize: "0.8em",
+                        fontWeight: 600
+                    }}
+                
+                >
+                    Next
+                </Button>
+                <Button
+                    style={{                            
+                        padding: "8px 16px",
+                        backgroundColor: "#e0e0e0",
+                        color: "#555",
+                        borderRadius: buttonRadius,
+                        fontSize: "0.8em",
+                        fontWeight: 600
+                    }}
+                >
                     Cancel
-                </div>
-                <div style={{
-                    flex: 1,
-                    textAlign: "center",
-                    padding: "8px 16px",
-                    backgroundColor: buttonBg,
-                    color: buttonText,
-                    borderRadius: buttonRadius,
-                    fontSize: "0.8em",
-                    fontWeight: 600
-                }}>
-                    Sign In
-                </div>
-            </div>
+                </Button>
+                
+            </Stack>
+            
         </>
     );
 
@@ -120,9 +129,14 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
             alignItems: "center",
             justifyContent: "center",
             padding: "24px",
-            backgroundColor: pageBg,
+            backgroundColor: "#fefefe",
             minHeight: 200
         }}>
+            {config.marketingtext && (
+                <div style={{ marginBottom: "8px", fontWeight: "bolder", fontSize: "0.85em", color: "#444", textAlign: "center", lineHeight: 1.4 }}>
+                    {config.marketingtext}
+                </div>
+            )}
             {config.marketingimageuri && (
                 <img
                     src={config.marketingimageuri}
@@ -130,11 +144,7 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
                     style={{ maxWidth: "80%", maxHeight: 180, objectFit: "contain", marginBottom: 12 }}
                 />
             )}
-            {config.marketingtext && (
-                <div style={{ fontSize: "0.85em", color: "#444", textAlign: "center", lineHeight: 1.4 }}>
-                    {config.marketingtext}
-                </div>
-            )}
+            
             {!config.marketingimageuri && !config.marketingtext && (
                 <div style={{ fontSize: "0.8em", color: "#aaa", fontStyle: "italic" }}>
                     Marketing Panel

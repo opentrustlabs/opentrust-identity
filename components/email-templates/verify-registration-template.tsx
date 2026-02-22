@@ -46,8 +46,8 @@ const InnerComponent: React.FC<{token: string, name: string, tenantLookAndFeel: 
     const headerStyle = {
         minHeight: "55px",
         padding: "4px 8px",
-        backgroundColor: tenantLookAndFeel.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
-        color: tenantLookAndFeel.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
+        backgroundColor: tenantLookAndFeel.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+        color: tenantLookAndFeel.headertextcolor || DEFAULT_TEXT_COLOR,
         marginBottom: "24px",
         borderBottom: "solid 2px lightgrey",
         borderRadius: "8px"
@@ -63,19 +63,16 @@ const InnerComponent: React.FC<{token: string, name: string, tenantLookAndFeel: 
                         <Row 
                             dir='row'
                             style={{
-                                backgroundColor: tenantLookAndFeel.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
-                                color: tenantLookAndFeel.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
+                                backgroundColor: tenantLookAndFeel.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                                color: tenantLookAndFeel.headertextcolor || DEFAULT_TEXT_COLOR,
                             }}
                         >
-                            {tenantLookAndFeel.authenticationlogo &&
-                                <Column>{tenantLookAndFeel.authenticationlogo}</Column>
-                            }
-                            {tenantLookAndFeel.authenticationlogouri &&
-                                <Column><img height={"45px"} src={`${tenantLookAndFeel.authenticationlogouri}`}></img></Column>
+                            {tenantLookAndFeel.logouri &&
+                                <Column><img height={"45px"} src={`${tenantLookAndFeel.logouri}`}></img></Column>
                             }
                             
-                            {tenantLookAndFeel.authenticationheadertext &&
-                                <Column>{tenantLookAndFeel.authenticationheadertext}</Column>
+                            {tenantLookAndFeel.headertext &&
+                                <Column>{tenantLookAndFeel.headertext}</Column>
                             }
                         </Row>
                     </Section>                    
@@ -102,8 +99,8 @@ const InnerComponent: React.FC<{token: string, name: string, tenantLookAndFeel: 
                             rel="noopener noreferrer"
                             style={{
                                 padding: "8px 16px",
-                                backgroundColor: tenantLookAndFeel.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
-                                color: tenantLookAndFeel.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
+                                backgroundColor: tenantLookAndFeel.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                                color: tenantLookAndFeel.headertextcolor || DEFAULT_TEXT_COLOR,
                                 borderRadius: "8px",
                                 border: "solid 1px lightgrey"
                             }}

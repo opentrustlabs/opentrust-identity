@@ -20,14 +20,14 @@ const CONTENT_SECURITY_POLICY = isDev
       default-src 'self';
       script-src 'self' 'unsafe-eval' 'unsafe-inline';
       style-src 'self' 'unsafe-inline';
-      img-src 'self' https://flagcdn.com data: blob:;
       connect-src 'self';
+      img-src 'self' https:;
     `
   : `
       default-src 'self';
       script-src 'self';
-      style-src 'self';
-      img-src 'self' https://flagcdn.com data:;
+      style-src 'self';     
+      img-src 'self' https:; 
       connect-src 'self';
       font-src 'self';
       object-src 'none';
