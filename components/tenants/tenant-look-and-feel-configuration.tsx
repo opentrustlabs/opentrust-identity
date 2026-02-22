@@ -1,5 +1,5 @@
 "use client";
-import { FooterLink, FooterLinkInput, PortalUserProfile, TenantLookAndFeel, TenantLookAndFeelInput } from "@/graphql/generated/graphql-types";
+import { FooterLinkInput, PortalUserProfile, TenantLookAndFeel, TenantLookAndFeelInput } from "@/graphql/generated/graphql-types";
 import { REMOVE_TENANT_LOOK_AND_FEEL_MUTATION, TENANT_LOOK_AND_FEEL_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TENANT_LOOK_AND_FEEL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
@@ -10,16 +10,17 @@ import Grid2 from "@mui/material/Grid2";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import ColorizeIcon from '@mui/icons-material/Colorize';
+import EditIcon from '@mui/icons-material/Edit';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { Alert, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, IconButton, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material";
-import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, IMAGE_PANEL_LEFT, IMAGE_PANEL_POSITIONS, LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPE_TWO_COLUMN, LAYOUT_TYPES, LOGO_HEADER_POSITION_LEFT, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { Alert, Box, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, IconButton, InputLabel, MenuItem, Select, Typography } from "@mui/material";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, IMAGE_PANEL_LEFT, IMAGE_PANEL_POSITIONS, LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPE_TWO_COLUMN, LOGO_HEADER_POSITION_LEFT, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { HexColorPicker } from "react-colorful";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
 import { containsScope } from "@/utils/authz-utils";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
-import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import AuthScreenPreview from "./auth-screen-preview";
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
@@ -40,7 +41,6 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     const intl = useIntl();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
-    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
     const initInput: TenantLookAndFeelInput = {
         tenantid: tenantId,
@@ -57,7 +57,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         linkcolor: "",
         layouttype: LAYOUT_TYPE_SINGLE_COLUMN,
         imagepanelposition: IMAGE_PANEL_LEFT,
-        buttonborderradius: "4px",        
+        buttonborderradius: "4px",
         headerlogoposition: LOGO_HEADER_POSITION_LEFT,
         marketingimageuri: "",
         marketingtext: "",
@@ -71,6 +71,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     const [revertToInput, setRevertToInput] = React.useState<TenantLookAndFeelInput>(initInput);
     const [hasSystemDefaultLookAndFeel, setHasSystemDefaultLookAndFeel] = React.useState<boolean>(false);
     const [showConfirmRestoreLookAndFeelDefaultDialog, setShowConfirmRestoreLookAndFeelDefaultDialog] = React.useState<boolean>(false);
+    const [editDialogOpen, setEditDialogOpen] = React.useState<boolean>(false);
 
     // Color picker state — generic approach using a field key
     const [colorPickerOpen, setColorPickerOpen] = React.useState(false);
@@ -106,7 +107,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     tenantid: tenantId,
                     headerbackgroundcolor: config.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
                     headertext: config.headertext,
-                    headertextcolor: config.headertextcolor || "white",                    
+                    headertextcolor: config.headertextcolor || "white",
                     logouri: config.logouri || "",
                     buttonbackgroundcolor: config.buttonbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
                     buttontextcolor: config.buttontextcolor || "white",
@@ -199,12 +200,11 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         setMarkDirty(true);
     };
 
-
-    // Helper to render a color field with a color picker icon
+    // Helper to render a color field with a color picker icon (full-width for dialog panel)
     const renderColorField = (fieldKey: string, label: string, value: string | null | undefined) => (
-        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-            <Grid2 display="flex" alignItems={"center"} container spacing={2} size={12}>
-                <Grid2 size={11}>
+        <Grid2 marginBottom={"12px"} size={12}>
+            <Grid2 display="flex" alignItems={"center"} container spacing={1} size={12}>
+                <Grid2 size={10}>
                     <TextField
                         disabled={readOnly}
                         value={value || ""}
@@ -215,9 +215,10 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         }}
                         fullWidth={true}
                         label={label}
+                        size="small"
                     />
                 </Grid2>
-                <Grid2 size={1}>
+                <Grid2 size={2}>
                     {!readOnly &&
                         <ColorizeIcon onClick={() => openColorPicker(fieldKey, label)} sx={{ cursor: "pointer" }} />
                     }
@@ -226,11 +227,205 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         </Grid2>
     );
 
+    // Extracted config inputs panel for use inside the edit dialog
+    const renderConfigInputs = () => (
+        <Grid2 container size={12} spacing={1}>
+            {errorMessage &&
+                <Grid2 marginBottom={"12px"} size={12}>
+                    <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
+                </Grid2>
+            }
+
+            {/* ===== HEADER ===== */}
+            <Grid2 size={12}>
+                <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.85em"}}>Header</Typography></Divider>
+            </Grid2>
+            {renderColorField("headerbackgroundcolor", "Header Background Color", tenantLookAndFeelInput.headerbackgroundcolor)}
+            {renderColorField("headertextcolor", "Header Text Color", tenantLookAndFeelInput.headertextcolor)}
+            <Grid2 marginBottom={"12px"} size={12}>
+                <TextField
+                    disabled={readOnly}
+                    value={tenantLookAndFeelInput.headertext || ""}
+                    onChange={(evt) => {
+                        setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, headertext: evt.target.value });
+                        setMarkDirty(true);
+                    }}
+                    fullWidth={true}
+                    label="Header Text"
+                    size="small"
+                />
+            </Grid2>
+            <Grid2 marginBottom={"12px"} size={12}>
+                <TextField
+                    disabled={readOnly}
+                    value={tenantLookAndFeelInput.logouri || ""}
+                    onChange={(evt) => {
+                        setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, logouri: evt.target.value });
+                        setMarkDirty(true);
+                    }}
+                    fullWidth={true}
+                    label="Logo URI"
+                    size="small"
+                />
+            </Grid2>
+
+            {/* ===== BUTTONS ===== */}
+            <Grid2 size={12}>
+                <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.85em"}}>Buttons</Typography></Divider>
+            </Grid2>
+            {renderColorField("buttonbackgroundcolor", "Button Background Color", tenantLookAndFeelInput.buttonbackgroundcolor)}
+            {renderColorField("buttontextcolor", "Button Text Color", tenantLookAndFeelInput.buttontextcolor)}
+            <Grid2 marginBottom={"12px"} size={12}>
+                <TextField
+                    fullWidth={true}
+                    disabled={readOnly}
+                    onChange={(evt) => {
+                        setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, buttonborderradius: evt.target.value });
+                        setMarkDirty(true);
+                    }}
+                    label="Button Border Radius"
+                    value={tenantLookAndFeelInput.buttonborderradius || ""}
+                    size="small"
+                />
+            </Grid2>
+
+            {/* ===== PAGE & INPUTS ===== */}
+            <Grid2 size={12}>
+                <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.85em"}}>Page &amp; Inputs</Typography></Divider>
+            </Grid2>
+            {renderColorField("pagebackgroundcolor", "Page Background Color", tenantLookAndFeelInput.pagebackgroundcolor)}
+            {renderColorField("inputbordercolor", "Input Border Color", tenantLookAndFeelInput.inputbordercolor)}
+            {renderColorField("linkcolor", "Link Color", tenantLookAndFeelInput.linkcolor)}
+
+            {/* ===== FOOTER ===== */}
+            <Grid2 size={12}>
+                <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.85em"}}>Footer</Typography></Divider>
+            </Grid2>
+            {renderColorField("footerbackgroundcolor", "Footer Background Color", tenantLookAndFeelInput.footerbackgroundcolor)}
+            {renderColorField("footertextcolor", "Footer Text Color", tenantLookAndFeelInput.footertextcolor)}
+
+            {/* ===== LAYOUT ===== */}
+            <Grid2 size={12}>
+                <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.85em"}}>Layout</Typography></Divider>
+            </Grid2>
+            <Grid2 marginBottom={"12px"} size={12}>
+                <FormControl fullWidth size="small">
+                    <InputLabel>Layout Type</InputLabel>
+                    <Select
+                        disabled={readOnly}
+                        value={tenantLookAndFeelInput.layouttype || LAYOUT_TYPE_SINGLE_COLUMN}
+                        label="Layout Type"
+                        onChange={(evt) => {
+                            setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, layouttype: evt.target.value });
+                            setMarkDirty(true);
+                        }}
+                    >
+                        <MenuItem key={LAYOUT_TYPE_SINGLE_COLUMN} value={LAYOUT_TYPE_SINGLE_COLUMN}>Classic</MenuItem>
+                        <MenuItem key={LAYOUT_TYPE_TWO_COLUMN} value={LAYOUT_TYPE_TWO_COLUMN}>Two Column</MenuItem>
+                    </Select>
+                </FormControl>
+            </Grid2>
+            <Grid2 marginBottom={"12px"} size={12}>
+                <FormControl fullWidth size="small">
+                    <InputLabel>Marketing Panel Position</InputLabel>
+                    <Select
+                        disabled={readOnly}
+                        value={tenantLookAndFeelInput.imagepanelposition || IMAGE_PANEL_LEFT}
+                        label="Marketing Panel Position"
+                        onChange={(evt) => {
+                            setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, imagepanelposition: evt.target.value });
+                            setMarkDirty(true);
+                        }}
+                    >
+                        {IMAGE_PANEL_POSITIONS.map((pos) => (
+                            <MenuItem key={pos} value={pos}>{pos.toWellFormed()}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Grid2>
+            <Grid2 marginBottom={"12px"} size={12}>
+                <TextField
+                    disabled={readOnly || tenantLookAndFeelInput.layouttype === LAYOUT_TYPE_SINGLE_COLUMN}
+                    value={tenantLookAndFeelInput.marketingimageuri || ""}
+                    onChange={(evt) => {
+                        setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, marketingimageuri: evt.target.value });
+                        setMarkDirty(true);
+                    }}
+                    fullWidth={true}
+                    label="Marketing Image URI"
+                    size="small"
+                />
+            </Grid2>
+            <Grid2 marginBottom={"12px"} size={12}>
+                <TextField
+                    disabled={readOnly}
+                    value={tenantLookAndFeelInput.marketingtext || ""}
+                    onChange={(evt) => {
+                        setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, marketingtext: evt.target.value });
+                        setMarkDirty(true);
+                    }}
+                    fullWidth={true}
+                    label="Marketing Text"
+                    size="small"
+                />
+            </Grid2>
+
+            {/* ===== FOOTER LINKS ===== */}
+            <Grid2 size={12}>
+                <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.85em"}}>Footer Links</Typography></Divider>
+            </Grid2>
+            {tenantLookAndFeelInput.footerlinks?.map((link, index) => (
+                <Grid2 key={index} container size={12} spacing={1} alignItems={"center"}>
+                    <Grid2 size={5}>
+                        <TextField
+                            disabled={readOnly}
+                            value={link?.linktext || ""}
+                            onChange={(evt) => handleFooterLinkChange(index, "linktext", evt.target.value)}
+                            fullWidth={true}
+                            label="Link Text"
+                            size="small"
+                        />
+                    </Grid2>
+                    <Grid2 size={6}>
+                        <TextField
+                            disabled={readOnly}
+                            value={link?.uri || ""}
+                            onChange={(evt) => handleFooterLinkChange(index, "uri", evt.target.value)}
+                            fullWidth={true}
+                            label="URI"
+                            size="small"
+                        />
+                    </Grid2>
+                    <Grid2 size={1}>
+                        {!readOnly &&
+                            <IconButton onClick={() => handleRemoveFooterLink(index)} size="small">
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                            </IconButton>
+                        }
+                    </Grid2>
+                </Grid2>
+            ))}
+            {!readOnly &&
+                <Grid2 size={12}>
+                    <Button
+                        variant="text"
+                        startIcon={<AddCircleOutlineIcon />}
+                        onClick={handleAddFooterLink}
+                        sx={{ textTransform: "none", fontSize: "0.8em" }}
+                    >
+                        Add Footer Link
+                    </Button>
+                </Grid2>
+            }
+        </Grid2>
+    );
+
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
 
     return (
         <>
+            {/* Confirm Restore Defaults Dialog */}
             {showConfirmRestoreLookAndFeelDefaultDialog &&
                 <Dialog
                     open={showConfirmRestoreLookAndFeelDefaultDialog}
@@ -243,23 +438,21 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         </Typography>
                     </DialogContent>
                     <DialogActions>
-                        <Button
-                            onClick={() => setShowConfirmRestoreLookAndFeelDefaultDialog(false)}
-                        >
+                        <Button onClick={() => setShowConfirmRestoreLookAndFeelDefaultDialog(false)}>
                             Cancel
                         </Button>
-                        <Button
-                            onClick={() => {
-                                setShowConfirmRestoreLookAndFeelDefaultDialog(false);
-                                onUpdateStart();
-                                removeTenantLookAndFeelMutation();
-                            }}
-                        >
+                        <Button onClick={() => {
+                            setShowConfirmRestoreLookAndFeelDefaultDialog(false);
+                            onUpdateStart();
+                            removeTenantLookAndFeelMutation();
+                        }}>
                             Confirm
                         </Button>
                     </DialogActions>
                 </Dialog>
             }
+
+            {/* Color Picker Dialog */}
             <Dialog
                 onClose={() => setColorPickerOpen(false)}
                 open={colorPickerOpen}
@@ -276,324 +469,94 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     <Button onClick={applyColorPicker}>Select</Button>
                 </DialogActions>
             </Dialog>
-            <Grid2 container size={12} spacing={2}>
-                {errorMessage &&
-                    <Grid2 marginBottom={"16px"} size={12} >
-                        <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
-                    </Grid2>
-                }
 
-                {/* ===== HEADER PREVIEW ===== */}
-                <div style={{fontWeight: "bold", fontSize: "1.0em", textDecoration: "underline"}}>Header Preview</div>
-                <Grid2
-                    container
-                    spacing={2}
-                    margin={"8px 0px"}
-                    size={12}
-                    height={"72px"}
-                    alignContent={"center"}
-                    alignItems={"center"}
-                    display={"flex"}
-                    padding={"8px"}
-                    sx={{
-                        backgroundColor: tenantLookAndFeelInput.headerbackgroundcolor,
-                        color: tenantLookAndFeelInput.headertextcolor,
-                        fontWeight: "bold",
-                        fontSize: "1.0em",
-                        border: "solid 1px lightgrey"
-                    }}
+            {/* Main View: Edit Button + Previews */}
+            <Box sx={{ mb: 2 }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<EditIcon />}
+                    onClick={() => setEditDialogOpen(true)}
+                    disabled={readOnly}
+                    sx={{ mb: 2 }}
                 >
-                    <Stack direction={"row"}>
-                        <div style={{marginRight: "16px"}}>
-                            {tenantLookAndFeelInput.logouri &&
-                                <img style={{height: !breakPoints.isMedium ? "45px": "25px"}} src={tenantLookAndFeelInput.logouri} alt=" Header Logo"></img>
-                            }
-                        </div>
-                        <div style={{alignContent: "center", alignItems: "center"}}>
-                            {tenantLookAndFeelInput.headertext}
-                        </div>
-                    </Stack>
-                </Grid2>
+                    Edit Look and Feel
+                </Button>
+            </Box>
 
-                {/* ===== INPUTS PREVIEW ===== */}
-                <div style={{fontWeight: "bold", fontSize: "1.0em", textDecoration: "underline"}}>Inputs Preview</div>
-                <Grid2
-                    container
-                    spacing={1}
-                    margin={"8px 0px"}
-                    size={12}
-                    height={"45px"}
-                    alignContent={"center"}
-                    alignItems={"center"}
-                    display={"flex"}
-                    padding={"8px"}
-                >
-                    <Stack direction={"row"}>
-                        <div style={{marginRight: "16px"}}>
-                            <TextField 
-                                name="example input"
-                                placeholder="example@example.com"
-                                fullWidth={true}
-                            />
-                        </div>
-                        <div style={{marginRight: "16px"}}>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    fontWeight: "bold",
-                                    fontSize: "0.9em",
-                                    height: "100%",
-                                    padding: "8px 32px 8px 32px",
-                                    backgroundColor: tenantLookAndFeelInput.buttonbackgroundcolor || tenantLookAndFeelInput.headerbackgroundcolor,
-                                    color: tenantLookAndFeelInput.buttontextcolor || tenantLookAndFeelInput.headertextcolor,
-                                    borderRadius: tenantLookAndFeelInput.buttonborderradius
-                                }}
-                            >Cancel</Button>
-                        </div>
-                        <div style={{marginRight: "16px"}}>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    fontWeight: "bold",
-                                    fontSize: "0.9em",
-                                    height: "100%",
-                                    padding: "8px 32px 8px 32px",
-                                    backgroundColor: tenantLookAndFeelInput.buttonbackgroundcolor || tenantLookAndFeelInput.headerbackgroundcolor,
-                                    color: tenantLookAndFeelInput.buttontextcolor || tenantLookAndFeelInput.headertextcolor,
-                                    borderRadius: tenantLookAndFeelInput.buttonborderradius
-                                }}
-                            >Submit</Button>
-                        </div>
-                    </Stack>
-                </Grid2>
+            {/* Desktop Preview */}
+            <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: "bold", color: "#666" }}>Desktop Preview</Typography>
+            </Box>
+            <Box sx={{ mb: 3 }}>
+                <AuthScreenPreview config={tenantLookAndFeelInput} width="100%" />
+            </Box>
 
-                {/* ===== FOOTER PREVIEW ===== */}
-                <div style={{fontWeight: "bold", fontSize: "1.0em", textDecoration: "underline"}}>Footer Preview</div>
-                <Grid2
-                    container
-                    spacing={2}
-                    margin={"8px 0px"}
-                    size={12}
-                    minHeight={"40px"}
-                    alignContent={"center"}
-                    alignItems={"center"}
-                    display={"flex"}
-                    padding={"8px"}
-                    sx={{
-                        backgroundColor: tenantLookAndFeelInput.footerbackgroundcolor || tenantLookAndFeelInput.headerbackgroundcolor,
-                        color: tenantLookAndFeelInput.footertextcolor || tenantLookAndFeelInput.headertextcolor,
-                        fontSize: "0.8em",
-                        border: "solid 1px lightgrey"
-                    }}
-                >
-                    <Stack direction={"row"} spacing={2}>
-                        {tenantLookAndFeelInput.footerlinks?.map((link, idx) => (
-                            <span key={idx} style={{textDecoration: "underline", cursor: "pointer"}}>
-                                {link?.linktext || "Link"}
-                            </span>
-                        ))}
-                        {(!tenantLookAndFeelInput.footerlinks || tenantLookAndFeelInput.footerlinks.length === 0) &&
-                            <span style={{opacity: 0.6}}>No footer links configured</span>
-                        }
-                    </Stack>
-                </Grid2>
+            {/* Mobile Preview */}
+            <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: "bold", color: "#666" }}>Mobile Preview</Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                <Box sx={{ width: 375 }}>
+                    <AuthScreenPreview config={tenantLookAndFeelInput} width={375} mobile={true} />
+                </Box>
+            </Box>
 
-                {/* ===== HEADER COLORS ===== */}
-                <Grid2 size={12}>
-                    <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Header</Typography></Divider>
-                </Grid2>
-                {renderColorField("headerbackgroundcolor", "Header Background Color", tenantLookAndFeelInput.headerbackgroundcolor)}
-                {renderColorField("headertextcolor", "Header Text Color", tenantLookAndFeelInput.headertextcolor)}
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <TextField name="headerText" id="headerText"
-                        disabled={readOnly}
-                        value={tenantLookAndFeelInput.headertext || ""}
-                        onChange={(evt) => { tenantLookAndFeelInput.headertext = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                        fullWidth={true}
-                        label="Header Text"
-                    />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    {!readOnly &&
-                        <React.Fragment>                            
-                            <Grid2 marginTop={"8px"} container size={12}>
-                                <Grid2 size={12}>
-                                    <TextField
-                                        disabled={readOnly}
-                                        value={tenantLookAndFeelInput.logouri}
-                                        onChange={(evt) => { tenantLookAndFeelInput.logouri = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                                        fullWidth={true}
-                                        label="Logo URI"
-                                    />
-                                </Grid2>
-                            </Grid2>
-                        </React.Fragment>
-                    }
-                </Grid2>
-
-                {/* ===== BUTTON COLORS ===== */}
-                <Grid2 size={12}>
-                    <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Buttons</Typography></Divider>
-                </Grid2>
-                {renderColorField("buttonbackgroundcolor", "Button Background Color", tenantLookAndFeelInput.buttonbackgroundcolor)}
-                {renderColorField("buttontextcolor", "Button Text Color", tenantLookAndFeelInput.buttontextcolor)}
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                    <TextField fullWidth={true} 
-                        name="buttonborderradius"
-                        onChange={(evt) => {
-                            tenantLookAndFeelInput.buttonborderradius = evt.target.value;
-                            setTenantLookAndFeelInput({...tenantLookAndFeelInput});
-                            setMarkDirty(true);
-                        }}                        
-                        label="Button Border Radius"
-                        value={tenantLookAndFeelInput.buttonborderradius}
-                    />
-                </Grid2>
-                {}
-
-                {/* ===== INPUT / PAGE COLORS ===== */}
-                <Grid2 size={12}>
-                    <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Page &amp; Inputs</Typography></Divider>
-                </Grid2>
-                {renderColorField("pagebackgroundcolor", "Page Background Color", tenantLookAndFeelInput.pagebackgroundcolor)}
-                {renderColorField("inputbordercolor", "Input Border Color", tenantLookAndFeelInput.inputbordercolor)}
-                {renderColorField("linkcolor", "Link Color", tenantLookAndFeelInput.linkcolor)}
-
-                {/* ===== FOOTER COLORS ===== */}
-                <Grid2 size={12}>
-                    <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Footer</Typography></Divider>
-                </Grid2>
-                {renderColorField("footerbackgroundcolor", "Footer Background Color", tenantLookAndFeelInput.footerbackgroundcolor)}
-                {renderColorField("footertextcolor", "Footer Text Color", tenantLookAndFeelInput.footertextcolor)}
-
-                {/* ===== LAYOUT ===== */}
-                <Grid2 size={12}>
-                    <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Layout</Typography></Divider>
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                    <FormControl fullWidth>
-                        <InputLabel>Layout Type</InputLabel>
-                        <Select
-                            disabled={readOnly}
-                            value={tenantLookAndFeelInput.layouttype || LAYOUT_TYPE_SINGLE_COLUMN}
-                            label="Layout Type"
-                            onChange={(evt) => {
-                                setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, layouttype: evt.target.value });
-                                setMarkDirty(true);
-                            }}
-                        >                            
-                            <MenuItem key={LAYOUT_TYPE_SINGLE_COLUMN} value={LAYOUT_TYPE_SINGLE_COLUMN}>Classic</MenuItem>
-                            <MenuItem key={LAYOUT_TYPE_TWO_COLUMN} value={LAYOUT_TYPE_TWO_COLUMN}>Two Column</MenuItem>                            
-                        </Select>
-                    </FormControl>
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                    <FormControl fullWidth>
-                        <InputLabel>Marketing Panel Position</InputLabel>
-                        <Select
-                            disabled={readOnly}
-                            value={tenantLookAndFeelInput.imagepanelposition || IMAGE_PANEL_LEFT}
-                            label="Image Panel Position"
-                            onChange={(evt) => {
-                                setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, imagepanelposition: evt.target.value });
-                                setMarkDirty(true);
-                            }}
-                        >
-                            {IMAGE_PANEL_POSITIONS.map((pos) => (
-                                <MenuItem key={pos} value={pos}>{pos.toWellFormed()}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                    <TextField
-                        disabled={readOnly || tenantLookAndFeelInput.layouttype === LAYOUT_TYPE_SINGLE_COLUMN}
-                        value={tenantLookAndFeelInput.marketingimageuri || ""}
-                        onChange={(evt) => {
-                            setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, marketingimageuri: evt.target.value });
-                            setMarkDirty(true);
-                        }}
-                        fullWidth={true}
-                        label="Marketing Image URI"
-                    />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                    <TextField
-                        disabled={readOnly}
-                        value={tenantLookAndFeelInput.marketingtext || ""}
-                        onChange={(evt) => {
-                            setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, marketingtext: evt.target.value });
-                            setMarkDirty(true);
-                        }}
-                        fullWidth={true}
-                        label="Marketing Text"
-                    />
-                </Grid2>
-
-                {/* ===== FOOTER LINKS ===== */}
-                <Grid2 size={12}>
-                    <Divider><Typography sx={{fontWeight: "bold", fontSize: "0.9em"}}>Footer Links</Typography></Divider>
-                </Grid2>
-                {tenantLookAndFeelInput.footerlinks?.map((link, index) => (
-                    <Grid2 key={index} container size={12} spacing={2} alignItems={"center"}>
-                        <Grid2 size={{ sm: 5, xs: 5, md: 5, lg: 5, xl: 5 }}>
-                            <TextField
-                                disabled={readOnly}
-                                value={link?.linktext || ""}
-                                onChange={(evt) => handleFooterLinkChange(index, "linktext", evt.target.value)}
-                                fullWidth={true}
-                                label="Link Text"
-                                size="small"
-                            />
+            {/* Edit Dialog */}
+            <Dialog
+                open={editDialogOpen}
+                onClose={() => setEditDialogOpen(false)}
+                maxWidth="xl"
+                fullWidth={true}
+            >
+                <DialogTitle>Edit Look and Feel</DialogTitle>
+                <DialogContent>
+                    <Grid2 container spacing={2} sx={{ mt: 1 }}>
+                        {/* Left: Previews */}
+                        <Grid2 size={9}>
+                            <Box sx={{ mb: 1 }}>
+                                <Typography variant="caption" sx={{ fontWeight: "bold", color: "#666" }}>Desktop Preview</Typography>
+                            </Box>
+                            <Box sx={{ mb: 3 }}>
+                                <AuthScreenPreview config={tenantLookAndFeelInput} width="100%" />
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                                <Typography variant="caption" sx={{ fontWeight: "bold", color: "#666" }}>Mobile Preview</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                <Box sx={{ width: 375 }}>
+                                    <AuthScreenPreview config={tenantLookAndFeelInput} width={375} mobile={true} />
+                                </Box>
+                            </Box>
                         </Grid2>
-                        <Grid2 size={{ sm: 6, xs: 6, md: 6, lg: 6, xl: 6 }}>
-                            <TextField
-                                disabled={readOnly}
-                                value={link?.uri || ""}
-                                onChange={(evt) => handleFooterLinkChange(index, "uri", evt.target.value)}
-                                fullWidth={true}
-                                label="URI"
-                                size="small"
-                            />
-                        </Grid2>
-                        <Grid2 size={1}>
-                            {!readOnly &&
-                                <IconButton onClick={() => handleRemoveFooterLink(index)} size="small">
-                                    <DeleteForeverOutlinedIcon />
-                                </IconButton>
-                            }
+
+                        {/* Right: Config Inputs */}
+                        <Grid2 size={3} sx={{ pl: 2 }}>
+                            {renderConfigInputs()}
+                            <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
+                                        setMarkDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        onUpdateStart();
+                                        mutateTenantLookAndFeel();
+                                    }}
+                                    markDirty={markDirty}
+                                    disableSubmit={!containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
+                                    enableRestoreDefault={hasSystemDefaultLookAndFeel === false}
+                                    restoreDefaultHandler={() => {
+                                        setShowConfirmRestoreLookAndFeelDefaultDialog(true);
+                                    }}
+                                />
+                                <Button onClick={() => setEditDialogOpen(false)} variant="outlined">
+                                    Close
+                                </Button>
+                            </Box>
                         </Grid2>
                     </Grid2>
-                ))}
-                {!readOnly &&
-                    <Grid2 size={12}>
-                        <Button
-                            variant="text"
-                            startIcon={<AddCircleOutlineIcon />}
-                            onClick={handleAddFooterLink}
-                            sx={{ textTransform: "none" }}
-                        >
-                            Add Footer Link
-                        </Button>
-                    </Grid2>
-                }
-            </Grid2>
-            <DetailSectionActionHandler
-                onDiscardClickedHandler={() => {
-                    setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
-                    setMarkDirty(false);
-                }}
-                onUpdateClickedHandler={() => {
-                    onUpdateStart();
-                    mutateTenantLookAndFeel();
-                }}
-                markDirty={markDirty}
-                disableSubmit={!containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
-                enableRestoreDefault={hasSystemDefaultLookAndFeel === false}
-                restoreDefaultHandler={() => {
-                    setShowConfirmRestoreLookAndFeelDefaultDialog(true);
-                }}
-            />
+                </DialogContent>
+            </Dialog>
         </>
     )
 
