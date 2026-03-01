@@ -28,8 +28,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                 width: "100%", 
                 height: "5vh",
                 minHeight: "70px",
-                color: textColor,
-                borderBottom: "1px solid lightgrey"
+                color: textColor
             }}
         >
             <Container

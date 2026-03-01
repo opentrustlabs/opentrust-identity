@@ -14,7 +14,7 @@ export interface AuthScreenPreviewProps {
 const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "100%", mobile = false }) => {
 
     const headerBg = config.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
-    const headerTextColor = config.headertextcolor || DEFAULT_TEXT_COLOR;
+    const headerTextColor = config.headertextcolor || DEFAULT_TEXT_COLOR;    
     const buttonBg = config.buttonbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
     const buttonText = config.buttontextcolor || "white";
     const buttonRadius = config.buttonborderradius || "4px";
@@ -184,11 +184,6 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
                 {config.headertext && (
                     <span style={{ fontWeight: 600, fontSize: "0.95em" }}>
                         {config.headertext}
-                    </span>
-                )}
-                {!config.logouri && !config.headertext && (
-                    <span style={{ fontWeight: 600, fontSize: "0.95em", opacity: 0.7 }}>
-                        Header
                     </span>
                 )}
             </div>

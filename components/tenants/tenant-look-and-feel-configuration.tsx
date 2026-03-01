@@ -255,7 +255,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 <TextField
                     disabled={readOnly}
                     value={tenantLookAndFeelInput.headertext || ""}
-                    onChange={(evt) => {
+                    onChange={(evt) => {                        
                         setTenantLookAndFeelInput({ ...tenantLookAndFeelInput, headertext: evt.target.value });
                         setMarkDirty(true);
                     }}
