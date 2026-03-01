@@ -440,37 +440,27 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const tenantLookAndFeel: TenantLookAndFeel = {
-                tenantid: tenantLookAndFeelInput.tenantid,
-                headerbackgroundcolor: tenantLookAndFeelInput.headerbackgroundcolor,
-                headertextcolor: tenantLookAndFeelInput.headertextcolor,
-                headertext: tenantLookAndFeelInput.headertext,                
-                logouri: tenantLookAndFeelInput.logouri,
-                buttonbackgroundcolor: tenantLookAndFeelInput.buttonbackgroundcolor,
-                buttontextcolor: tenantLookAndFeelInput.buttontextcolor,
-                inputbordercolor: tenantLookAndFeelInput.inputbordercolor,
-                pagebackgroundcolor: tenantLookAndFeelInput.pagebackgroundcolor,
-                footerbackgroundcolor: tenantLookAndFeelInput.footerbackgroundcolor,
-                footertextcolor: tenantLookAndFeelInput.footertextcolor,
-                linkcolor: tenantLookAndFeelInput.linkcolor,
-                layouttype: tenantLookAndFeelInput.layouttype,
-                marketingimageuri: tenantLookAndFeelInput.marketingimageuri,
-                imagepanelposition: tenantLookAndFeelInput.imagepanelposition,
-                buttonborderradius: tenantLookAndFeelInput.buttonborderradius,
-                headerlogoposition: tenantLookAndFeelInput.headerlogoposition,
-                marketingtext: tenantLookAndFeelInput.marketingtext,
-            }
-
-        // Extract footer links before persisting the entity (footer links are in a separate table)
-        if(tenantLookAndFeelInput.footerlinks && tenantLookAndFeelInput.footerlinks.length > 0){
-            for(let i = 0; i < tenantLookAndFeelInput.footerlinks.length; i++){
-                tenantLookAndFeel.footerlinks?.push({
-                    footerlinkid: randomUUID().toString(),
-                    tenantid: tenantLookAndFeelInput.tenantid,
-                    linktext: tenantLookAndFeelInput.footerlinks[i]?.linktext || "",
-                    uri: tenantLookAndFeelInput.footerlinks[i]?.uri || ""
-                });
-            }
+            tenantid: tenantLookAndFeelInput.tenantid,
+            headerbackgroundcolor: tenantLookAndFeelInput.headerbackgroundcolor,
+            headertextcolor: tenantLookAndFeelInput.headertextcolor,
+            headertext: tenantLookAndFeelInput.headertext,                
+            logouri: tenantLookAndFeelInput.logouri,
+            buttonbackgroundcolor: tenantLookAndFeelInput.buttonbackgroundcolor,
+            buttontextcolor: tenantLookAndFeelInput.buttontextcolor,
+            inputbordercolor: tenantLookAndFeelInput.inputbordercolor,
+            pagebackgroundcolor: tenantLookAndFeelInput.pagebackgroundcolor,
+            footerbackgroundcolor: tenantLookAndFeelInput.footerbackgroundcolor,
+            footertextcolor: tenantLookAndFeelInput.footertextcolor,
+            linkcolor: tenantLookAndFeelInput.linkcolor,
+            layouttype: tenantLookAndFeelInput.layouttype,
+            marketingimageuri: tenantLookAndFeelInput.marketingimageuri,
+            imagepanelposition: tenantLookAndFeelInput.imagepanelposition,
+            buttonborderradius: tenantLookAndFeelInput.buttonborderradius,
+            headerlogoposition: tenantLookAndFeelInput.headerlogoposition,
+            marketingtext: tenantLookAndFeelInput.marketingtext,
+            footerlinks: []
         }
+
         
         const existing: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
         if(!existing){
@@ -498,6 +488,18 @@ class TenantService {
             await tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
         }
 
+        // Extract footer links before persisting the entity (footer links are in a separate table)
+        if(tenantLookAndFeelInput.footerlinks && tenantLookAndFeelInput.footerlinks.length > 0){
+            for(let i = 0; i < tenantLookAndFeelInput.footerlinks.length; i++){
+                tenantLookAndFeel.footerlinks?.push({
+                    footerlinkid: randomUUID().toString(),
+                    tenantid: tenantLookAndFeelInput.tenantid,
+                    linktext: tenantLookAndFeelInput.footerlinks[i]?.linktext || "",
+                    uri: tenantLookAndFeelInput.footerlinks[i]?.uri || ""
+                });
+            }
+        }
+        
         // Save footer links (delete-then-reinsert)
         await tenantDao.deleteFooterLinksByTenantId(tenantLookAndFeel.tenantid);
         if(tenantLookAndFeel.footerlinks && tenantLookAndFeel.footerlinks.length > 0){
@@ -507,6 +509,8 @@ class TenantService {
                 }
             }
         }
+
+        console.log(JSON.stringify(tenantLookAndFeel));
         return tenantLookAndFeel;
     }
 

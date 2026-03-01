@@ -877,7 +877,7 @@ type TenantLookAndFeel {
     imagepanelposition: String
     buttonborderradius: String
     headerlogoposition: String
-    footerlinks: [FooterLink]
+    footerlinks: [FooterLink!]!
 }
 
 type FooterLink {

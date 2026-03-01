@@ -133,7 +133,7 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
             minHeight: 200
         }}>
             {config.marketingtext && (
-                <div style={{ marginBottom: "8px", fontWeight: "bolder", fontSize: "0.85em", color: "#444", textAlign: "center", lineHeight: 1.4 }}>
+                <div style={{ marginBottom: "8px",  maxWidth: "80%", fontWeight: "bolder", fontSize: "0.85em", color: "#444", textAlign: "center", lineHeight: 1.4 }}>
                     {config.marketingtext}
                 </div>
             )}
@@ -141,7 +141,7 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
                 <img
                     src={config.marketingimageuri}
                     alt="Marketing"
-                    style={{ maxWidth: "80%", maxHeight: 180, objectFit: "contain", marginBottom: 12 }}
+                    style={{ maxWidth: "80%", maxHeight: 180, objectFit: "contain" }}
                 />
             )}
             

@@ -163,13 +163,17 @@ class CassandraTenantDao extends TenantDao {
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
-        await mapper.insert(tenantLookAndFeel);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { footerlinks, ...entity } = tenantLookAndFeel;
+        await mapper.insert(entity);
         return tenantLookAndFeel;
     }
 
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
-        await mapper.update(tenantLookAndFeel);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { footerlinks, ...entity } = tenantLookAndFeel;
+        await mapper.update(entity);
         return tenantLookAndFeel;
     }
     

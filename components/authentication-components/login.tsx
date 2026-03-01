@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_TENANT_META_DATA, LAYOUT_TYPE_SINGLE_COLUMN, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, AuthenticationRequestedScope, ScopeTranslation } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
@@ -32,6 +32,7 @@ import { GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY, TENANT_META_DATA_QUERY } f
 import LanguageIcon from '@mui/icons-material/Language';
 import { useIntl } from 'react-intl';
 import { ValidateEmailOnAuthentication } from "./validate-email";
+import LoginLayout from "./login-layout";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -88,8 +89,7 @@ const Login: React.FC<LoginProps>= ({
         preAuthToken: preAuthToken,
         returnToUri: returnToUri
     };
-
-    
+        
     const [username, setUsername] = useState<string | null>("");
     const [password, setPassword] = useState<string | null>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -109,7 +109,10 @@ const Login: React.FC<LoginProps>= ({
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
 
-    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
+    // PAGE-LEVEL VARIABLES
+    const layoutType = tenantBean.getTenantMetaData().tenantLookAndFeel?.layouttype ?? LAYOUT_TYPE_SINGLE_COLUMN;
+    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : layoutType === LAYOUT_TYPE_SINGLE_COLUMN ? "650px" : "1280px";
+
 
     // GRAPHQL FUNCTIONS
     const [ tenantMetadataLazyQuery ] = useLazyQuery(TENANT_META_DATA_QUERY, {               
@@ -390,7 +393,7 @@ const Login: React.FC<LoginProps>= ({
         return (
             <Paper
                 elevation={4}
-                sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
+                sx={{ padding: 2, height: "100%", maxWidth: maxWidth }}
             >
                 {(i18nContext.hasSelectedLanguage() !== true || openLanguageSelector) &&
                     <Dialog 
@@ -474,32 +477,29 @@ const Login: React.FC<LoginProps>= ({
                         maxWidth="sm"
                         fullWidth={true}
                     >
-                        <DialogTitle fontWeight={"bold"}>{intl.formatMessage({id: "SELECT_PASSWORD_RECOVERY_OPTION"})}</DialogTitle>
-                        <DialogContent>
-                            <Typography component="div">
-                                <Grid2 container size={12} spacing={1}>
-                                    <Grid2 size={11}>{intl.formatMessage({id: "USE_PRIMARY_EMAIL"})}</Grid2>
-                                    <Grid2 size={1}>
-                                        <RadioStyledCheckbox 
-                                            onChange={() => {
-                                                setUseRecoveryEmail(false);
-                                            }}
-                                            checked={useRecoveryEmail === false}                                    
-                                        />
-                                    </Grid2>
-                                    <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
-                                    <Grid2 size={1}>
-                                        <RadioStyledCheckbox 
-                                            onChange={() => {
-                                                setUseRecoveryEmail(true);
-                                            }}
-                                            checked={useRecoveryEmail === true}
-                                        />
-
-                                    </Grid2>
+                        <DialogTitle fontSize={"1.0em"} fontWeight={"bold"}>{intl.formatMessage({id: "SELECT_PASSWORD_RECOVERY_OPTION"})}</DialogTitle>
+                        <DialogContent>                            
+                            <Grid2 container size={12} spacing={1}>
+                                <Grid2 size={11}>{intl.formatMessage({id: "USE_PRIMARY_EMAIL"})}</Grid2>
+                                <Grid2 size={1}>
+                                    <RadioStyledCheckbox 
+                                        onChange={() => {
+                                            setUseRecoveryEmail(false);
+                                        }}
+                                        checked={useRecoveryEmail === false}                                    
+                                    />
                                 </Grid2>
-                            </Typography>
+                                <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
+                                <Grid2 size={1}>
+                                    <RadioStyledCheckbox 
+                                        onChange={() => {
+                                            setUseRecoveryEmail(true);
+                                        }}
+                                        checked={useRecoveryEmail === true}
+                                    />
 
+                                </Grid2>
+                            </Grid2>
                         </DialogContent>
                         <DialogActions>
                             <Button
@@ -529,526 +529,487 @@ const Login: React.FC<LoginProps>= ({
                     </Dialog>
                 }
                 
-                <Grid2 spacing={3} container size={{ xs: 12 }}>
-                    {errorMessage !== null &&
-                        <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                            <Stack
-                                direction={"row"}
-                                justifyItems={"center"}
-                                alignItems={"center"}
-                                sx={{ width: "100%" }}
-                            >
-                                <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-
-                            </Stack>
-                        </Grid2>
-                    }
-                    {authorizationError &&
-                        <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                            <Stack
-                                direction={"row"}
-                                justifyItems={"center"}
-                                alignItems={"center"}
-                                sx={{ width: "100%" }}
-                            >
-                                <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%", fontSize: "0.85em", lineHeight: "1.6em" }} severity="error">
-                                    <span>There was an error with the configuration of the client or referring application:</span>
-                                    <span style={{fontWeight: "bold"}}> {authorizationErrorDescription}. </span>
-                                    <span>Login will not be permitted until the issues are resolved. Please try again later or contact support if the problem persists.</span>
-                                </Alert>
-
-                            </Stack>
-                        </Grid2>
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.EnterUserCode &&
-                        <UserCodeInput
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true)
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.EnterEmail &&
-                        <React.Fragment>
-                            {authorizationScopeApprovalData &&
-                                <Grid2 container size={12} spacing={1}>
-                                    <Typography component="div" sx={{width: "100%"}}>
-                                        <Alert severity="info" sx={{width: "100%", fontSize: "0.95em"}}>
-                                            <Grid2 marginBottom={"8px"} size={{xs: 12}}>
-                                                <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName} </span>
-                                                <span>{intl.formatMessage({id: "SCOPE_PERMISSION_REQUEST"})}:</span>
-                                            </Grid2>
-                                            <Grid2 size={{xs: 12}}>
-                                                <ul style={{ paddingLeft: "32px", marginBottom: "8px" }}>
-                                                    {authorizationScopeApprovalData.requestedScope.map(
-                                                        (requestedScope: AuthenticationRequestedScope) => (
-                                                            <li key={requestedScope.scopeId}>{getScopeTranslation(requestedScope)}</li>
-                                                        )
-                                                    )}
-                                                </ul>
-                                            </Grid2>
-                                        </Alert>
-                                    </Typography>
-                                </Grid2>
-                            }
-                            <Grid2 container size={12} spacing={1}>
-                                <Grid2 size={11}>
-                                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>                                    
-                                </Grid2>
-                                <Grid2 size={1}>
-                                    <LanguageIcon 
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {
-                                            setOpenLanguageSelector(true);
-                                        }}
-                                    />
-                                </Grid2>
-                                <Grid2 size={12}>
-                                    <TextField
-                                        id="email"
-                                        required={true}
-                                        autoFocus={true}
-                                        autoComplete="email"
-                                        label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
-                                        name="email"
-                                        fullWidth
-                                        onChange={(evt) => setUsername(evt.target.value)}
-                                        onKeyDown={handleEnterButtonPress}
-                                        value={username}
-                                        disabled={isLoginDisabled}
-                                    >
-                                    </TextField>
-                                </Grid2>
-
-                            </Grid2>
-                            
-                            <Grid2 size={{ xs: 12 }}>
+                <LoginLayout tenantLookAndFeel={tenantBean.getTenantMetaData().tenantLookAndFeel || DEFAULT_TENANT_LOOK_AND_FEEL} >                    
+                    <Grid2 spacing={3} container size={{ xs: 12 }}>
+                        {errorMessage !== null &&
+                            <Grid2 size={{ xs: 12 }} textAlign={"center"}>
                                 <Stack
-                                    direction={"row-reverse"}
-                                    spacing={2}
+                                    direction={"row"}
+                                    justifyItems={"center"}
+                                    alignItems={"center"}
+                                    sx={{ width: "100%" }}
                                 >
-                                    <Button
-                                        disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
-                                        variant="contained"                                        
-                                        onClick={() => handleUserNameInput()}
-                                    >
-                                        {intl.formatMessage({id: "NEXT"})}
-                                    </Button>
-                                    <Button
-                                        variant="contained"  
-                                        onClick={() => {
-                                            handleCancelAuthentication(userAuthenticationState);                                            
-                                        }}
-                                    >
-                                        {intl.formatMessage({id: "CANCEL"})}
-                                    </Button>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+
                                 </Stack>
                             </Grid2>
-                            {tenantBean.getTenantMetaData().tenant.allowUserSelfRegistration &&
-                                <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                                    <Stack
-                                        direction={"row-reverse"}
-                                        justifyItems={"center"}
-                                        alignItems={"center"}
-                                    >
-                                        <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
-                                            <Button
-                                                disabled={false}
-                                                variant="contained"                                                
-                                            >
-                                                {intl.formatMessage({id: "REGISTER"})}
-                                            </Button>
-                                        </Link>
+                        }
+                        {authorizationError &&
+                            <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                                <Stack
+                                    direction={"row"}
+                                    justifyItems={"center"}
+                                    alignItems={"center"}
+                                    sx={{ width: "100%" }}
+                                >
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%", fontSize: "0.85em", lineHeight: "1.6em" }} severity="error">
+                                        <span>There was an error with the configuration of the client or referring application:</span>
+                                        <span style={{fontWeight: "bold"}}> {authorizationErrorDescription}. </span>
+                                        <span>Login will not be permitted until the issues are resolved. Please try again later or contact support if the problem persists.</span>
+                                    </Alert>
 
-                                        <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>{intl.formatMessage({id: "NEED_TO_CREATE_AN_ACCOUNT"})}</div>
-                                    </Stack>
-                                </Grid2>
-                            }
-                            {tenantBean.getTenantMetaData().tenant.allowSocialLogin && tenantBean.getTenantMetaData().socialOIDCProviders.length > 0 &&
-                                <React.Fragment>
-                                    <Grid2 size={{ xs: 12 }}>
-                                        <Divider>OR</Divider>
-                                    </Grid2>
-                                    <Typography width={"100%"} component="div">
-                                        {tenantBean.getTenantMetaData().socialOIDCProviders.map(
-                                            (provider: FederatedOidcProvider) => (
-                                                <Grid2
-                                                    className="social-media-login-container"
-                                                    key={provider.federatedOIDCProviderId}
-                                                    onClick={() => {
-                                                        authenticateWithSocialOIDCProvider({
-                                                            variables: {
-                                                                tenantId: tenantId,
-                                                                preAuthToken: preAuthToken,
-                                                                federatedOIDCProviderId: provider.federatedOIDCProviderId
-                                                            }
-                                                        })
-                                                    }}
-                                                    container spacing={0}
-                                                    size={{ xs: 12 }}
-                                                >
-                                                    <Grid2 display={"flex"} alignContent={"center"} size={breakPoints.isMedium ? 2 : 1.5}>
-                                                        {getIconForSocialProvider(provider)}
-                                                    </Grid2>
-                                                    <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>{intl.formatMessage({id: "SIGN_IN_WITH"})} {provider.federatedOIDCProviderName}</Grid2>
-                                                </Grid2>
-                                            )
-                                        )}
-                                    </Typography>
-                                </React.Fragment>
-                            }
-                        </React.Fragment>
-                    }                    
-                    {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
-                        <React.Fragment>
-                            {/* <form method="POST"
-                                noValidate
-                                id="loginForm"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setErrorMessage(null);
-                                    authenticateUser({
-                                        variables: {
-                                            username: username,
-                                            password: password,
-                                            tenantId: userAuthenticationState.tenantId,
-                                            authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
-                                            preAuthToken: userAuthenticationState.preAuthToken
-                                        }
-                                    });
-
+                                </Stack>
+                            </Grid2>
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.EnterUserCode &&
+                            <UserCodeInput
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
                                 }}
-                                style={{ display: "flex", flexDirection: "column", width: "100%" }}
-                            > */}
-                            <Grid2 container size={12}>
-                                
-                                    <div style={{display: "hidden"}}>
-                                        <TextField
-                                            name="username"
-                                            autoComplete="username"
-                                            value={username}
-                                            type="hidden"
-                                            sx={{
-                                                width: 0, // Sets the width to 0
-                                                height: 0, // Sets the height to 0
-                                                overflow: 'hidden', // Hides any overflowing content
-                                                position: 'absolute', // Ensures it doesn't affect layout
-                                                opacity: 0, // Makes it completely transparent
-                                                pointerEvents: 'none', // Prevents interaction
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.EnterEmail &&
+                            <React.Fragment>
+                                {authorizationScopeApprovalData &&
+                                    <Grid2 container size={12} spacing={1}>
+                                        <Typography component="div" sx={{width: "100%"}}>
+                                            <Alert severity="info" sx={{width: "100%", fontSize: "0.95em"}}>
+                                                <Grid2 marginBottom={"8px"} size={{xs: 12}}>
+                                                    <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName} </span>
+                                                    <span>{intl.formatMessage({id: "SCOPE_PERMISSION_REQUEST"})}:</span>
+                                                </Grid2>
+                                                <Grid2 size={{xs: 12}}>
+                                                    <ul style={{ paddingLeft: "32px", marginBottom: "8px" }}>
+                                                        {authorizationScopeApprovalData.requestedScope.map(
+                                                            (requestedScope: AuthenticationRequestedScope) => (
+                                                                <li key={requestedScope.scopeId}>{getScopeTranslation(requestedScope)}</li>
+                                                            )
+                                                        )}
+                                                    </ul>
+                                                </Grid2>
+                                            </Alert>
+                                        </Typography>
+                                    </Grid2>
+                                }
+                                <Grid2 container size={12} spacing={1}>
+                                    <Grid2 size={11}>
+                                        <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>                                    
+                                    </Grid2>
+                                    <Grid2 size={1}>
+                                        <LanguageIcon 
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {
+                                                setOpenLanguageSelector(true);
                                             }}
                                         />
-                                    </div>
-                                    <Grid2  size={12}>
-
-                                        <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({ id: "SIGN_IN" })}</div>
+                                    </Grid2>
+                                    <Grid2 size={12}>
                                         <TextField
-                                            type="password"
-                                            id="password"
-                                            autoComplete="current-password"
+                                            id="email"
                                             required={true}
                                             autoFocus={true}
-                                            label={intl.formatMessage({ id: "PASSWORD" })}
-                                            name="password"
+                                            autoComplete="email"
+                                            label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
+                                            name="email"
                                             fullWidth
-                                            onChange={(evt) => setPassword(evt.target.value)}
-                                            value={password}
-                                            sx={{
-                                                "& .MuiOutlinedInput-root": {
-                                                    "&.Mui-focused fieldset": {
-                                                        borderColor:
-                                                            (tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor === "white" ||
-                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor === "#FFFFFF" ||
-                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor === "#ffffff") ?
-                                                                "lightgray" :
-                                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor
-                                                    }
-                                                },
-                                                "& .MuiFormLabel-root": {
-                                                    "&.MuiInputLabel-root": {
-                                                        "&.Mui-focused": {
-                                                            color: "black"
-                                                        }
-                                                    }
-                                                }
-                                            }}
+                                            onChange={(evt) => setUsername(evt.target.value)}
+                                            onKeyDown={handleEnterButtonPress}
+                                            value={username}
+                                            disabled={isLoginDisabled}
                                         >
                                         </TextField>
-
                                     </Grid2>
+
+                                </Grid2>
                                 
-                            </Grid2>
-                            {/* </form> */}
-                            {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
                                 <Grid2 size={{ xs: 12 }}>
                                     <Stack
                                         direction={"row-reverse"}
+                                        spacing={2}
                                     >
-                                        <span 
-                                            style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
+                                        <Button
+                                            disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
+                                            variant="contained"                                        
+                                            onClick={() => handleUserNameInput()}
+                                        >
+                                            {intl.formatMessage({id: "NEXT"})}
+                                        </Button>
+                                        <Button
+                                            variant="contained"  
                                             onClick={() => {
-                                                setIsPasswordResetFlow(true);
-                                                setShowRecoveryEmailDialog(true);                                                
+                                                handleCancelAuthentication(userAuthenticationState);                                            
                                             }}
                                         >
-                                            {intl.formatMessage({id: "FORGOT_PASSWORD"})}?
-                                        </span>                                            
+                                            {intl.formatMessage({id: "CANCEL"})}
+                                        </Button>
                                     </Stack>
                                 </Grid2>
-                            }
-                            <Grid2 size={12}>
-                                <Stack
-                                    direction={"row-reverse"}
-                                >
-                                    <Button
-                                        disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
-                                        variant="contained"
-                                        onClick={() => {
-                                            // const form = document.getElementById("loginForm") as HTMLFormElement;
-                                            // (form.elements.namedItem("username") as HTMLInputElement).value = username || "";
-                                            // (form.elements.namedItem("password") as HTMLInputElement).value = password || "";
-                                            // setTimeout(() => {
-                                            //     form.submit()
-                                            // }, 50);
-                                            
-                                            setErrorMessage(null);
-                                            authenticateUser({
-                                                variables: {
-                                                    username: username,
-                                                    password: password,
-                                                    tenantId: userAuthenticationState.tenantId,
-                                                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
-                                                    preAuthToken: userAuthenticationState.preAuthToken
-                                                }
-                                            });
-                                        }}
+                                {tenantBean.getTenantMetaData().tenant.allowUserSelfRegistration &&
+                                    <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                                        <Stack
+                                            direction={"row-reverse"}
+                                            justifyItems={"center"}
+                                            alignItems={"center"}
+                                        >
+                                            <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
+                                                <Button
+                                                    disabled={false}
+                                                    variant="contained"                                                
+                                                >
+                                                    {intl.formatMessage({id: "REGISTER"})}
+                                                </Button>
+                                            </Link>
+
+                                            <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>{intl.formatMessage({id: "NEED_TO_CREATE_AN_ACCOUNT"})}</div>
+                                        </Stack>
+                                    </Grid2>
+                                }
+                                {tenantBean.getTenantMetaData().tenant.allowSocialLogin && tenantBean.getTenantMetaData().socialOIDCProviders.length > 0 &&
+                                    <React.Fragment>
+                                        <Grid2 size={{ xs: 12 }}>
+                                            <Divider>OR</Divider>
+                                        </Grid2>
+                                        <Typography width={"100%"} component="div">
+                                            {tenantBean.getTenantMetaData().socialOIDCProviders.map(
+                                                (provider: FederatedOidcProvider) => (
+                                                    <Grid2
+                                                        className="social-media-login-container"
+                                                        key={provider.federatedOIDCProviderId}
+                                                        onClick={() => {
+                                                            authenticateWithSocialOIDCProvider({
+                                                                variables: {
+                                                                    tenantId: tenantId,
+                                                                    preAuthToken: preAuthToken,
+                                                                    federatedOIDCProviderId: provider.federatedOIDCProviderId
+                                                                }
+                                                            })
+                                                        }}
+                                                        container spacing={0}
+                                                        size={{ xs: 12 }}
+                                                    >
+                                                        <Grid2 display={"flex"} alignContent={"center"} size={breakPoints.isMedium ? 2 : 1.5}>
+                                                            {getIconForSocialProvider(provider)}
+                                                        </Grid2>
+                                                        <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>{intl.formatMessage({id: "SIGN_IN_WITH"})} {provider.federatedOIDCProviderName}</Grid2>
+                                                    </Grid2>
+                                                )
+                                            )}
+                                        </Typography>
+                                    </React.Fragment>
+                                }
+                            </React.Fragment>
+                        }                    
+                        {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
+                            <React.Fragment>
+                                <Grid2 container size={12}>                                
+                                        <div style={{display: "hidden"}}>
+                                            <TextField
+                                                name="username"
+                                                autoComplete="username"
+                                                value={username}
+                                                type="hidden"
+                                                sx={{
+                                                    width: 0, // Sets the width to 0
+                                                    height: 0, // Sets the height to 0
+                                                    overflow: 'hidden', // Hides any overflowing content
+                                                    position: 'absolute', // Ensures it doesn't affect layout
+                                                    opacity: 0, // Makes it completely transparent
+                                                    pointerEvents: 'none', // Prevents interaction
+                                                }}
+                                            />
+                                        </div>
+                                        <Grid2  size={12}>
+                                            <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({ id: "SIGN_IN" })}</div>
+                                            <TextField
+                                                type="password"
+                                                id="password"
+                                                autoComplete="current-password"
+                                                required={true}
+                                                autoFocus={true}
+                                                label={intl.formatMessage({ id: "PASSWORD" })}
+                                                name="password"
+                                                fullWidth
+                                                onChange={(evt) => setPassword(evt.target.value)}
+                                                value={password}                                            
+                                            >
+                                            </TextField>
+
+                                        </Grid2>
+                                    
+                                </Grid2>
+                                
+                                {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
+                                    <Grid2 size={{ xs: 12 }}>
+                                        <Stack
+                                            direction={"row-reverse"}
+                                        >
+                                            <span 
+                                                style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
+                                                onClick={() => {
+                                                    setIsPasswordResetFlow(true);
+                                                    setShowRecoveryEmailDialog(true);                                                
+                                                }}
+                                            >
+                                                {intl.formatMessage({id: "FORGOT_PASSWORD"})}?
+                                            </span>                                            
+                                        </Stack>
+                                    </Grid2>
+                                }
+                                <Grid2 size={12}>
+                                    <Stack
+                                        direction={"row-reverse"}
                                     >
-                                        {intl.formatMessage({id: "LOGIN"})}
-                                    </Button>
-                                    <Button
-                                        disabled={false}
-                                        variant="contained"
-                                        onClick={() => { 
-                                            setErrorMessage(null); 
-                                            setPassword(""); 
-                                            setUserAuthenticationState({...authnState});
-                                        }}
+                                        <Button
+                                            disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
+                                            variant="contained"
+                                            onClick={() => {
+                                                // const form = document.getElementById("loginForm") as HTMLFormElement;
+                                                // (form.elements.namedItem("username") as HTMLInputElement).value = username || "";
+                                                // (form.elements.namedItem("password") as HTMLInputElement).value = password || "";
+                                                // setTimeout(() => {
+                                                //     form.submit()
+                                                // }, 50);
+                                                
+                                                setErrorMessage(null);
+                                                authenticateUser({
+                                                    variables: {
+                                                        username: username,
+                                                        password: password,
+                                                        tenantId: userAuthenticationState.tenantId,
+                                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                        preAuthToken: userAuthenticationState.preAuthToken
+                                                    }
+                                                });
+                                            }}
+                                        >
+                                            {intl.formatMessage({id: "LOGIN"})}
+                                        </Button>
+                                        <Button
+                                            disabled={false}
+                                            variant="contained"
+                                            onClick={() => { 
+                                                setErrorMessage(null); 
+                                                setPassword(""); 
+                                                setUserAuthenticationState({...authnState});
+                                            }}
+                                        >
+                                            {intl.formatMessage({id: "BACK"})}
+                                        </Button>
+                                        <Button
+                                            onClick={() => {
+                                                handleCancelAuthentication(userAuthenticationState);
+                                            }}
+                                            variant="contained"
+                                        >
+                                            {intl.formatMessage({id: "CANCEL"})}
+                                        </Button>
+                                    </Stack>
+                                </Grid2>
+                            </React.Fragment>
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.EnterPasswordAndMigrateUser &&
+                            <React.Fragment>
+                                <Grid2 size={{ xs: 12 }}>
+                                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>
+                                    <TextField
+                                        type="password"
+                                        id="password"
+                                        required={true}
+                                        autoFocus={true}
+                                        label={intl.formatMessage({id: "PASSWORD"})}
+                                        name="password"
+                                        fullWidth
+                                        onChange={(evt) => setPassword(evt.target.value)}                                    
+                                        value={password}                                    
                                     >
-                                        {intl.formatMessage({id: "BACK"})}
-                                    </Button>
-                                    <Button
-                                        onClick={() => {
-                                            handleCancelAuthentication(userAuthenticationState);
-                                        }}
-                                        variant="contained"
+                                    </TextField>
+                                </Grid2>
+                                <Grid2 size={12}>
+                                    <Stack
+                                        direction={"row-reverse"}
                                     >
-                                        {intl.formatMessage({id: "CANCEL"})}
-                                    </Button>
-                                </Stack>
-                            </Grid2>
-                        </React.Fragment>
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.EnterPasswordAndMigrateUser &&
-                        <React.Fragment>
-                            <Grid2 size={{ xs: 12 }}>
-                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>
-                                <TextField
-                                    type="password"
-                                    id="password"
-                                    required={true}
-                                    autoFocus={true}
-                                    label={intl.formatMessage({id: "PASSWORD"})}
-                                    name="password"
-                                    fullWidth
-                                    onChange={(evt) => setPassword(evt.target.value)}                                    
-                                    value={password}                                    
-                                >
-                                </TextField>
-                            </Grid2>
-                            <Grid2 size={12}>
-                                <Stack
-                                    direction={"row-reverse"}
-                                >
-                                    <Button
-                                        disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
-                                        variant="contained"
-                                        onClick={() => {
-                                            setErrorMessage(null);
-                                            authenticateUserAndMigrate({
-                                                variables: {
-                                                    username: username,
-                                                    password: password,
-                                                    tenantId: userAuthenticationState.tenantId,
-                                                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
-                                                    preAuthToken: userAuthenticationState.preAuthToken
-                                                }
-                                            });
-                                        }}
-                                    >
-                                        {intl.formatMessage({id: "LOGIN"})}
-                                    </Button>
-                                    <Button
-                                        disabled={false}
-                                        variant="contained"
-                                        onClick={() => { 
-                                            setErrorMessage(null); 
-                                            setPassword(""); 
-                                            setUserAuthenticationState({...authnState});
-                                        }}
-                                    >
-                                        {intl.formatMessage({id: "BACK"})}
-                                    </Button>
-                                    <Button
-                                        onClick={() => {
-                                            handleCancelAuthentication(userAuthenticationState);
-                                        }}
-                                        variant="contained"
-                                    >
-                                        {intl.formatMessage({id: "CANCEL"})}
-                                    </Button>
-                                </Stack>
-                            </Grid2>
-                        </React.Fragment>
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.RotatePassword && passwordConfig !== null &&
-                        <AuthentiationRotatePassword
-                            initialUserAuthenticationState={userAuthenticationState}
-                            passwordConfig={passwordConfig}
-                            isPasswordResetFlow={isPasswordResetFlow}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true)
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.ValidatePasswordResetToken &&
-                        <ValidatePasswordResetToken
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true)
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.ValidateEmail &&
-                        <ValidateEmailOnAuthentication
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true)
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp &&
-                        <AuthentiationConfigureTotp
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true)
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp &&
-                        <AuthentiationValidateTotp
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true);
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey &&
-                        <AuthentiationConfigureSecurityKey
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true);
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey &&
-                        <AuthentiationValidateSecurityKey
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true);
-                            }}
-                        />
-                    }
-                    {userAuthenticationState.authenticationState === AuthenticationState.AcceptTermsAndConditions &&
-                        <AuthentiationAcceptTermsAndConditions
-                            initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => {
-                                handleCancelAuthentication(userAuthenticationState);
-                            }}
-                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
-                                setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
-                            }}
-                            onUpdateStart={() => {
-                                setErrorMessage(null);
-                                setShowMutationBackdrop(true);
-                            }}
-                        />
-                    }
-                </Grid2>
+                                        <Button
+                                            disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
+                                            variant="contained"
+                                            onClick={() => {
+                                                setErrorMessage(null);
+                                                authenticateUserAndMigrate({
+                                                    variables: {
+                                                        username: username,
+                                                        password: password,
+                                                        tenantId: userAuthenticationState.tenantId,
+                                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                        preAuthToken: userAuthenticationState.preAuthToken
+                                                    }
+                                                });
+                                            }}
+                                        >
+                                            {intl.formatMessage({id: "LOGIN"})}
+                                        </Button>
+                                        <Button
+                                            disabled={false}
+                                            variant="contained"
+                                            onClick={() => { 
+                                                setErrorMessage(null); 
+                                                setPassword(""); 
+                                                setUserAuthenticationState({...authnState});
+                                            }}
+                                        >
+                                            {intl.formatMessage({id: "BACK"})}
+                                        </Button>
+                                        <Button
+                                            onClick={() => {
+                                                handleCancelAuthentication(userAuthenticationState);
+                                            }}
+                                            variant="contained"
+                                        >
+                                            {intl.formatMessage({id: "CANCEL"})}
+                                        </Button>
+                                    </Stack>
+                                </Grid2>
+                            </React.Fragment>
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.RotatePassword && passwordConfig !== null &&
+                            <AuthentiationRotatePassword
+                                initialUserAuthenticationState={userAuthenticationState}
+                                passwordConfig={passwordConfig}
+                                isPasswordResetFlow={isPasswordResetFlow}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ValidatePasswordResetToken &&
+                            <ValidatePasswordResetToken
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ValidateEmail &&
+                            <ValidateEmailOnAuthentication
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp &&
+                            <AuthentiationConfigureTotp
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp &&
+                            <AuthentiationValidateTotp
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true);
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey &&
+                            <AuthentiationConfigureSecurityKey
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true);
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey &&
+                            <AuthentiationValidateSecurityKey
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true);
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.AcceptTermsAndConditions &&
+                            <AuthentiationAcceptTermsAndConditions
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true);
+                                }}
+                            />
+                        }
+                    </Grid2>
+                </LoginLayout>
                 <Backdrop
                     sx={{ color: '#fff' }}
                     open={showMutationBackdrop}

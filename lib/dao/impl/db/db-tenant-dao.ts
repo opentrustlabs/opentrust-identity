@@ -221,18 +221,22 @@ class DBTenantDao extends TenantDao {
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const tenantLookAndFeelRepo = await RDBDriver.getInstance().getTenantLookAndFeelRepository();
-        await tenantLookAndFeelRepo.insert(tenantLookAndFeel);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { footerlinks, ...entity } = tenantLookAndFeel;
+        await tenantLookAndFeelRepo.insert(entity);
         return Promise.resolve(tenantLookAndFeel);
     }
 
 
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const tenantLookAndFeelRepo = await RDBDriver.getInstance().getTenantLookAndFeelRepository();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { footerlinks, ...entity } = tenantLookAndFeel;
         await tenantLookAndFeelRepo.update(
             {
                 tenantid: tenantLookAndFeel.tenantid
             },
-            tenantLookAndFeel
+            entity
         );
         return Promise.resolve(tenantLookAndFeel);
     }

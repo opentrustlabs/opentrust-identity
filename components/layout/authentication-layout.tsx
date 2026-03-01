@@ -3,8 +3,8 @@ import React, { ReactNode, useContext } from "react";
 import AuthenticationHeader from "./authentication-header";
 import AuthenticationFooter from "./authentication-footer";
 import Container from "@mui/material/Container";
-import { Grid2 } from "@mui/material";
-import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TENANT_META_DATA, DEFAULT_TEXT_COLOR, QUERY_PARAM_TENANT_ID, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
+import { CssBaseline, Grid2 } from "@mui/material";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TENANT_META_DATA, DEFAULT_TEXT_COLOR, QUERY_PARAM_TENANT_ID, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, DEFAULT_TENANT_LOOK_AND_FEEL } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { useSearchParams } from "next/navigation";
@@ -13,6 +13,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import ErrorComponent from "../error/error-component";
 import DataLoading from "./data-loading";
+import { TenantLookAndFeel } from "@/graphql/generated/graphql-types";
 
 interface LayoutProps {
     children: ReactNode
@@ -35,6 +36,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
         backgroundColor = tenantBean.getTenantMetaData().tenantLookAndFeel?.headerbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
     }
    
+    // STATE VARIABLES
+    const [lookAndFeel, setLookAndFeel] = React.useState<TenantLookAndFeel>();
  
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
@@ -44,7 +47,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
         skip: tenantId === null || tenantId === undefined,
         onCompleted(data) {            
             if(data.getTenantMetaData !== null){             
-                tenantBean.setTenantMetaData(data.getTenantMetaData);             
+                tenantBean.setTenantMetaData(data.getTenantMetaData);
+                setLookAndFeel(data.getTenantMetaData.tenantLookAndFeel || DEFAULT_TENANT_LOOK_AND_FEEL);
             }    
         }
     });
@@ -52,9 +56,11 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
     if(loading) return <DataLoading dataLoadingSize={"lg"} color={null} />
     if(error) return <ErrorComponent componentSize={"xl"} message={error.message}  />
 
-    if(tenantBean && tenantBean.getTenantMetaData()){
-        const theme = createTheme({    
-            components: {
+    if(lookAndFeel){
+        const palette = lookAndFeel.pagebackgroundcolor ? {background: {default: lookAndFeel.pagebackgroundcolor }} : {};
+        const theme = createTheme({
+            palette: palette,
+            components: {                
                 MuiButton: {
                     defaultProps: {
                         variant: "contained"
@@ -76,16 +82,23 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                             fontSize: "0.9em",
                             height: "100%", 
                             padding: "8px 32px 8px 32px", 
-                            marginLeft: "8px" 
+                            marginLeft: "8px",
+                            borderRadius: tenantBean.getTenantMetaData().tenantLookAndFeel?.buttonborderradius ?? "4px"
                         }                        
                     }        
                 },
                 MuiTextField: {
                     styleOverrides: {
                         root: {
-                            
-                        },
-                        
+                            '& .MuiOutlinedInput-root': {
+                                '& fieldset, &:hover fieldset, &.Mui-focused fieldset': {
+                                    borderColor: lookAndFeel.inputbordercolor || "default",
+                                }                                
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: lookAndFeel.inputbordercolor || "default"
+                            }
+                        }                        
                     }
                 },
                 MuiTypography: {
@@ -108,7 +121,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
             <div
                 style={{ }}
             >
-                <ThemeProvider theme={theme}>                
+                <ThemeProvider theme={theme}>
+                    <CssBaseline />
                     <AuthenticationHeader
                         tenantMetaData={
                             tenantBean.getTenantMetaData().tenant.tenantId === "" || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()

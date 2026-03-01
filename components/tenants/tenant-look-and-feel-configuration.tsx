@@ -12,7 +12,8 @@ import TextField from "@mui/material/TextField";
 import ColorizeIcon from '@mui/icons-material/Colorize';
 import EditIcon from '@mui/icons-material/Edit';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { Alert, Box, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, IconButton, InputLabel, MenuItem, Select, Typography } from "@mui/material";
+import CancelPresentationOutlinedIcon from '@mui/icons-material/CancelPresentationOutlined';
+import { Alert, Backdrop, Box, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, IconButton, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, IMAGE_PANEL_LEFT, IMAGE_PANEL_POSITIONS, LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPE_TWO_COLUMN, LOGO_HEADER_POSITION_LEFT, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { HexColorPicker } from "react-colorful";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
@@ -21,6 +22,7 @@ import { useIntl } from 'react-intl';
 import { containsScope } from "@/utils/authz-utils";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import AuthScreenPreview from "./auth-screen-preview";
+import { ResponsiveContext } from "../contexts/responsive-context";
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
@@ -41,6 +43,8 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     const intl = useIntl();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const responsiveContext = useContext(ResponsiveContext);
+    
 
     const initInput: TenantLookAndFeelInput = {
         tenantid: tenantId,
@@ -72,12 +76,14 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     const [hasSystemDefaultLookAndFeel, setHasSystemDefaultLookAndFeel] = React.useState<boolean>(false);
     const [showConfirmRestoreLookAndFeelDefaultDialog, setShowConfirmRestoreLookAndFeelDefaultDialog] = React.useState<boolean>(false);
     const [editDialogOpen, setEditDialogOpen] = React.useState<boolean>(false);
+    const [showUpdatingBackdrop, setShowUpdatingBackdrop] = React.useState<boolean>(false);
 
     // Color picker state — generic approach using a field key
     const [colorPickerOpen, setColorPickerOpen] = React.useState(false);
     const [colorPickerField, setColorPickerField] = React.useState<string>("");
     const [colorPickerLabel, setColorPickerLabel] = React.useState<string>("");
     const [tempColor, setTempColor] = React.useState("");
+
 
     const openColorPicker = (field: string, label: string) => {
         setColorPickerField(field);
@@ -147,11 +153,14 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         onCompleted() {
             onUpdateEnd(true);
             setMarkDirty(false);
+            setShowUpdatingBackdrop(false);
+            setEditDialogOpen(false);
             refetch();
         },
         onError(error) {
             onUpdateEnd(false);
             setTenantLookAndFeelInput({...revertToInput});
+            setShowUpdatingBackdrop(false)
             setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
@@ -229,7 +238,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
 
     // Extracted config inputs panel for use inside the edit dialog
     const renderConfigInputs = () => (
-        <Grid2 container size={12} spacing={1}>
+        <Grid2 container size={12} spacing={1} marginBottom={"16px"}>
             {errorMessage &&
                 <Grid2 marginBottom={"12px"} size={12}>
                     <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
@@ -470,18 +479,18 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 </DialogActions>
             </Dialog>
 
-            {/* Main View: Edit Button + Previews */}
+            {/* Main View: Edit Button + Previews */}            
             <Box sx={{ mb: 2 }}>
                 <Button
                     variant="outlined"
                     startIcon={<EditIcon />}
                     onClick={() => setEditDialogOpen(true)}
-                    disabled={readOnly}
+                    disabled={readOnly || responsiveContext.isMedium}
                     sx={{ mb: 2 }}
                 >
-                    Edit Look and Feel
+                    {responsiveContext.isMedium ? "Edit Only Available On Desktop" : "Edit"}
                 </Button>
-            </Box>
+            </Box>            
 
             {/* Desktop Preview */}
             <Box sx={{ mb: 1 }}>
@@ -508,11 +517,28 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 maxWidth="xl"
                 fullWidth={true}
             >
-                <DialogTitle>Edit Look and Feel</DialogTitle>
+                <DialogTitle>
+                    <CancelPresentationOutlinedIcon
+                        onClick={() => setEditDialogOpen(false)} 
+                        sx={{
+                            position: "absolute",
+                            right: 8,
+                            top: 8,
+                            cursor: "pointer"                            
+                        }}                        
+                    />
+                </DialogTitle>
                 <DialogContent>
-                    <Grid2 container spacing={2} sx={{ mt: 1 }}>
+                    <Backdrop
+                        sx={{ color: '#fff'}}
+                        open={showUpdatingBackdrop}
+                        onClick={() => setShowUpdatingBackdrop(false)}
+                    >
+                        <CircularProgress color="info" />
+                    </Backdrop>
+                    <Grid2 container spacing={2} >
                         {/* Left: Previews */}
-                        <Grid2 size={9}>
+                        <Grid2 size={responsiveContext.isLarge ? 8.5 : 9.5}>
                             <Box sx={{ mb: 1 }}>
                                 <Typography variant="caption" sx={{ fontWeight: "bold", color: "#666" }}>Desktop Preview</Typography>
                             </Box>
@@ -530,29 +556,28 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         </Grid2>
 
                         {/* Right: Config Inputs */}
-                        <Grid2 size={3} sx={{ pl: 2 }}>
+                        <Grid2 size={responsiveContext.isLarge ? 3.5 : 2.5}>
+
                             {renderConfigInputs()}
-                            <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                                <DetailSectionActionHandler
-                                    onDiscardClickedHandler={() => {
-                                        setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
-                                        setMarkDirty(false);
-                                    }}
-                                    onUpdateClickedHandler={() => {
-                                        onUpdateStart();
-                                        mutateTenantLookAndFeel();
-                                    }}
-                                    markDirty={markDirty}
-                                    disableSubmit={!containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
-                                    enableRestoreDefault={hasSystemDefaultLookAndFeel === false}
-                                    restoreDefaultHandler={() => {
-                                        setShowConfirmRestoreLookAndFeelDefaultDialog(true);
-                                    }}
-                                />
-                                <Button onClick={() => setEditDialogOpen(false)} variant="outlined">
-                                    Close
-                                </Button>
-                            </Box>
+                            
+                            <DetailSectionActionHandler
+                                onDiscardClickedHandler={() => {
+                                    setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
+                                    setMarkDirty(false);
+                                }}
+                                onUpdateClickedHandler={() => {
+                                    onUpdateStart();
+                                    setShowUpdatingBackdrop(true);
+                                    mutateTenantLookAndFeel();
+                                }}
+                                markDirty={markDirty}
+                                disableSubmit={!containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
+                                enableRestoreDefault={hasSystemDefaultLookAndFeel === false}
+                                restoreDefaultHandler={() => {
+                                    setShowConfirmRestoreLookAndFeelDefaultDialog(true);
+                                }}
+                            />
+                            
                         </Grid2>
                     </Grid2>
                 </DialogContent>
