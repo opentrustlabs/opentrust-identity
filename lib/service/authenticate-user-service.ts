@@ -1507,15 +1507,18 @@ class AuthenticateUserService extends IdentityService {
             return {isValid: false, errorDetail: ERROR_CODES.EC00118, isDuress: false};
         }
         const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
+        console.log(userFailedLoginAttempts);
+        
         let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(tenantId);
         if(loginFailurePolicy === null){
             loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
         }
+        
 
-        // We will check to see if the user can authenticate based on the number of failures they have previously
-        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
+        // We will check to see if the user can authenticate based on the number of failures they have had previously
+        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.        
         if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
-            if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
+            if(userFailedLoginAttempts[userFailedLoginAttempts.length - 1].nextLoginNotBefore > Date.now()){
                 return {isValid: false, errorDetail: ERROR_CODES.EC00119, isDuress: false}
             }
         }
@@ -1699,7 +1702,6 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError = ERROR_CODES.EC00097;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return;
-            
         }
         if(userAuthenticationState.deviceCodeId){
             const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userAuthenticationState.deviceCodeId, "devicecodeid");
@@ -1713,16 +1715,22 @@ class AuthenticateUserService extends IdentityService {
         if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){    
             try {
                 if(!userAuthenticationState.preAuthToken){
-                    throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
+                    response.authenticationError = ERROR_CODES.EC00182;
+                    response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                    return;
                 }
                 const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(userAuthenticationState.preAuthToken);
                 
                 if(preAuthenticationState === null){
-                    throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
+                    response.authenticationError = ERROR_CODES.EC00182;
+                    response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                    return;                    
                 }                
                 if(preAuthenticationState.expiresAtMs < Date.now()){
                     await authDao.deletePreAuthenticationState(userAuthenticationState.preAuthToken);
-                    throw new GraphQLError(ERROR_CODES.EC00183.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00183}});
+                    response.authenticationError = ERROR_CODES.EC00183;
+                    response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                    return;
                 }
                 // Before checking whether this is a FAPI or OIDC type of pre-auth-token, we can
                 // set some common values on the response and delete the existing pre-auth data.

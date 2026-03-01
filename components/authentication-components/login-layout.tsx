@@ -29,7 +29,7 @@ const LoginLayout: React.FC<LoginLayoutProps> = ({
                                         {tenantLookAndFeel.marketingimageuri &&
                                             <img
                                                 src={tenantLookAndFeel.marketingimageuri}
-                                                style={{ maxWidth: "95%", maxHeight: 420, objectFit: "contain" }}
+                                                style={{ maxWidth: "95%", objectFit: "contain" }}
                                             />
                                         }
                                     </div>
@@ -54,7 +54,7 @@ const LoginLayout: React.FC<LoginLayoutProps> = ({
                                         {tenantLookAndFeel.marketingimageuri &&
                                             <img
                                                 src={tenantLookAndFeel.marketingimageuri}
-                                                style={{ maxWidth: "95%", maxHeight: 420, objectFit: "contain" }}
+                                                style={{ maxWidth: "95%", objectFit: "contain" }}
                                             />
                                         }
                                     </div>
