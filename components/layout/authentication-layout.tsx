@@ -76,8 +76,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                                     
                                 }
                             ],
-                            color: textColor,
-                            backgroundColor: backgroundColor,
+                            color: lookAndFeel.buttontextcolor || textColor,
+                            backgroundColor: lookAndFeel.buttonbackgroundcolor || backgroundColor,
                             fontWeight: "bold",
                             fontSize: "0.9em",
                             height: "100%", 

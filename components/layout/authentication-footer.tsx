@@ -6,8 +6,6 @@ import Grid2 from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import Link from "next/link";
 import React from "react";
-
-
 export interface AuthenticationFooterProps {
     tenantMetaData: TenantMetaData,
     isAuthenticateToPortal: boolean
@@ -45,14 +43,16 @@ const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
                         <Stack direction="row" spacing={1} >
                             {tenantMetaData.tenantLookAndFeel.footerlinks.map(
                                 (link: FooterLink) => (
-                                    <span>
-                                        <Link
-                                            href={link.uri}
-                                            target="_blank"
-                                        >
-                                            {link.linktext}
-                                        </Link>
-                                    </span>
+                                    <React.Fragment key={link.footerlinkid}>
+                                        <span>
+                                            <Link
+                                                href={link.uri}
+                                                target="_blank"
+                                            >
+                                                {link.linktext}
+                                            </Link>
+                                        </span>
+                                    </React.Fragment>
                                 )
                             )}
                         </Stack>
@@ -60,9 +60,6 @@ const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
                 </Grid2>
             </Container>
         </div>
-
-
-        
     )
 }
 
