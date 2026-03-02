@@ -945,7 +945,7 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
     EC00183: {
         errorCode: "EC00183",
         errorKey: "ERROR_PRE_AUTHENTICATION_TOKEN_IS_EXPIRED",
-        errorMessage: "You authorization session has expired."
+        errorMessage: "Your authorization session has expired."
     },
     EC00184: {
         errorCode: "EC00184",
