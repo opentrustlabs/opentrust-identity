@@ -513,7 +513,7 @@ create TABLE tenant_look_and_feel (
     marketingtext VARCHAR2(1024),
     imagepanelposition VARCHAR2(16),
     buttonborderradius VARCHAR2(16),
-    headerlogoposition VARCHAR2(16),	
+    headerlogoposition VARCHAR2(16),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
