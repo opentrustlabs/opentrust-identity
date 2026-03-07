@@ -1,6 +1,6 @@
 "use client";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
-import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, LOGO_HEADER_POSITION_CENTER, LOGO_HEADER_POSITION_LEFT, LOGO_HEADER_POSITION_RIGHT } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, LOGO_HEADER_POSITION_CENTER, LOGO_HEADER_POSITION_RIGHT } from "@/utils/consts";
 import { Container, Stack } from "@mui/material";
 import React from "react";
 

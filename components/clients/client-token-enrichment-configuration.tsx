@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { TokenEnrichmentConfiguration, TokenEnrichmentConfigurationInput, TokenEnrichmentFailureMode } from "@/graphql/generated/graphql-types";
+import { TokenEnrichmentConfiguration, TokenEnrichmentFailureMode } from "@/graphql/generated/graphql-types";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import DialogContent from "@mui/material/DialogContent";

@@ -10,7 +10,7 @@ export interface ManagementFooterProps {
 }
 
 const ManagementFooter: React.FC<ManagementFooterProps> = ({
-    tenantMetaData
+    
 }) => {
 
 
@@ -30,13 +30,7 @@ const ManagementFooter: React.FC<ManagementFooterProps> = ({
             <Container
                 maxWidth={false}
             >
-                <div>
-                    {
-                        /* TODO
-                            Add footer links
-                        */
-                    }
-                </div>
+                <div></div>
             </Container>
         </div>
         
