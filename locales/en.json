@@ -182,7 +182,7 @@
     "ERROR_INVALID_CREDENTIAL_ID": "The credential ID for the security is not valid.",
     "ERROR_CANNOT_OBTAIN_COUNTER_VALUE": "Unable to determin the counter value for the security key.",
     "ERROR_INVALID_PRE_AUTHENTICATION_TOKEN": "Your authorization session cannot be found.",
-    "ERROR_PRE_AUTHENTICATION_TOKEN_IS_EXPIRED": "You authorization session has expired.",
+    "ERROR_PRE_AUTHENTICATION_TOKEN_IS_EXPIRED": "Your authorization session has expired.",
     "ERROR_YOU_DO_NOT_HAVE_SUFFICIENT_PERMISSIONS_TO_VIEW_THIS_PAGE": "You do not have sufficient permission to view this page.",
     "ERROR_AUDIT_RECORD_RETENTION_PERIOD_MUST_BE_GREATER_THAN_0_DAYS": "The audit record retention period must be greater than 0 days.",
     "ERROR_SERVICE_ACCOUNT_INCOMPATABLE_WITH_OIDC": "A service account cannot be enabled for OIDC (SSO)",

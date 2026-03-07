@@ -740,15 +740,23 @@ create TABLE tenant_anonymous_user_configuration (
 
 create TABLE tenant_look_and_feel (
     tenantid UUID PRIMARY KEY,
-    adminheaderbackgroundcolor TEXT,
-    adminheadertextcolor TEXT,
-    adminheadertext TEXT,
     authenticationheaderbackgroundcolor TEXT,
     authenticationheadertextcolor TEXT,    
     authenticationlogouri TEXT,
-    authenticationlogomimetype TEXT,
     authenticationheadertext TEXT,
-    authenticationlogo BLOB
+    buttonbackgroundcolor TEXT,
+    buttontextcolor TEXT,
+    inputbordercolor TEXT,
+    pagebackgroundcolor TEXT,
+    footerbackgroundcolor TEXT,
+    footertextcolor TEXT,
+    linkcolor TEXT,
+    layouttype TEXT,
+    marketingimageuri TEXT,
+    marketingtext TEXT,
+    imagepanelposition TEXT,
+    buttonborderradius TEXT,
+    headerlogoposition TEXT
 );
 
 create TABLE footer_link (

@@ -859,17 +859,25 @@ type ChangeEvent {
 }
 
 type TenantLookAndFeel {
-    tenantid: String!
-    adminheaderbackgroundcolor: String
-    adminheadertextcolor: String
-    adminheadertext: String
-    authenticationheaderbackgroundcolor: String
-    authenticationheadertextcolor: String
-    authenticationlogo: String
-    authenticationlogouri: String
-    authenticationlogomimetype: String
-    authenticationheadertext: String
-    footerlinks: [FooterLink]
+    tenantid: String!    
+    headerbackgroundcolor: String
+    headertextcolor: String
+    logouri: String
+    headertext: String
+    buttonbackgroundcolor: String
+    buttontextcolor: String
+    inputbordercolor: String
+    pagebackgroundcolor: String
+    footerbackgroundcolor: String
+    footertextcolor: String
+    linkcolor: String
+    layouttype: String
+    marketingimageuri: String
+    marketingtext: String
+    imagepanelposition: String
+    buttonborderradius: String
+    headerlogoposition: String
+    footerlinks: [FooterLink!]!
 }
 
 type FooterLink {
@@ -1480,23 +1488,30 @@ input TenantLegacyUserMigrationConfigInput {
 }
 
 input FooterLinkInput {
-    footerlinkid: String
     tenantid: String!
     linktext: String!
     uri: String!
 }
 
 input TenantLookAndFeelInput {
-    tenantid: String!
-    adminheaderbackgroundcolor: String
-    adminheadertextcolor: String
-    adminheadertext: String
-    authenticationheaderbackgroundcolor: String
-    authenticationheadertextcolor: String
-    authenticationlogo: String
-    authenticationlogouri: String
-    authenticationlogomimetype: String
-    authenticationheadertext: String
+    tenantid: String!    
+    headerbackgroundcolor: String
+    headertextcolor: String
+    logouri: String
+    headertext: String
+    buttonbackgroundcolor: String
+    buttontextcolor: String
+    inputbordercolor: String
+    pagebackgroundcolor: String
+    footerbackgroundcolor: String
+    footertextcolor: String
+    linkcolor: String
+    layouttype: String
+    marketingimageuri: String
+    marketingtext: String
+    imagepanelposition: String
+    buttonborderradius: String
+    headerlogoposition: String
     footerlinks: [FooterLinkInput]
 }
 

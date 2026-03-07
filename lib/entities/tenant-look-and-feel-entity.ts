@@ -1,77 +1,114 @@
 import { EntitySchema } from 'typeorm';
-import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
-
-const {
-    RDB_DIALECT
-} = process.env;
-
-const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
-
 
 const TenantLookAndFeelEntity = new EntitySchema({
-
 
     columns: {
         tenantid: {
             type: String,
             primary: true,
             name: "tenantid"
-        },
-        adminheaderbackgroundcolor: {
+        },        
+        headerbackgroundcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "adminheaderbackgroundcolor"
+            name: "headerbackgroundcolor"
         },
-        adminheadertext: {
+        headertext: {
             type: String,
             primary: false,
             nullable: true,
-            name: "adminheadertext"
+            name: "headertext"
         },
-        adminheadertextcolor: {
+        headertextcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "adminheadertextcolor"
+            name: "headertextcolor"
         },
-        authenticationheaderbackgroundcolor: {
+        logouri: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationheaderbackgroundcolor"
-        },
-        authenticationheadertext: {
+            name: "logouri"
+        },        
+        buttonbackgroundcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationheadertext"
+            name: "buttonbackgroundcolor"
         },
-        authenticationheadertextcolor: {
+        buttontextcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationheadertextcolor"
+            name: "buttontextcolor"
         },
-
-        authenticationlogouri: {
+        inputbordercolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationlogouri"
+            name: "inputbordercolor"
         },
-        authenticationlogomimetype: {
+        pagebackgroundcolor: {
             type: String,
             primary: false,
             nullable: true,
-            name: "authenticationlogomimetype"
+            name: "pagebackgroundcolor"
         },
-        authenticationlogo: {
-            type: blobType,
+        footerbackgroundcolor: {
+            type: String,
             primary: false,
             nullable: true,
-            name: "authenticationlogo",
-            transformer: stringToBlobTransformer()
+            name: "footerbackgroundcolor"
+        },
+        footertextcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "footertextcolor"
+        },
+        linkcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "linkcolor"
+        },
+        layouttype: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "layouttype"
+        },    
+        marketingimageuri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "marketingimageuri"
+        },
+        marketingtext: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "marketingtext"
+        },
+        imagepanelposition: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "imagepanelposition"
+        },
+        buttonborderradius: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "buttonborderradius"
+        },
+        headerlogoposition: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "headerlogoposition"
         }
     },
     tableName: "tenant_look_and_feel",

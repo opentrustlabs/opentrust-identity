@@ -906,6 +906,26 @@ you would want to check for certificate expiration, CA constraints, duplicate su
 and deprecated hash algorithms.
 
 
+### Updates
+
+Periodically, the application will be updated. These updates may encompass anything from 
+simple bug fixes to entirely new features. It is expected that some of the updates will
+require changes to the database schema or the search schema, as well as data 
+modifications (e.g. INSERTs, UPDATEs, and DELETEs).
+
+All changes will be documented in the directory
+
+`/scripts/migrations`
+
+where there will be sub-folders with names that will indicate the version that is being
+migrated "from" to the verstion that is being migrated "to". In each of these folders there will
+be detailed instructions on how to execute the migration path.
+
+The other files under the `/scripts` directory for database and search engine schema definitions
+and data inserts will always be up-to-date with respect to the version of the application as
+defined in the package.json file.
+
+
 ### License
 
 This tool is released under the GNU Affero General Public License (AGPL). Which basically means that you can 

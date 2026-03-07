@@ -666,21 +666,9 @@ const resolvers: Resolvers = {
             await tenantService.removeTenantAnonymousUserConfig(tenantId);
             return tenantId;
         },
-        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {            
-            const tenantService: TenantService = new TenantService(oidcContext);
-            const tenantLookAndFeel: TenantLookAndFeel = {
-                tenantid: tenantLookAndFeelInput.tenantid,
-                authenticationheaderbackgroundcolor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
-                authenticationheadertextcolor: tenantLookAndFeelInput.authenticationheadertextcolor,
-                authenticationheadertext: tenantLookAndFeelInput.authenticationheadertext,
-                authenticationlogo: tenantLookAndFeelInput.authenticationlogo,
-                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype,
-                adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
-                adminheadertext: tenantLookAndFeelInput.adminheadertext,
-                adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
-                authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri
-            }
-            await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
+        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);            
+            const tenantLookAndFeel = await tenantService.setTenantLookAndFeel(tenantLookAndFeelInput);
             return tenantLookAndFeel;
         },
         removeTenantLookAndFeel: async(_: any, { tenantId }, oidcContext) => {

@@ -503,15 +503,23 @@ create TABLE tenant_anonymous_user_configuration (
 
 create TABLE tenant_look_and_feel (
     tenantid VARCHAR(64) PRIMARY KEY,
-    adminheaderbackgroundcolor VARCHAR(32),
-    adminheadertextcolor VARCHAR(32),
-    adminheadertext VARCHAR(128),
-    authenticationheaderbackgroundcolor VARCHAR(32),
-    authenticationheadertextcolor VARCHAR(32),    
-    authenticationlogouri VARCHAR(256),
-    authenticationlogomimetype VARCHAR(16),
-    authenticationheadertext VARCHAR(128),
-    authenticationlogo BLOB,
+    headerbackgroundcolor VARCHAR(32),
+    headertextcolor VARCHAR(32),    
+    logouri VARCHAR(256),
+    headertext VARCHAR(128),
+    buttonbackgroundcolor VARCHAR(32),
+    buttontextcolor VARCHAR(32),
+    inputbordercolor VARCHAR(32),
+    pagebackgroundcolor VARCHAR(32),
+    footerbackgroundcolor VARCHAR(32),
+    footertextcolor VARCHAR(32),
+    linkcolor VARCHAR(32),
+    layouttype VARCHAR(32),
+    marketingimageuri VARCHAR(256),
+    marketingtext VARCHAR(1024),
+    imagepanelposition VARCHAR(16),
+    buttonborderradius VARCHAR(16),
+    headerlogoposition VARCHAR(16),	
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 

@@ -115,14 +115,28 @@ export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
     mutation setTenantLookAndFeel($tenantLookAndFeelInput: TenantLookAndFeelInput!) {
         setTenantLookAndFeel(tenantLookAndFeelInput: $tenantLookAndFeelInput) {
             tenantid
-            adminheaderbackgroundcolor
-            adminheadertextcolor
-            adminheadertext
-            authenticationheaderbackgroundcolor
-            authenticationheadertextcolor
-            authenticationlogo
-            authenticationlogomimetype
-            authenticationheadertext     
+            headerbackgroundcolor
+            headertextcolor
+            headertext
+            buttonbackgroundcolor
+            buttontextcolor
+            inputbordercolor
+            pagebackgroundcolor
+            footerbackgroundcolor
+            footertextcolor
+            linkcolor
+            layouttype
+            marketingimageuri
+            marketingtext
+            imagepanelposition
+            buttonborderradius
+            headerlogoposition
+            footerlinks {
+                footerlinkid
+                tenantid
+                linktext
+                uri
+            }
         }
     }
 `);

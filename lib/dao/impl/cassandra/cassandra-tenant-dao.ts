@@ -1,4 +1,4 @@
-import { Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory, UserTenantRel, FooterLink } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
@@ -163,13 +163,17 @@ class CassandraTenantDao extends TenantDao {
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
-        await mapper.insert(tenantLookAndFeel);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { footerlinks, ...entity } = tenantLookAndFeel;
+        await mapper.insert(entity);
         return tenantLookAndFeel;
     }
 
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
-        await mapper.update(tenantLookAndFeel);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { footerlinks, ...entity } = tenantLookAndFeel;
+        await mapper.update(entity);
         return tenantLookAndFeel;
     }
     
@@ -177,6 +181,30 @@ class CassandraTenantDao extends TenantDao {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
         const id = types.Uuid.fromString(tenantId);
         await mapper.remove({tenantid: id});
+        return;
+    }
+
+    public async getFooterLinks(tenantId: string): Promise<FooterLink[]> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("footer_link");
+        const id = types.Uuid.fromString(tenantId);
+        const result = await mapper.find({tenantid: id});
+        return result.toArray() as FooterLink[];
+    }
+
+    public async createFooterLink(footerLink: FooterLink): Promise<FooterLink> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("footer_link");
+        await mapper.insert(footerLink);
+        return footerLink;
+    }
+
+    public async deleteFooterLinksByTenantId(tenantId: string): Promise<void> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("footer_link");
+        const id = types.Uuid.fromString(tenantId);
+        const result = await mapper.find({tenantid: id});
+        const links = result.toArray();
+        for (const link of links) {
+            await mapper.remove({footerlinkid: link.footerlinkid});
+        }
         return;
     }
 

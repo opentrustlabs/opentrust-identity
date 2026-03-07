@@ -1,26 +1,36 @@
-import type { FooterLink } from "@/graphql/generated/graphql-types";
+import { EntitySchema } from 'typeorm';
 
 
-// @Entity({
-//     tableName: "footer_link"
-// })
-class FooterLinkEntity implements FooterLink {
+const FooterLinkEntity = new EntitySchema({
 
-    constructor(m?: FooterLink){
-        if(m){
-            Object.assign(this, m);
+    columns: {
+        footerlinkid: {
+            type: String,
+            primary: true,
+            name: "footerlinkid"
+        },
+        tenantid: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        linktext: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "linktext"
+        },
+        uri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "uri"
         }
-    }
-    __typename?: "FooterLink";
+    },
+    tableName: "footer_link",
+    name: "footerLink"
+});
 
-    footerlinkid: string;
-    linktext: string;
-
-    tenantid: string;
-
-    uri: string;
-    
-    
-}
 
 export default FooterLinkEntity;

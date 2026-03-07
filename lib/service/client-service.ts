@@ -492,18 +492,15 @@ class ClientService {
             }
             // Block bare IP addresses (both v4 an v6)
             if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
-                // TODO - new error code
                 throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
             }
 
             // Block IPv6 addresses
             if (/^\[?[a-f0-9:]+\]?$/.test(hostname)) {
-                // TODO - new error code
                 throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
             }            
         }
-        catch(e){
-            // TODO - new error code
+        catch{
             throw new GraphQLError(ERROR_CODES.EC00233.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00233}});
         }
 
