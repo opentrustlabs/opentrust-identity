@@ -21,7 +21,7 @@ const ManagementFooter: React.FC<ManagementFooterProps> = ({
                 backgroundColor: DEFAULT_BACKGROUND_COLOR, 
                 width: "100%", 
                 minHeight: "4vh", 
-                color: tenantMetaData.tenantLookAndFeel?.adminheadertextcolor || DEFAULT_TEXT_COLOR,
+                color: DEFAULT_TEXT_COLOR,
                 borderTop: "solid 1px lightgray",
                 boxShadow: "0px 0px 1vh 0px grey",
             }}

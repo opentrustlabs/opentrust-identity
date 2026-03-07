@@ -81,12 +81,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                     justifyItems={"center"}
                     alignItems={"center"}
                 >
-                    {tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext &&
-                        <div style={{ verticalAlign: "center", fontWeight: "bold", marginLeft: "8px" }}>{tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext}</div>
-                    }
-                    {!tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext &&
-                        <div style={{ verticalAlign: "center", fontWeight: "bold", padding: "8px" }}>OpenTrust Identity</div>
-                    }
+                    <div style={{ verticalAlign: "center", fontWeight: "bold", padding: "8px" }}>OpenTrust Identity</div>
                 </Stack>
                 <Stack
                     direction={"row"}
