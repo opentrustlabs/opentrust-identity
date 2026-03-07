@@ -1,41 +1,15 @@
 import type { NextConfig } from "next";
 
-const isDev = process.env.NODE_ENV === "development";
-
-// const cspHeader = `
-//     default-src 'self';
-//     script-src 'self' 'unsafe-eval' 'unsafe-inline';
-//     style-src 'self' 'unsafe-inline';
-//     img-src 'self' blob: data:;
-//     font-src 'self';
-//     object-src 'none';
-//     base-uri 'self';
-//     form-action 'self';
-//     frame-ancestors 'none';
-//     upgrade-insecure-requests;
-// `
-
-const CONTENT_SECURITY_POLICY = isDev
-  ? `
-      default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline';
-      style-src 'self' 'unsafe-inline';
-      connect-src 'self';
-      img-src 'self' https:;
-    `
-  : `
-      default-src 'self';
-      script-src 'self';
-      style-src 'self';     
-      img-src 'self' https:; 
-      connect-src 'self';
-      font-src 'self';
-      object-src 'none';
-      base-uri 'self';
-      frame-ancestors 'none';
-      form-action 'self';
-      upgrade-insecure-requests;
-    `;
+// Minimal CSP applied at the app level.
+// script-src, style-src, connect-src, font-src, img-src are intentionally
+// omitted here — configure those in your nginx/Apache reverse proxy where
+// you can tune them without rebuilding the image.
+const CONTENT_SECURITY_POLICY = `
+  object-src 'none';
+  base-uri 'self';
+  frame-ancestors 'none';
+  form-action 'self';
+`;
 
 const nextConfig: NextConfig = {
   
