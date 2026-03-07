@@ -128,7 +128,7 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: "24px",
+            padding: "16px 8px",
             backgroundColor: "#fefefe",
             minHeight: 200
         }}>
@@ -141,7 +141,7 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
                 <img
                     src={config.marketingimageuri}
                     alt="Marketing"
-                    style={{ maxWidth: "80%", maxHeight: 180, objectFit: "contain" }}
+                    style={{ maxWidth: "100%", maxHeight: 180, objectFit: "contain" }}
                 />
             )}
             
@@ -195,7 +195,7 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "24px 16px"
+                padding: "24px"
             }}>
                 {isTwoColumn ? (
                     <div style={{
@@ -211,7 +211,7 @@ const AuthScreenPreview: React.FC<AuthScreenPreviewProps> = ({ config, width = "
                         {marketingOnLeft && marketingPanel}
                         <div style={{
                             flex: 1,
-                            padding: "32px 28px",
+                            padding: "32px 24px",
                             display: "flex",
                             flexDirection: "column",
                             justifyContent: "center"

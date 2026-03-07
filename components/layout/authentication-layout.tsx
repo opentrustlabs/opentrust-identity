@@ -37,14 +37,14 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
     }
    
     // STATE VARIABLES
-    const [lookAndFeel, setLookAndFeel] = React.useState<TenantLookAndFeel>();
+    const [lookAndFeel, setLookAndFeel] = React.useState<TenantLookAndFeel | null>(authenticateToPortal === "true" ? DEFAULT_TENANT_LOOK_AND_FEEL : null);
  
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
         },
-        skip: tenantId === null || tenantId === undefined,
+        skip: tenantId === null || tenantId === undefined || authenticateToPortal === "true",
         onCompleted(data) {            
             if(data.getTenantMetaData !== null){             
                 tenantBean.setTenantMetaData(data.getTenantMetaData);
@@ -123,6 +123,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
             >
                 <ThemeProvider theme={theme}>
                     <CssBaseline />
+                    
                     <AuthenticationHeader
                         tenantMetaData={
                             tenantBean.getTenantMetaData().tenant.tenantId === "" || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
