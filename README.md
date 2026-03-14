@@ -213,18 +213,21 @@ CUSTOM_KMS_PASSWORD=customkmspassword
 The variable `CUSTOM_KMS_USE_PKI_IDENTITY` is required and can be `true | false`. The `CUSTOM_KMS_USERNAME`
 and `CUSTOM_KMS_PASSWORD` are required only if `CUSTOM_KMS_USE_PKI_IDENTITY` is set to `false`.
 
-
 See the file `env.example` at the root of the project for more details. The provisioning of the 
 PKI Identity or the service account in system which implements the custom solution is 
 outside the scope of this tool.
 
+The tool supports the following KMSs:
 
-Future development of this tool will include support for the following KMSs
-- AWS
 - Google
+
+See the `env.example` file at the root of the project for more details on configuring the KMS.
+
+Future development of this tool will include support for the following KMSs:
+
+- AWS
 - Azure
 - Tencent
-
 
 
 ##### 3. Security Event Callback Service
