@@ -156,6 +156,9 @@ Currently, this tool supports the following configuration for KMS:
 - none
 - filesystem
 - custom
+- googlekms
+
+See the environment property `KMS_STRATEGY` in the env.example file for more details.
 
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
 as Oracle with TDE).
@@ -217,14 +220,12 @@ See the file `env.example` at the root of the project for more details. The prov
 PKI Identity or the service account in system which implements the custom solution is 
 outside the scope of this tool.
 
-The tool supports the following KMSs:
-
+The tool supports the following commercial KMSs:
 - Google
 
 See the `env.example` file at the root of the project for more details on configuring the KMS.
 
-Future development of this tool will include support for the following KMSs:
-
+Future development of this tool will include support for the following commercial KMSs:
 - AWS
 - Azure
 - Tencent
