@@ -1,5 +1,5 @@
 import { MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
-import Kms from "./kms";
+import CachingKms from "./caching-kms";
 import { Client as KmsClient} from "tencentcloud-sdk-nodejs/tencentcloud/services/kms/v20190118/kms_client";
 import type {
   EncryptRequest,
@@ -9,8 +9,6 @@ import type {
 } from
   "tencentcloud-sdk-nodejs/tencentcloud/services/kms/v20190118/kms_models";
 import { logWithDetails } from "../logging/logger";
-
-
 
 const {
     TENCENT_KMS_SECRET_ID,
@@ -37,7 +35,7 @@ const kmsClient: KmsClient = new KmsClient({
     }
 });
 
-class TencentKms extends Kms {
+class TencentKms extends CachingKms {
 
     public async encrypt(data: string, aad?: string): Promise<string | null> {
         if(data.length > maxLength){
@@ -86,7 +84,7 @@ class TencentKms extends Kms {
 
     }
 
-    public async decrypt(data: string, aad?: string): Promise<string | null> {
+    protected async decryptUncached(data: string, aad?: string): Promise<string | null> {
         const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
         if(!decryptedData){
             return Promise.resolve(null);

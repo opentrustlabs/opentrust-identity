@@ -152,13 +152,15 @@ There is a lot of data which needs to be encrypted at rest. These include the cl
 the passcode for encrypted private keys, client secrets for federated OIDC providers, and, if you are using
 ReCaptcha, ReCaptcha API keys. 
 
+See the environment property `KMS_STRATEGY` in the env.example file for more details about how these are defined.
+
 Currently, this tool supports the following configuration for KMS:
 - none
 - filesystem
 - custom
-- googlekms
+- Google (configured as googlekms)
+- AWS (configured as awskms)
 
-See the environment property `KMS_STRATEGY` in the env.example file for more details.
 
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
 as Oracle with TDE).
@@ -222,11 +224,11 @@ outside the scope of this tool.
 
 The tool supports the following commercial KMSs:
 - Google
+- AWS
 
 See the `env.example` file at the root of the project for more details on configuring the KMS.
 
 Future development of this tool will include support for the following commercial KMSs:
-- AWS
 - Azure
 - Tencent
 
@@ -769,7 +771,7 @@ Here are the rules for defining and using the callback;
 6. The size of the response should be reasonably small, on the order of several hundred bytes, so that the size of the Authorization header does not exceed limits that are set at firewalls.
 7. The format of the response should be a JSON object, which can contain arbitrary property values.
 8. The response will be set as-is on the JWT in the property: `exts`
-9. The `exts` will be part of the response from both the OIDC `userinfo` endpoint and the `/users/me` endpoint.
+9. The `exts` property will be part of the response from both the OIDC `userinfo` endpoint and the `/users/me` endpoint.
 
 
 

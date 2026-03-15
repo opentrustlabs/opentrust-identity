@@ -1,5 +1,6 @@
 import { MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
-import Kms, { KeyWrappedEncryptedData } from "./kms";
+import CachingKms from "./caching-kms";
+import { KeyWrappedEncryptedData } from "./kms";
 import { KeyClient, CryptographyClient, KeyVaultKey, WrapResult, UnwrapResult } from "@azure/keyvault-keys";
 import { DefaultAzureCredential,  } from "@azure/identity";
 import { logWithDetails } from "../logging/logger";
@@ -33,7 +34,7 @@ const defaultCredential = new DefaultAzureCredential();
 
 const keyClient = new KeyClient(AZURE_KMS_VAULT_URL || "", defaultCredential);
 
-class AzureKms extends Kms {
+class AzureKms extends CachingKms {
 
     public async encrypt(data: string, aad?: string): Promise<string | null> {
         if(data.length > maxLength){
@@ -51,7 +52,7 @@ class AzureKms extends Kms {
         
     }
 
-    public async decrypt(data: string, aad?: string): Promise<string | null> {
+    protected async decryptUncached(data: string, aad?: string): Promise<string | null> {
         const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
         if(!decryptedData){
             return Promise.resolve(null);

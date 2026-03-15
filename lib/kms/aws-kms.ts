@@ -1,5 +1,5 @@
 import { logWithDetails } from "../logging/logger";
-import Kms from "./kms";
+import CachingKms from "./caching-kms";
 import { KMSClient, EncryptCommand, DecryptCommand, EncryptCommandOutput, DecryptCommandOutput} from "@aws-sdk/client-kms";
 
 const {
@@ -32,7 +32,7 @@ const kmsClient = new KMSClient({
 });
 
 
-class AWSKms extends Kms {
+class AWSKms extends CachingKms {
 
     public async encrypt(data: string, aad?: string): Promise<string | null> {
         if(data.length > maxLength){
@@ -73,7 +73,7 @@ class AWSKms extends Kms {
         }
     }
 
-    public async decrypt(data: string, aad?: string): Promise<string | null> {
+    protected async decryptUncached(data: string, aad?: string): Promise<string | null> {
         const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
         if(!decryptedData){
             return Promise.resolve(null);
