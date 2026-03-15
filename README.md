@@ -753,7 +753,7 @@ having either _identity_ or _delegated permissions_ client types.
 The reason why you might want to implement a callback is to add domin-specific data from your
 application to the basic JWT issued by the IAM tool - that is, information which is not part of
 the IAM tool itself. What kind of domain-specific data? This could be organization
-IDs or names to which the user belongs, their security profile within the application, and
+IDs and names to which the user belongs, their security profile within the application, and
 so on. 
 
 Depending on your requirements, if the token enrichment callback fails, you can either have the
