@@ -311,16 +311,16 @@ This service call will be invoked with a Bearer Authorization header for the cli
 client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
 a scope of `security.event.write`. Your implementation of this service can check for the presence of this scope using
 the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
-configured for it (see the env.example file for details). 
+configured for it (see the env.example file for details).
 
 
 ##### 4. SMS Service Wrapper
 
 This tool does not yet support SMS (for features such as verifying phone numbers or sending one-time passcodes for
 password reset), although it is on the roadmap. The issue with SMS is the great variety of SMS providers,
-each with its own API and authorization. This tool is not intended support any particular provider, but if an SMS 
+each with its own API and authorization. This tool is not intended to support any particular provider, but if an SMS 
 provider is available in your organization, and you want to enable SMS in this tool when the feature is
-ready, then you will need to write a wrapper service around your SMS provider. 
+ready, then you will need to write a wrapper service around your SMS provider.
 
 The JSON payload for the SMS service is: 
 
@@ -339,7 +339,7 @@ The JSON payload for the SMS service is:
 More details can be found in the file `/lib/models/sms.ts`.
 
 This service call will be invoked with a Bearer Authorization header for the client which is defined as the root
-client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
+client for the IAM tool. This client, which is the default when the IAM tool is initilized, is configured with
 a scope of `sms.send`. Your implementation of this service can check for the presence of this scope using
 the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
 configured for it (see the env.example file for details).
@@ -446,21 +446,21 @@ access token for this client and pass it as the Bearer Authorization header.
 
 ```bash
 npm install 
-# or
-yarn install
 ```
 
-##### 2. Create the database schemas and load the country and state/province/region data
+##### 2. Create the database schemas
 
 DDL scripts for each database are included in the `/scripts/db` or `/scripts/cassandra` directories of
 this project.
+
+##### 3. Load the country and state/province/region data
 
 The data load files for country and state/province/region are in the files `/scripts/db/country-state-region-province-inserts.sql`
 (for relational database) and `/scripts/cassandra/country-state-region-province-inserts.cql` for
 Cassandra.
 
 
-##### 3. Create the 2 search indexes
+##### 4. Create the 2 search indexes
 
 The JSON payloads for the 2 Opensearch indexes are under `/scripts/search`
 
@@ -559,22 +559,20 @@ To create or remove an alias:
 }
 ```
 
-##### 4. Configure the .env file
+##### 5. Configure the .env file
 
 You will need to configure your .env file for local or development or deployment. There is an example file `env.example` at the root of 
 this project. Please read it carefully since it contains several caveats about using mTLS and proxy configuration for
 outbound HTTP and SMTP calls. 
 
 
-##### 5. Start the server
+##### 6. Start the server
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-##### 6. Initialize the IAM tool with the Root Tenant and all ancillary data.
+##### 7. Initialize the IAM tool with the Root Tenant and all ancillary data.
 
 There is only one way to initialize the IAM tool, regardless if you are on a local development machine or deploying to 
 a higher environment, and it does NOT involve default credentials of admin/admin. With over 30 years of PKI we can do better. 
