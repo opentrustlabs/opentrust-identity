@@ -152,14 +152,14 @@ There is a lot of data which needs to be encrypted at rest. These include the cl
 the passcode for encrypted private keys, client secrets for federated OIDC providers, and, if you are using
 ReCaptcha, ReCaptcha API keys. 
 
-See the environment property `KMS_STRATEGY` in the env.example file for more details about how these are defined.
+See the environment property `KMS_STRATEGY` in the `env.example` file for more details about how these are defined.
 
 Currently, this tool supports the following configuration for KMS:
-- none
-- filesystem
-- custom
-- Google (configured as googlekms)
-- AWS (configured as awskms)
+- `none`
+- `filesystem`
+- `custom`
+- Google (configured as `googlekms`)
+- AWS (configured as `awskms`)
 
 
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
