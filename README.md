@@ -160,6 +160,7 @@ Currently, this tool supports the following configuration for KMS:
 - `custom`
 - Google (configured as `googlekms`)
 - AWS (configured as `awskms`)
+- Azure (configured as `azurekms`)
 
 
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
