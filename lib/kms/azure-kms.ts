@@ -1,177 +1,267 @@
 import { MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
 import CachingKms from "./caching-kms";
 import { KeyWrappedEncryptedData } from "./kms";
-import { KeyClient, CryptographyClient, KeyVaultKey, WrapResult, UnwrapResult } from "@azure/keyvault-keys";
-import { DefaultAzureCredential,  } from "@azure/identity";
+import { KeyClient, CryptographyClient, KeyVaultKey, WrapResult, UnwrapResult, KeyWrapAlgorithm } from "@azure/keyvault-keys";
+import { DefaultAzureCredential } from "@azure/identity";
 import { logWithDetails } from "../logging/logger";
 
 
-// This will be used for serializing the data and metadata for
-// encryption operations for Azure KMS, since Azure KMS does not
-// prefix any metadata such as key version, iv, or algorithm or anything
-// else, to the returned cipher text. So we will have to keep track outselves.
-// This will be serialized as json.toString() => based64 encoded.
-interface CryptoEnvelope {
-  keyId: string,                 // Full Key Vault key ID (includes version) from the getKey() service.
-  keyWrapAlg: string,            // This will be A256KW 
-  iv: string,
-  authTag: string,
-  encryptedDek: string,
-  cipherText: string,
-  aad: string | null
+// Envelope for direct string encryption via Key Vault's native encrypt/decrypt APIs.
+// Serialized as JSON → base64 and returned from encrypt().
+interface DirectEncryptEnvelope {
+    alg: string;        // "RSA-OAEP-256" | "A256GCM"
+    keyId: string;      // Full Key Vault key ID (includes version)
+    ct: string;         // base64 ciphertext
+    aad: string | null;
+    iv?: string;        // base64, AES-GCM only
+    tag?: string;       // base64, AES-GCM only
+}
+
+// Envelope for buffer encryption using local AES-GCM + Key Vault key wrapping.
+// Stored as raw UTF-8 JSON bytes in the Buffer returned from encryptBuffer().
+interface KeyWrapEnvelope {
+    keyId: string;
+    keyWrapAlg: string;
+    iv: string;
+    authTag: string;
+    encryptedDek: string;
+    cipherText: string;
+    aad: string | null;
 }
 
 
 const {
     MAX_PLAIN_TEXT_LENGTH,
     AZURE_KMS_VAULT_URL,
-    AZURE_KMS_KEY_NAME
+    AZURE_KMS_KEY_NAME,
+    AZURE_KMS_KEY_TYPE
 } = process.env;
 
 const maxLength = MAX_PLAIN_TEXT_LENGTH ? parseInt(MAX_PLAIN_TEXT_LENGTH) : MAX_ENCRYPTION_LENGTH;
 
-const defaultCredential = new DefaultAzureCredential();
+// "RSA" uses RSA-OAEP-256 for both direct encryption and key wrapping.
+// "AES" uses A256GCM for direct encryption and A256KW for key wrapping (Managed HSM only).
+const keyType = (AZURE_KMS_KEY_TYPE || "RSA").toUpperCase();
+const wrapAlgorithm: KeyWrapAlgorithm = keyType === "AES" ? "A256KW" : "RSA-OAEP-256";
 
+const defaultCredential = new DefaultAzureCredential();
 const keyClient = new KeyClient(AZURE_KMS_VAULT_URL || "", defaultCredential);
+
 
 class AzureKms extends CachingKms {
 
+    // Directly encrypts the string via Key Vault's encrypt API.
+    // RSA keys: RSA-OAEP-256, max plaintext ~190 bytes (2048-bit) or ~446 bytes (4096-bit).
+    // AES keys: A256GCM, any size (Managed HSM only).
     public async encrypt(data: string, aad?: string): Promise<string | null> {
         if(data.length > maxLength){
-            return Promise.resolve(null);
-        }
-        const encryptedData: Buffer | null = await this.encryptBuffer(Buffer.from(data, "utf-8"), aad);
-        if(!encryptedData){
-            return Promise.resolve(null);
-        }
-        return Promise.resolve(encryptedData.toString("base64"));
-    }
-
-    public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
-        return this.encryptBufferWithKeyWrapping(data, aad);
-        
-    }
-
-    protected async decryptUncached(data: string, aad?: string): Promise<string | null> {
-        const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
-        if(!decryptedData){
-            return Promise.resolve(null);
-        }
-        return Promise.resolve(decryptedData.toString("utf-8"));
-    }
-
-    public async decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
-        return this.decryptBufferWithKeyWrapping(data, aad);
-    }
-
-    /**
-     * Need to override the encrypt buffer with key wrapping because Azure KMS does
-     * not prefix any metadata to the cipher text, unlike with Google and AWS. This
-     * means that we have to keep track of the key versions and other metadata ourselves
-     * and prefix those values to the cipher text.
-     * @param buffer 
-     * @param aad 
-     */
-    public async encryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null> {
-
-        let key: KeyVaultKey | null = null;
-        try{     
-            key = await keyClient.getKey(AZURE_KMS_KEY_NAME || "");
-        }
-        catch(error: unknown){
-            const err: Error = error as Error;
-            logWithDetails("error", `Cannot retrieve key with key name of ${AZURE_KMS_KEY_NAME} for encryption with Azure KMS. ${err.message}`, {err});
             return null;
         }
 
-        if(!key || !key.id){
+        let key: KeyVaultKey | null = null;
+        try {
+            key = await keyClient.getKey(AZURE_KMS_KEY_NAME || "");
+        }
+        catch(error: unknown) {
+            const err = error as Error;
+            logWithDetails("error", `Cannot retrieve key for encryption with Azure KMS. ${err.message}`, {err});
+            return null;
+        }
+
+        if(!key?.id) {
             logWithDetails("error", "Cannot determine key ID for encryption with Azure KMS");
             return null;
         }
 
-        let version = key.properties.version;
-        if(!version){
-            version = key.id.split("/").pop();
+        try {
+            const cryptoClient = new CryptographyClient(key.id, defaultCredential);
+
+            let ct: string;
+            let iv: string | undefined;
+            let tag: string | undefined;
+
+            if(keyType === "AES") {
+                const result = await cryptoClient.encrypt({
+                    algorithm: "A256GCM",
+                    plaintext: Buffer.from(data, "utf-8"),
+                    additionalAuthenticatedData: aad ? Buffer.from(aad, "utf-8") : undefined
+                });
+                ct = Buffer.from(result.result).toString("base64");
+                iv = result.iv ? Buffer.from(result.iv).toString("base64") : undefined;
+                tag = result.authenticationTag ? Buffer.from(result.authenticationTag).toString("base64") : undefined;
+            } else {
+                const result = await cryptoClient.encrypt({
+                    algorithm: "RSA-OAEP-256",
+                    plaintext: Buffer.from(data, "utf-8")
+                });
+                ct = Buffer.from(result.result).toString("base64");
+            }
+
+            const envelope: DirectEncryptEnvelope = {
+                alg: keyType === "AES" ? "A256GCM" : "RSA-OAEP-256",
+                keyId: key.id,
+                ct,
+                aad: aad || null,
+                iv,
+                tag
+            };
+
+            return Buffer.from(JSON.stringify(envelope), "utf-8").toString("base64");
         }
-        if(!version){
-            logWithDetails("error", "Cannot determine key version for encryption with Azure KMS.");
+        catch(error: unknown) {
+            const err = error as Error;
+            logWithDetails("error", `Error encrypting with Azure KMS: ${err.message}`, {err});
+            return null;
+        }
+    }
+
+    // Encrypts arbitrary-size buffers using local AES-GCM + Key Vault key wrapping.
+    public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
+        return this.encryptBufferWithKeyWrapping(data, aad);
+    }
+
+    protected async decryptUncached(data: string, aad?: string): Promise<string | null> {
+        try {
+            const envelope: DirectEncryptEnvelope = JSON.parse(
+                Buffer.from(data, "base64").toString("utf-8")
+            );
+
+            if(envelope.aad !== (aad || null)) {
+                logWithDetails("error", "Error decrypting with Azure KMS: AAD mismatch.");
+                return null;
+            }
+
+            const cryptoClient = new CryptographyClient(envelope.keyId, defaultCredential);
+
+            if(envelope.alg === "A256GCM" || envelope.alg === "A192GCM" || envelope.alg === "A128GCM") {
+                if(!envelope.iv || !envelope.tag) {
+                    logWithDetails("error", "Error decrypting with Azure KMS: missing IV or auth tag for AES-GCM.");
+                    return null;
+                }
+                const result = await cryptoClient.decrypt({
+                    algorithm: envelope.alg,
+                    ciphertext: Buffer.from(envelope.ct, "base64"),
+                    iv: Buffer.from(envelope.iv, "base64"),
+                    authenticationTag: Buffer.from(envelope.tag, "base64"),
+                    additionalAuthenticatedData: aad ? Buffer.from(aad, "utf-8") : undefined
+                });
+                return Buffer.from(result.result).toString("utf-8");
+            } else {
+                // RSA-OAEP or RSA-OAEP-256
+                const result = await cryptoClient.decrypt({
+                    algorithm: envelope.alg as "RSA-OAEP" | "RSA-OAEP-256" | "RSA1_5",
+                    ciphertext: Buffer.from(envelope.ct, "base64")
+                });
+                return Buffer.from(result.result).toString("utf-8");
+            }
+        }
+        catch(error: unknown) {
+            const err = error as Error;
+            logWithDetails("error", `Error decrypting with Azure KMS: ${err.message}`, {err});
+            return null;
+        }
+    }
+
+    // Decrypts arbitrary-size buffers using Key Vault key unwrapping + local AES-GCM.
+    public async decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
+        return this.decryptBufferWithKeyWrapping(data, aad);
+    }
+
+    public async encryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null> {
+
+        let key: KeyVaultKey | null = null;
+        try {
+            key = await keyClient.getKey(AZURE_KMS_KEY_NAME || "");
+        }
+        catch(error: unknown) {
+            const err = error as Error;
+            logWithDetails("error", `Cannot retrieve key for buffer encryption with Azure KMS. ${err.message}`, {err});
             return null;
         }
 
-        const cryptoClient: CryptographyClient = new CryptographyClient(key.id, defaultCredential);
+        if(!key?.id) {
+            logWithDetails("error", "Cannot determine key ID for buffer encryption with Azure KMS");
+            return null;
+        }
+
+        let version = key.properties.version;
+        if(!version) {
+            version = key.id.split("/").pop();
+        }
+        if(!version) {
+            logWithDetails("error", "Cannot determine key version for buffer encryption with Azure KMS.");
+            return null;
+        }
+
+        const cryptoClient = new CryptographyClient(key.id, defaultCredential);
         const keyWrappedEncryptedData: KeyWrappedEncryptedData = this.generateKeyWrappedData(buffer, aad);
 
         let wrappedDek: WrapResult | null = null;
-        try{
+        try {
             wrappedDek = await cryptoClient.wrapKey(
-                "A256KW",
+                wrapAlgorithm,
                 keyWrappedEncryptedData.aesKey.export()
             );
         }
-        catch(error: unknown){
-            const err: Error = error as Error;
-            logWithDetails("error", `Cannot encrypt key for Azure KMS: ${err.message}`, {err});
+        catch(error: unknown) {
+            const err = error as Error;
+            logWithDetails("error", `Cannot wrap key for Azure KMS: ${err.message}`, {err});
             return null;
         }
 
-        if(!wrappedDek || !wrappedDek.result){
-            logWithDetails("error", "No wrapped key results was available for encryption with Azure KMS");
+        if(!wrappedDek?.result) {
+            logWithDetails("error", "No wrapped key result available for buffer encryption with Azure KMS");
             return null;
         }
 
-        const cryptoEnvelope: CryptoEnvelope = {
+        const envelope: KeyWrapEnvelope = {
             aad: aad || null,
             authTag: keyWrappedEncryptedData.authTag.toString("base64"),
             cipherText: keyWrappedEncryptedData.cipherText.toString("base64"),
             encryptedDek: Buffer.from(wrappedDek.result).toString("base64"),
             iv: keyWrappedEncryptedData.iv.toString("base64"),
             keyId: key.id,
-            keyWrapAlg: "A256KW"
+            keyWrapAlg: wrapAlgorithm
         };
 
-        const b: Buffer = Buffer.from(JSON.stringify(cryptoEnvelope), "utf-8");
-        return b;        
+        return Buffer.from(JSON.stringify(envelope), "utf-8");
     }
 
     public async decryptBufferWithKeyWrapping(buffer: Buffer, aad?: string): Promise<Buffer | null> {
 
         try {
-            const s: string = buffer.toString("utf-8");
-            const cryptoEnvelope: CryptoEnvelope = JSON.parse(s);
+            const envelope: KeyWrapEnvelope = JSON.parse(buffer.toString("utf-8"));
 
-            // Validate AAD matches what was used during encryption
-            if(cryptoEnvelope.aad !== (aad || null)){
-                logWithDetails("error", "Error decrypting with Azure KMS: AAD mismatch. Expected AAD does not match the AAD used during encryption.");
+            if(envelope.aad !== (aad || null)) {
+                logWithDetails("error", "Error decrypting buffer with Azure KMS: AAD mismatch.");
                 return null;
             }
 
-            // Since we saved the key id previously, we need it to construct this
-            // CryptographyClient rather than relying on the call to keyClient.getKey()
-            const cryptoClient: CryptographyClient = new CryptographyClient(cryptoEnvelope.keyId, defaultCredential);
+            const cryptoClient = new CryptographyClient(envelope.keyId, defaultCredential);
             let unwrappedDek: UnwrapResult | null = null;
-            try{
+            try {
                 unwrappedDek = await cryptoClient.unwrapKey(
-                    "A256KW",
-                    Buffer.from(cryptoEnvelope.encryptedDek, "base64")
+                    envelope.keyWrapAlg as KeyWrapAlgorithm,
+                    Buffer.from(envelope.encryptedDek, "base64")
                 );
             }
-            catch(error: unknown){
-                const err: Error = error as Error;
-                logWithDetails("error", `Cannot decrypt key for Azure KMS: ${err.message}`, {err});
+            catch(error: unknown) {
+                const err = error as Error;
+                logWithDetails("error", `Cannot unwrap key for Azure KMS: ${err.message}`, {err});
                 return null;
             }
-            const decryptedBuffer: Buffer = this.decryptKeyWrappedData(
-                Buffer.from(cryptoEnvelope.cipherText, "base64"),
+
+            return this.decryptKeyWrappedData(
+                Buffer.from(envelope.cipherText, "base64"),
                 Buffer.from(unwrappedDek.result),
-                Buffer.from(cryptoEnvelope.iv, "base64"),
-                Buffer.from(cryptoEnvelope.authTag, "base64"),
-                aad ? aad : undefined
+                Buffer.from(envelope.iv, "base64"),
+                Buffer.from(envelope.authTag, "base64"),
+                aad ?? undefined
             );
-            return decryptedBuffer;
         }
-        catch(error: unknown){
-            const err: Error = error as Error;
-            logWithDetails("error", `Error decrypting with Azure KMS: ${err.message}`, {err});
+        catch(error: unknown) {
+            const err = error as Error;
+            logWithDetails("error", `Error decrypting buffer with Azure KMS: ${err.message}`, {err});
             return null;
         }
     }
