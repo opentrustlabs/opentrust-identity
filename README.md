@@ -225,11 +225,11 @@ outside the scope of this tool.
 The tool supports the following commercial KMSs:
 - Google
 - AWS
+- Azure
 
 See the `env.example` file at the root of the project for more details on configuring the KMS.
 
 Future development of this tool will include support for the following commercial KMSs:
-- Azure
 - Tencent
 
 
