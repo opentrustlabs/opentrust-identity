@@ -46,7 +46,7 @@ const AccessError: React.FC = () => {
     console.log("error Message: ", errorMessage)
 
     return (
-        <Alert sx={{maxWidth: breakPoints.isMedium ? "80vw" : "30vw"}} severity="error">{errorMessage}</Alert>
+        <Alert sx={{maxWidth: breakPoints.isMedium ? "80vw" : "30vw", fontSize: "0.95em"}} severity="error">{errorMessage}</Alert>
     )
 }
 
