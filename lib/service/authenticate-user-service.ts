@@ -74,7 +74,6 @@ class AuthenticateUserService extends IdentityService {
         // their password and have likely failed). 
         // 1.   Is the user on the correct stage of authentication? (that is, entering their password)
         // 2.   Does the user exist and is the user enabled? (Note that the user might be locked due to too many failed logins)
-        // 3.      
 
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
@@ -94,7 +93,7 @@ class AuthenticateUserService extends IdentityService {
         }
         let userRecoveryEmail: UserRecoveryEmail | null = null;
         if(useRecoveryEmail === true){
-            userRecoveryEmail = await identityDao.getUserRecoveryEmail(user.userId);
+            userRecoveryEmail = await identityDao.getUserRecoveryEmailBy("id", user.userId);
             if(userRecoveryEmail === null){
                 response.authenticationError = ERROR_CODES.EC00098;
                 return Promise.resolve(response);
@@ -357,13 +356,19 @@ class AuthenticateUserService extends IdentityService {
             }
         }
 
-        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
-        // 5.   Error. If the user exists but is not in a state where they can be authenticated.
+        const user: User | null = await identityDao.getUserBy("email", this.formatEmail(email));
+        const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", this.formatEmail(email));
+        // 5.   Error Conditions:
+        //          a. If the user is trying to log in with a recovery email
+        //          b. If the user exists but is not in a state where they can be authenticated.
+        if(userByRecoveryEmail){
+            response.authenticationError = ERROR_CODES.EC00097;
+            return response;
+        }
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
             response.authenticationError = ERROR_CODES.EC00097;
             return response;
         }
-        
         
         // 6.   Possible Error. If the user exists, but does not belong to a suitable authentication group.
         // 
@@ -398,14 +403,13 @@ class AuthenticateUserService extends IdentityService {
             }
         }
 
-
         // 7.   Error. If user does not exist (either in the local data store or in a legacy system), there is no provider, 
         //      and the tenant does not allow self-registration
         //      Need to check if there is a legacy system configured, and if so, is the user 
         //      in that system?
         let canMigrateUser: boolean = false;
         if(user === null){
-            let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
+            let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;         
             if(tenant.migrateLegacyUsers === true){
                 tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
@@ -420,7 +424,7 @@ class AuthenticateUserService extends IdentityService {
         if(user === null && !canMigrateUser && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
             response.authenticationError = ERROR_CODES.EC00108;
             return response;
-        }
+        }        
         
         // At this point we know that the tenant exists and allows either a external OIDC provider,
         // or allows the user to login with a username/password, or allows the user to register
@@ -436,7 +440,7 @@ class AuthenticateUserService extends IdentityService {
                 throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             response.uri = authorizationEndpoint;
-        }
+        }       
 
         // 9.   There is no provider, so we either need to register the user if they do not exist, or
         //      authenticate with username/password + other MFA types, or migrate from legacy system
@@ -581,6 +585,7 @@ class AuthenticateUserService extends IdentityService {
             await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
             response.userAuthenticationState = arrUserAuthenticationStates[0];
         }
+
         return response;           
     }
 
@@ -604,7 +609,7 @@ class AuthenticateUserService extends IdentityService {
             return response;
         }        
 
-        const user: User | null = await identityDao.getUserBy("email", email);
+        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
         
         // 2.   Error condition #2. The user is disabled, marked for delete, or locked
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
@@ -1507,7 +1512,6 @@ class AuthenticateUserService extends IdentityService {
             return {isValid: false, errorDetail: ERROR_CODES.EC00118, isDuress: false};
         }
         const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
-        console.log(userFailedLoginAttempts);
         
         let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(tenantId);
         if(loginFailurePolicy === null){

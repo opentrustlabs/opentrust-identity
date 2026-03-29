@@ -1,4 +1,4 @@
-import { AuthorizationCodeData, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, FederatedOidcProvider, Tenant, User, UserTenantRel } from '@/graphql/generated/graphql-types';
+import { AuthorizationCodeData, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, FederatedOidcProvider, Tenant, User, UserRecoveryEmail, UserTenantRel } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import IdentityDao from '@/lib/dao/identity-dao';
@@ -209,11 +209,20 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         return;
     }
 
+    // If the user has selected an account which is tied to a recovery email account, then return error
+    const userRecoveryByEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("email", userInfo.email.toLowerCase());
+    if(userRecoveryByEmail){
+        res.status(302).setHeader("location", `/access-error?access_error_code=00076&extended_message=${"Sign-in could not be completed. The email address associated with your account is already linked to an existing account. Please sign in using your original credentials, or contact support if you need assistance accessing your account."}`);
+        res.end();
+        return;
+    }
+
     let canonicalUser: User | null = null;
 
     const userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);
     
-    const userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);    
+    const userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email.toLowerCase());
+    
     let userByPhone: User | null = null;
     if(userInfo.phone_number){
         userByPhone = await identityDao.getUserBy("phone", userInfo.phone_number);
@@ -246,16 +255,17 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
         canonicalUser = userByFederatedSubjectId;
     }
+    
     // 2.
     // The "everything is ok" case.
     else if(userByFederatedSubjectId !== null && userByEmail !== null && userByFederatedSubjectId.userId === userByEmail.userId){
         await identityDao.addUserAuthenticationHistory(userByEmail.userId, Date.now());
         canonicalUser = userByEmail;
     }
+
     // 3.
-    // There are no users matching anything. Create a new user based on the userinfo retrieved from the 3rd party IdP
-    
-    else if(userByFederatedSubjectId === null && userByEmail === null){
+    // There are no users matching anything. Create a new user based on the userinfo retrieved from the 3rd party IdP    
+    else if(userByFederatedSubjectId === null && userByEmail === null && userRecoveryByEmail === null){
 
         const newUser: User = userInfoToUser(userInfo);
         if(userByPhone === null){
@@ -270,10 +280,11 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         
         canonicalUser = newUser;
     }
+
     // 4.
     // If we find the record based on the IdP ID, but no email-based record, then we update
     // the existing record with the information from the userinfo
-    else if(userByFederatedSubjectId !== null && userByEmail === null){
+    else if(userByFederatedSubjectId !== null && userByEmail === null && userRecoveryByEmail === null){
         
         userByFederatedSubjectId.email = userInfo.email;
         userByFederatedSubjectId.domain = getDomainFromEmail(userInfo.email);
@@ -291,12 +302,13 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
         canonicalUser = userByFederatedSubjectId;
     }
+
     // 5. 
     // We have found a record with the same email, but it was not previously tied
     // to a 3rd party IdP, OR it was tied to a DIFFERENT 3rd party IdP OR tied to a DIFFERENT
     // subject ID in the same IdP (that is, if the IdP uses the "pairwise" subject type) so we 
     // just update the existing record with the new IdP ID.
-    else if(userByFederatedSubjectId === null && userByEmail !== null){
+    else if(userByFederatedSubjectId === null && userByEmail !== null && userRecoveryByEmail === null){
         userByEmail.federatedOIDCProviderSubjectId = userInfo.sub;
         await identityDao.updateUser(userByEmail);
         await identityDao.addUserAuthenticationHistory(userByEmail.userId, Date.now());

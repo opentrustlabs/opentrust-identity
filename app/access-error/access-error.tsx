@@ -42,13 +42,12 @@ const AccessError: React.FC = () => {
     if(extendedMessage){
         errorMessage += " " + extendedMessage;
     }
+    console.log("checkpoint 1");
+    console.log("error Message: ", errorMessage)
 
     return (
-        
-            <Alert sx={{maxWidth: breakPoints.isMedium ? "80vw" : "30vw"}}  severity="error">{errorMessage}</Alert>
-        
+        <Alert sx={{maxWidth: breakPoints.isMedium ? "80vw" : "30vw"}} severity="error">{errorMessage}</Alert>
     )
 }
-export const dynamic = 'force-dynamic';
 
 export default AccessError;

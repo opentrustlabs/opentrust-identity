@@ -296,7 +296,7 @@ class RegisterUserService extends IdentityService {
 
         // For the one-time token, need to delete it in success case and        
         await identityDao.deleteEmailConfirmationToken(token);
-        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(userId);
+        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", userId);
         if(!userRecoveryEmail){
             response.userRegistrationState.registrationState = RegistrationState.Error;
             response.registrationError = ERROR_CODES.EC00136;
@@ -1134,7 +1134,8 @@ class RegisterUserService extends IdentityService {
         }
 
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
-        if (existingUser) {
+        const recoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("email", userCreateInput.email);
+        if (existingUser || recoveryAccount) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
         }
         if(userCreateInput.phoneNumber){
@@ -1317,16 +1318,11 @@ class RegisterUserService extends IdentityService {
      */
     protected async validateRecoveryEmail(userId: string, recoveryEmail: string): Promise<{isValid: boolean, errorDetail: ErrorDetail}>{
 
-        const existingRecoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(userId);
+        const existingRecoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", userId);
         if(existingRecoveryAccount !== null){
             return {isValid: false, errorDetail: ERROR_CODES.EC00141};
         }
-
-        const userByEmail: User | null = await identityDao.getUserBy("email", recoveryEmail);
-        if(userByEmail){
-            return {isValid: false, errorDetail: ERROR_CODES.EC00142};
-            
-        }
+ 
         const domain: string = getDomainFromEmail(recoveryEmail);
         if(domain.length === 0){
             return {isValid: false, errorDetail: ERROR_CODES.EC00143}

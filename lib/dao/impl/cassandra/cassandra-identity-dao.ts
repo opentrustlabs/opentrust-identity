@@ -1,5 +1,5 @@
 import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail, AuthenticationGroupUserRel, AuthorizationGroupUserRel, UserScopeRel, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
-import IdentityDao, { UserLookupType } from "../../identity-dao";
+import IdentityDao, { UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import { types } from "cassandra-driver";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
@@ -162,22 +162,7 @@ class CassandraIdentityDao extends IdentityDao {
             const result: User | null = await mapper.get({
                 email: value
             });
-            // Also try to lookup the user by recovery email, if it exists
-            if(result === null){
-                const recoveryEmailMapper = await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
-                const results: Array<{userId: string, email: string, emailVerified: boolean}> = 
-                            (await recoveryEmailMapper.find({email: value}, {limit: 1})).toArray();
-                if(results.length > 0){
-                    const {userId} = results[0];
-                    return this.getUserBy("id", userId);
-                }   
-                else{
-                    return null;
-                }
-            }
-            else{
-                return result;
-            }
+            return result;
         }
         else if(userLookupType === "id"){
             const mapper = await CassandraDriver.getInstance().getModelMapper("users");            
@@ -664,11 +649,18 @@ class CassandraIdentityDao extends IdentityDao {
         return;
     }
 
-    public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null> {
+    public async getUserRecoveryEmailBy(userRecoveryLookupType: UserRecoveryLookupType, value: string): Promise<UserRecoveryEmail | null> {
         const mapper =  await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
-        const results = await mapper.find({
-            userId: userId
-        });
+        const where = userRecoveryLookupType === "email" ?
+            {
+                email: value
+            }
+            :
+            {
+                userId: value
+            }
+
+        const results = await mapper.find(where);
         const arr: Array<UserRecoveryEmail> = results.toArray();
         if(arr.length > 0){
             return arr[0];
@@ -691,7 +683,7 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async deleteRecoveryEmail(userId: string): Promise<void> {
-        const userRecoveryEmail: UserRecoveryEmail | null = await this.getUserRecoveryEmail(userId);
+        const userRecoveryEmail: UserRecoveryEmail | null = await this.getUserRecoveryEmailBy("id", userId);
         if(userRecoveryEmail){
             const mapper =  await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
             await mapper.remove({
