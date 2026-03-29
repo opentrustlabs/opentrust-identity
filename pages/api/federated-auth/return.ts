@@ -211,7 +211,8 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
 
     let canonicalUser: User | null = null;
 
-    const userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);    
+    const userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);
+    
     const userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);    
     let userByPhone: User | null = null;
     if(userInfo.phone_number){
@@ -253,22 +254,27 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
     }
     // 3.
     // There are no users matching anything. Create a new user based on the userinfo retrieved from the 3rd party IdP
+    
     else if(userByFederatedSubjectId === null && userByEmail === null){
+
         const newUser: User = userInfoToUser(userInfo);
         if(userByPhone === null){
             newUser.phoneNumber = userInfo.phone_number;            
         }
+        
         await identityDao.createUser(newUser);
         await searchDao.updateObjectSearchIndex(tenant, newUser);
         await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, newUser);
         await updateUserTenantRel(tenant, newUser);
         await identityDao.addUserAuthenticationHistory(newUser.userId, Date.now());
+        
         canonicalUser = newUser;
     }
     // 4.
     // If we find the record based on the IdP ID, but no email-based record, then we update
     // the existing record with the information from the userinfo
     else if(userByFederatedSubjectId !== null && userByEmail === null){
+        
         userByFederatedSubjectId.email = userInfo.email;
         userByFederatedSubjectId.domain = getDomainFromEmail(userInfo.email);
         userByFederatedSubjectId.emailVerified = userInfo.email_verified || false;
@@ -298,8 +304,8 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
     }
 
     await authDao.deleteFederatedOIDCAuthorizationRel(state);
-    
     if(canonicalUser){
+
         const authorizationCode: string = generateRandomToken(32, "hex");
         if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
             await saveAuthorizationCodeData(authorizationCode, authRel, canonicalUser);
@@ -308,6 +314,9 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         else{
             const ttlSeconds = PORTAL_AUTH_TOKEN_TTL_HOURS ? parseInt(PORTAL_AUTH_TOKEN_TTL_HOURS) * 60 * 60 : DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS * 60 * 60;
             const result = await jwtServiceUtils.signIAMPortalUserJwt(canonicalUser, tenant, ttlSeconds, PRINCIPAL_TYPE_IAM_PORTAL_USER)
+            // Return the user to the page under the /app directory. This page will handle the extraction
+            // of the parameters after the url fragment and direct the user to the proper landing page
+            // for their tenant.
             res.status(302).setHeader("location", `/authorize/federated-auth/return#${HASH_PARAM_AUTH_TOKEN}=${result?.accessToken}&${HASH_PARAM_TOKEN_TTL}=${ttlSeconds * 1000}&${HASH_PARAM_TENANT_ID}=${tenant.tenantId}`);
         }
     }
