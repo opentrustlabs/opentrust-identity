@@ -1,4 +1,4 @@
-import Kms from "./kms";
+import CachingKms from "./caching-kms";
 import { KeyManagementServiceClient } from "@google-cloud/kms";
 import { MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
 import { logWithDetails } from "../logging/logger";
@@ -21,7 +21,7 @@ const maxLength = MAX_PLAIN_TEXT_LENGTH ? parseInt(MAX_PLAIN_TEXT_LENGTH) : MAX_
 // Just disable lint checks for now.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const crc32c = require("fast-crc32c");
-class GoogleKms extends Kms {
+class GoogleKms extends CachingKms {
 
     public async encrypt(data: string, aad?: string): Promise<string | null> {
         if(data.length > maxLength){
@@ -71,7 +71,7 @@ class GoogleKms extends Kms {
         }
     }
 
-    public async decrypt(data: string, aad?: string): Promise<string | null> {
+    protected async decryptUncached(data: string, aad?: string): Promise<string | null> {
         const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
         if(!decryptedData){
             return Promise.resolve(null);

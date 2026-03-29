@@ -1,6 +1,8 @@
 import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone" | "federatedoidcproviderid";
+
+export type UserRecoveryLookupType = "id" | "email";
 abstract class IdentityDao {
 
     abstract getFailedLogins(userId: string): Promise<Array<UserFailedLogin>>;
@@ -155,7 +157,7 @@ abstract class IdentityDao {
 
     abstract deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void>;
 
-    abstract getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>;
+    abstract getUserRecoveryEmailBy(userRecoveryLookupType: UserRecoveryLookupType, value: string): Promise<UserRecoveryEmail | null>;
 
     abstract addRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>;
 

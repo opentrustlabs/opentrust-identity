@@ -1,5 +1,5 @@
 import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
-import IdentityDao, { UserLookupType } from "../../identity-dao";
+import IdentityDao, { UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
 import { UserFido2CounterRel } from "@/lib/entities/user-fido2-counter-rel-entity";
 import RDBDriver from "@/lib/data-sources/rdb";
@@ -229,23 +229,6 @@ class DBIdentityDao extends IdentityDao {
             where: where
         });
 
-        // For email lookups, we can try the recovery email table too
-        if(u === null && userLookupType === "email"){
-            const userEmailRecoverRepo = await RDBDriver.getInstance().getUserEmailRecoveryRepository();
-            const entity: UserEmailRecovery | null = await userEmailRecoverRepo.findOne({
-                where: {
-                    email: value
-                }
-            });
-            if(entity){
-                const userId = entity.userId;
-                u = await userRepo.findOne({
-                    where: {
-                        userId: userId
-                    }
-                });
-            }
-        }
         return u;
     }
 
@@ -707,12 +690,18 @@ class DBIdentityDao extends IdentityDao {
         
     }
 
-    public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>{
+    public async getUserRecoveryEmailBy(userRecoveryLookupType: UserRecoveryLookupType, value: string): Promise<UserRecoveryEmail | null>{
         const userEmailRecoveryRepo = await RDBDriver.getInstance().getUserEmailRecoveryRepository();
+        const where = userRecoveryLookupType === "email" ? 
+        {
+            email: value
+        } 
+        :
+        {
+            userId: value
+        };
         const entity: UserEmailRecovery | null = await userEmailRecoveryRepo.findOne({
-            where: {
-                userId: userId
-            }
+            where: where
         });
         return entity;
     }

@@ -161,7 +161,8 @@ class IdentityService {
         // 3    verify that the new domain is not tied to a 3rd party provider.
         if (user.email !== existingUser.email) {
             const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
-            if (userByEmail) {
+            const userRecoveryByEmail = await identityDao.getUserRecoveryEmailBy("email", user.email);
+            if (userByEmail || userRecoveryByEmail) {
                 throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
             }
             
@@ -501,7 +502,7 @@ class IdentityService {
                 throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
             }
         }
-        return identityDao.getUserRecoveryEmail(userId);
+        return identityDao.getUserRecoveryEmailBy("id", userId);
     }
 
     public async swapPrimaryAndRecoveryEmail(): Promise<boolean> {
@@ -512,7 +513,7 @@ class IdentityService {
         if(user === null){
             throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
-        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(this.oidcContext.portalUserProfile.userId);
+        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", this.oidcContext.portalUserProfile.userId);
         if(userRecoveryEmail === null){
             throw new GraphQLError(ERROR_CODES.EC00168.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00168}});
         }
@@ -1231,6 +1232,7 @@ class IdentityService {
     protected formatEmail(email: string): string {
         return email.toLowerCase();
     }
+
     protected formatPhoneNumber(phoneNumber: string): string {
         const s = phoneNumber.replace(/\D/g, "");
         return `+${s}`;

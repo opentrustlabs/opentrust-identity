@@ -37,7 +37,9 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
     }
    
     // STATE VARIABLES
-    const [lookAndFeel, setLookAndFeel] = React.useState<TenantLookAndFeel | null>(authenticateToPortal === "true" ? DEFAULT_TENANT_LOOK_AND_FEEL : null);
+    const [lookAndFeel, setLookAndFeel] = React.useState<TenantLookAndFeel | null>(
+        authenticateToPortal === "true" || tenantId === null || tenantId === undefined ? DEFAULT_TENANT_LOOK_AND_FEEL : null
+    );
  
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {

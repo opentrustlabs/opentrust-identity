@@ -152,10 +152,16 @@ There is a lot of data which needs to be encrypted at rest. These include the cl
 the passcode for encrypted private keys, client secrets for federated OIDC providers, and, if you are using
 ReCaptcha, ReCaptcha API keys. 
 
+See the environment property `KMS_STRATEGY` in the `env.example` file for more details about how these are defined.
+
 Currently, this tool supports the following configuration for KMS:
-- none
-- filesystem
-- custom
+- `none`
+- `filesystem`
+- `custom`
+- Google (configured as `googlekms`)
+- AWS (configured as `awskms`)
+- Azure (configured as `azurekms`)
+
 
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
 as Oracle with TDE).
@@ -213,18 +219,19 @@ CUSTOM_KMS_PASSWORD=customkmspassword
 The variable `CUSTOM_KMS_USE_PKI_IDENTITY` is required and can be `true | false`. The `CUSTOM_KMS_USERNAME`
 and `CUSTOM_KMS_PASSWORD` are required only if `CUSTOM_KMS_USE_PKI_IDENTITY` is set to `false`.
 
-
 See the file `env.example` at the root of the project for more details. The provisioning of the 
 PKI Identity or the service account in system which implements the custom solution is 
 outside the scope of this tool.
 
-
-Future development of this tool will include support for the following KMSs
-- AWS
+The tool supports the following commercial KMSs:
 - Google
+- AWS
 - Azure
-- Tencent
 
+See the `env.example` file at the root of the project for more details on configuring the KMS.
+
+Future development of this tool will include support for the following commercial KMSs:
+- Tencent
 
 
 ##### 3. Security Event Callback Service
@@ -305,16 +312,16 @@ This service call will be invoked with a Bearer Authorization header for the cli
 client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
 a scope of `security.event.write`. Your implementation of this service can check for the presence of this scope using
 the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
-configured for it (see the env.example file for details). 
+configured for it (see the env.example file for details).
 
 
 ##### 4. SMS Service Wrapper
 
 This tool does not yet support SMS (for features such as verifying phone numbers or sending one-time passcodes for
 password reset), although it is on the roadmap. The issue with SMS is the great variety of SMS providers,
-each with its own API and authorization. This tool is not intended support any particular provider, but if an SMS 
+each with its own API and authorization. This tool is not intended to support any particular provider, but if an SMS 
 provider is available in your organization, and you want to enable SMS in this tool when the feature is
-ready, then you will need to write a wrapper service around your SMS provider. 
+ready, then you will need to write a wrapper service around your SMS provider.
 
 The JSON payload for the SMS service is: 
 
@@ -333,7 +340,7 @@ The JSON payload for the SMS service is:
 More details can be found in the file `/lib/models/sms.ts`.
 
 This service call will be invoked with a Bearer Authorization header for the client which is defined as the root
-client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
+client for the IAM tool. This client, which is the default when the IAM tool is initilized, is configured with
 a scope of `sms.send`. Your implementation of this service can check for the presence of this scope using
 the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
 configured for it (see the env.example file for details).
@@ -440,21 +447,21 @@ access token for this client and pass it as the Bearer Authorization header.
 
 ```bash
 npm install 
-# or
-yarn install
 ```
 
-##### 2. Create the database schemas and load the country and state/province/region data
+##### 2. Create the database schemas
 
 DDL scripts for each database are included in the `/scripts/db` or `/scripts/cassandra` directories of
 this project.
+
+##### 3. Load the country and state/province/region data
 
 The data load files for country and state/province/region are in the files `/scripts/db/country-state-region-province-inserts.sql`
 (for relational database) and `/scripts/cassandra/country-state-region-province-inserts.cql` for
 Cassandra.
 
 
-##### 3. Create the 2 search indexes
+##### 4. Create the 2 search indexes
 
 The JSON payloads for the 2 Opensearch indexes are under `/scripts/search`
 
@@ -553,22 +560,20 @@ To create or remove an alias:
 }
 ```
 
-##### 4. Configure the .env file
+##### 5. Configure the .env file
 
 You will need to configure your .env file for local or development or deployment. There is an example file `env.example` at the root of 
 this project. Please read it carefully since it contains several caveats about using mTLS and proxy configuration for
 outbound HTTP and SMTP calls. 
 
 
-##### 5. Start the server
+##### 6. Start the server
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-##### 6. Initialize the IAM tool with the Root Tenant and all ancillary data.
+##### 7. Initialize the IAM tool with the Root Tenant and all ancillary data.
 
 There is only one way to initialize the IAM tool, regardless if you are on a local development machine or deploying to 
 a higher environment, and it does NOT involve default credentials of admin/admin. With over 30 years of PKI we can do better. 
@@ -749,7 +754,7 @@ having either _identity_ or _delegated permissions_ client types.
 The reason why you might want to implement a callback is to add domin-specific data from your
 application to the basic JWT issued by the IAM tool - that is, information which is not part of
 the IAM tool itself. What kind of domain-specific data? This could be organization
-IDs or names to which the user belongs, their security profile within the application, and
+IDs and names to which the user belongs, their security profile within the application, and
 so on. 
 
 Depending on your requirements, if the token enrichment callback fails, you can either have the
@@ -765,7 +770,7 @@ Here are the rules for defining and using the callback;
 6. The size of the response should be reasonably small, on the order of several hundred bytes, so that the size of the Authorization header does not exceed limits that are set at firewalls.
 7. The format of the response should be a JSON object, which can contain arbitrary property values.
 8. The response will be set as-is on the JWT in the property: `exts`
-9. The `exts` will be part of the response from both the OIDC `userinfo` endpoint and the `/users/me` endpoint.
+9. The `exts` property will be part of the response from both the OIDC `userinfo` endpoint and the `/users/me` endpoint.
 
 
 

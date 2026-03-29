@@ -296,7 +296,7 @@ class RegisterUserService extends IdentityService {
 
         // For the one-time token, need to delete it in success case and        
         await identityDao.deleteEmailConfirmationToken(token);
-        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(userId);
+        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", userId);
         if(!userRecoveryEmail){
             response.userRegistrationState.registrationState = RegistrationState.Error;
             response.registrationError = ERROR_CODES.EC00136;
@@ -706,8 +706,9 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve(response);
     }
 
-    public async profileHandleEmailChange(newEmail: string): Promise<ProfileEmailChangeResponse> {
-        
+    public async profileHandleEmailChange(email: string): Promise<ProfileEmailChangeResponse> {
+        const formattedEmail = this.formatEmail(email);
+
         const response: ProfileEmailChangeResponse = {
             profileEmailChangeState: {
                 changeEmailSessionToken: "",
@@ -726,7 +727,7 @@ class RegisterUserService extends IdentityService {
             response.profileEmailChangeError = ERROR_CODES.EC00145;
             return response;            
         }
-        const domain: string = getDomainFromEmail(newEmail);
+        const domain: string = getDomainFromEmail(formattedEmail);
         if(domain.length === 0){
             response.profileEmailChangeError = ERROR_CODES.EC00017;
             return response;           
@@ -745,8 +746,9 @@ class RegisterUserService extends IdentityService {
             response.profileEmailChangeError = ERROR_CODES.EC00147;
             return response;
         }
-        const userByEmail: User | null = await identityDao.getUserBy("email", newEmail);
-        if(userByEmail !== null){
+        const userByEmail: User | null = await identityDao.getUserBy("email", formattedEmail);
+        const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", formattedEmail);
+        if(userByEmail !== null || userByRecoveryEmail !== null){
             response.profileEmailChangeError = ERROR_CODES.EC00142;
             return response;            
         }
@@ -761,7 +763,7 @@ class RegisterUserService extends IdentityService {
         const sessionToken: string = generateRandomToken(20, "hex");
         const arrStates: Array<ProfileEmailChangeState> = [];
         arrStates.push({
-            email: newEmail,
+            email: formattedEmail,
             expiresAtMs: Date.now() + (60 * 60 * 1000),
             changeEmailSessionToken: sessionToken,
             emailChangeState: EmailChangeState.ValidateEmail,
@@ -772,7 +774,7 @@ class RegisterUserService extends IdentityService {
         });
 
         arrStates.push({
-            email: newEmail,
+            email: formattedEmail,
             expiresAtMs: Date.now() + (60 * 60 * 1000),
             changeEmailSessionToken: sessionToken,
             emailChangeState: EmailChangeState.Completed,
@@ -1134,7 +1136,8 @@ class RegisterUserService extends IdentityService {
         }
 
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
-        if (existingUser) {
+        const recoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("email", userCreateInput.email);
+        if (existingUser || recoveryAccount) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
         }
         if(userCreateInput.phoneNumber){
@@ -1317,16 +1320,11 @@ class RegisterUserService extends IdentityService {
      */
     protected async validateRecoveryEmail(userId: string, recoveryEmail: string): Promise<{isValid: boolean, errorDetail: ErrorDetail}>{
 
-        const existingRecoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(userId);
+        const existingRecoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", userId);
         if(existingRecoveryAccount !== null){
             return {isValid: false, errorDetail: ERROR_CODES.EC00141};
         }
-
-        const userByEmail: User | null = await identityDao.getUserBy("email", recoveryEmail);
-        if(userByEmail){
-            return {isValid: false, errorDetail: ERROR_CODES.EC00142};
-            
-        }
+ 
         const domain: string = getDomainFromEmail(recoveryEmail);
         if(domain.length === 0){
             return {isValid: false, errorDetail: ERROR_CODES.EC00143}
