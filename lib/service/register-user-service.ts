@@ -706,8 +706,9 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve(response);
     }
 
-    public async profileHandleEmailChange(newEmail: string): Promise<ProfileEmailChangeResponse> {
-        
+    public async profileHandleEmailChange(email: string): Promise<ProfileEmailChangeResponse> {
+        const formattedEmail = this.formatEmail(email);
+
         const response: ProfileEmailChangeResponse = {
             profileEmailChangeState: {
                 changeEmailSessionToken: "",
@@ -726,7 +727,7 @@ class RegisterUserService extends IdentityService {
             response.profileEmailChangeError = ERROR_CODES.EC00145;
             return response;            
         }
-        const domain: string = getDomainFromEmail(newEmail);
+        const domain: string = getDomainFromEmail(formattedEmail);
         if(domain.length === 0){
             response.profileEmailChangeError = ERROR_CODES.EC00017;
             return response;           
@@ -745,8 +746,9 @@ class RegisterUserService extends IdentityService {
             response.profileEmailChangeError = ERROR_CODES.EC00147;
             return response;
         }
-        const userByEmail: User | null = await identityDao.getUserBy("email", newEmail);
-        if(userByEmail !== null){
+        const userByEmail: User | null = await identityDao.getUserBy("email", formattedEmail);
+        const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", formattedEmail);
+        if(userByEmail !== null || userByRecoveryEmail !== null){
             response.profileEmailChangeError = ERROR_CODES.EC00142;
             return response;            
         }
@@ -761,7 +763,7 @@ class RegisterUserService extends IdentityService {
         const sessionToken: string = generateRandomToken(20, "hex");
         const arrStates: Array<ProfileEmailChangeState> = [];
         arrStates.push({
-            email: newEmail,
+            email: formattedEmail,
             expiresAtMs: Date.now() + (60 * 60 * 1000),
             changeEmailSessionToken: sessionToken,
             emailChangeState: EmailChangeState.ValidateEmail,
@@ -772,7 +774,7 @@ class RegisterUserService extends IdentityService {
         });
 
         arrStates.push({
-            email: newEmail,
+            email: formattedEmail,
             expiresAtMs: Date.now() + (60 * 60 * 1000),
             changeEmailSessionToken: sessionToken,
             emailChangeState: EmailChangeState.Completed,

@@ -610,8 +610,15 @@ class AuthenticateUserService extends IdentityService {
         }        
 
         const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
+        const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", email.toLowerCase());
         
-        // 2.   Error condition #2. The user is disabled, marked for delete, or locked
+        // 2.   Error condition #2. 
+        //          a. The user is trying to authenticate with a recovery email
+        //          b. The user is disabled, marked for delete, or locked
+        if(userByRecoveryEmail){
+            response.authenticationError = ERROR_CODES.EC00097;
+            return response;
+        }
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
             response.authenticationError = ERROR_CODES.EC00097;
             return response;
