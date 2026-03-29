@@ -607,7 +607,7 @@ class AuthenticateUserService extends IdentityService {
         if(!managementDomains || managementDomains.length === 0){
             response.authenticationError = ERROR_CODES.EC00110;
             return response;
-        }        
+        }
 
         const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
         const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", email.toLowerCase());
