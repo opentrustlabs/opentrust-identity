@@ -161,6 +161,7 @@ Currently, this tool supports the following configuration for KMS:
 - Google (configured as `googlekms`)
 - AWS (configured as `awskms`)
 - Azure (configured as `azurekms`)
+- Tencent (configured as `tencentkms`)
 
 
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
@@ -227,11 +228,9 @@ The tool supports the following commercial KMSs:
 - Google
 - AWS
 - Azure
+- Tencent
 
 See the `env.example` file at the root of the project for more details on configuring the KMS.
-
-Future development of this tool will include support for the following commercial KMSs:
-- Tencent
 
 
 ##### 3. Security Event Callback Service
@@ -247,7 +246,6 @@ IAM tool, security events are the following:
 - A user has authenticated using their duress password  (`duress_authentication`)
 - A user has successfully authenticated (`successful_authentication`)
 - A user has reset their password (`reset_password`)
-- A user has authenticated using their backup email (`backup_email_authentication`)
 - A user has logged out (`logout`)
 - A new device has been registered (`device_registered`)
 - An authorization code has been exchanged for an access token (`auth_code_exchanged`)

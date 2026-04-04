@@ -41,15 +41,33 @@ class TencentKms extends CachingKms {
         if(data.length > maxLength){
             return Promise.resolve(null);
         }
-        const encryptedData: Buffer | null = await this.encryptBuffer(Buffer.from(data, "utf-8"), aad);
-        if(!encryptedData){
-            return Promise.resolve(null);
+        try {
+            const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
+            const encryptRequest: EncryptRequest = {
+                KeyId: TENCENT_KMS_KEY_ID || "",
+                Plaintext: Buffer.from(data, "utf-8").toString("base64"),
+                EncryptionContext: encryptionContext
+            }
+            const response: EncryptResponse = await new Promise<EncryptResponse>((resolve, reject) => {
+                kmsClient.Encrypt(encryptRequest, (error: string, resp: EncryptResponse) => {
+                    if (error) reject(new Error(error));
+                    else resolve(resp);
+                });
+            });
+            if(response.CiphertextBlob){
+                return response.CiphertextBlob;
+            }
+            logWithDetails("error", "Error encrypting with Tencent KMS: No cipher text returned");
+            return null;
         }
-        return Promise.resolve(encryptedData.toString("base64"));
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error encrypting with Tencent KMS: ${e.message}`, {e});
+            return null;
+        }
     }
 
     public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
-
         try {
             const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
             const encryptRequest: EncryptRequest = {
@@ -57,46 +75,59 @@ class TencentKms extends CachingKms {
                 Plaintext: data.toString("base64"),
                 EncryptionContext: encryptionContext
             }
-
             const response: EncryptResponse = await new Promise<EncryptResponse>((resolve, reject) => {
                 kmsClient.Encrypt(encryptRequest, (error: string, resp: EncryptResponse) => {
-                    if (error) {
-                        reject(new Error(error));
-                    } else {
-                        resolve(resp);
-                    }
+                    if (error) reject(new Error(error));
+                    else resolve(resp);
                 });
             });
-
             if(response.CiphertextBlob){
-                return Buffer.from(response.CiphertextBlob, "base64");
+                // Store the base64 string as UTF-8 bytes to avoid a base64→bytes→base64
+                // round-trip that can corrupt Tencent's ciphertext format.
+                return Buffer.from(response.CiphertextBlob, "utf-8");
             }
-            else{
-                logWithDetails("error", "Error encrypting with Tencent KMS: No cipher text returned");
-                return null;
-            }
+            logWithDetails("error", "Error encrypting with Tencent KMS: No cipher text returned");
+            return null;
         }
         catch(error: unknown){
             const e = error as Error;
             logWithDetails("error", `Error encrypting with Tencent KMS: ${e.message}`, {e});
             return null;
         }
-
     }
 
     protected async decryptUncached(data: string, aad?: string): Promise<string | null> {
-        const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
-        if(!decryptedData){
-            return Promise.resolve(null);
+        try {
+            const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
+            const decryptRequest: DecryptRequest = {
+                CiphertextBlob: data,
+                EncryptionContext: encryptionContext
+            }
+            const resp: DecryptResponse = await new Promise<DecryptResponse>((resolve, reject) => {
+                kmsClient.Decrypt(decryptRequest, (error: string, resp: DecryptResponse) => {
+                    if (error) reject(new Error(error));
+                    else resolve(resp);
+                });
+            });
+            if(resp.Plaintext){
+                return Buffer.from(resp.Plaintext, "base64").toString("utf-8");
+            }
+            logWithDetails("error", "Error decrypting with Tencent KMS: No plain text returned");
+            return null;
         }
-        return Promise.resolve(decryptedData.toString("utf-8"));
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error decrypting with Tencent KMS: ${e.message}`, {e});
+            return null;
+        }
     }
 
     public async decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
         try {
             const encryptionContext = aad ? JSON.stringify({"aad": aad}) : undefined;
             const decryptRequest: DecryptRequest = {
-                CiphertextBlob: data.toString("base64"),
+                // Buffer was stored as UTF-8 bytes of the base64 CiphertextBlob string.
+                CiphertextBlob: data.toString("utf-8"),
                 EncryptionContext: encryptionContext
             }
 

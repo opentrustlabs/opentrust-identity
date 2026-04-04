@@ -796,7 +796,7 @@ class RegisterUserService extends IdentityService {
     }
 
     public async profileAddRecoveryEmail(email: string): Promise<ProfileEmailChangeResponse> {   
-
+        
         const recoveryEmail = this.formatEmail(email);
         const response: ProfileEmailChangeResponse = {
             profileEmailChangeState: {
@@ -810,6 +810,12 @@ class RegisterUserService extends IdentityService {
                 userId: ""
             },
             profileEmailChangeError: ERROR_CODES.DEFAULT,
+        }
+
+        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        if(!systemSettings.allowRecoveryEmail){
+            response.profileEmailChangeError = ERROR_CODES.EC00145;
+            return response;   
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
@@ -867,8 +873,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
         
         // Send an email to the user with the token value.        
-        let fromEmailAddr: string = "";
-        const systemSettings = await tenantDao.getSystemSettings();
+        let fromEmailAddr: string = "";        
         if(systemSettings && systemSettings.noReplyEmail){
             fromEmailAddr = systemSettings.noReplyEmail;
         }
@@ -1320,21 +1325,38 @@ class RegisterUserService extends IdentityService {
      */
     protected async validateRecoveryEmail(userId: string, recoveryEmail: string): Promise<{isValid: boolean, errorDetail: ErrorDetail}>{
 
+        // Error conditions:
+        //  1.  If there already is a recovery email
+        //  2.  If the domain is not valid
+        //  3.  If the domain is tied to a federated oidc provider
+        //  4.  The email is tied to an existing user or recovery account
         const existingRecoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", userId);
         if(existingRecoveryAccount !== null){
             return {isValid: false, errorDetail: ERROR_CODES.EC00141};
         }
- 
+        
         const domain: string = getDomainFromEmail(recoveryEmail);
         if(domain.length === 0){
             return {isValid: false, errorDetail: ERROR_CODES.EC00143}
         }
+        
         // Cannot create users who are tied to an existing external oidc provider. These types of user can ONLY be created
         // by going through SSO with their provider.
         const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
         if(federatedOIDCProvider){
             return {isValid: false, errorDetail: ERROR_CODES.EC00144};            
         }
+
+        const userByEmail = await identityDao.getUserBy("email", recoveryEmail);
+        if(userByEmail){
+            return {isValid: false, errorDetail: ERROR_CODES.EC00145};
+        }
+        
+        const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", recoveryEmail);
+        if(userByRecoveryEmail){
+            return {isValid: false, errorDetail: ERROR_CODES.EC00145};
+        }
+
         return {isValid: true, errorDetail: ERROR_CODES.NULL_ERROR}
     }
 
