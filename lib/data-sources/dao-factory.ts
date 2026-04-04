@@ -56,6 +56,7 @@ import CustomKms from "../kms/custom-kms";
 import GoogleKms from "../kms/google-kms";
 import AWSKms from "../kms/aws-kms";
 import AzureKms from "../kms/azure-kms";
+import TencentKms from "../kms/tencent-kms";
 // import GoogleKms from "../kms/google-kms";
 // import AWSKms from "../kms/aws-kms";
 // import AzureKms from "../kms/azure-kms";
@@ -161,10 +162,10 @@ class DaoFactory {
             DaoFactory.instance.kms = new AzureKms();
             return DaoFactory.instance.kms;
         }
-        // else if(kmsStrategy === "tencentkms"){
-        //     DaoFactory.instance.kms = new TencentKms();
-        //     return DaoFactory.instance.kms;
-        // }
+        else if(kmsStrategy === "tencentkms"){
+            DaoFactory.instance.kms = new TencentKms();
+            return DaoFactory.instance.kms;
+        }
         else {
             throw new Error("ERROR_KMS_STRATEGY_NOT_IMPLEMENTED");
         }
