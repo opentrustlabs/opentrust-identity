@@ -330,13 +330,14 @@ type Tenant {
     allowSocialLogin: Boolean!
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    verifyPhoneNumberOnSelfRegistration: Boolean!
     federatedAuthenticationConstraint: String!
     federatedauthenticationconstraintid: String
     markForDelete: Boolean!
     tenantType: String!
     tenanttypeid: String
     migrateLegacyUsers: Boolean!
-    allowLoginByPhoneNumber: Boolean!
+    allowLoginByPhoneNumber: Boolean!    
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
@@ -502,6 +503,7 @@ type User {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -1242,6 +1244,14 @@ type SystemSettings {
     auditRecordRetentionPeriodDays: Int
     noReplyEmail: String
     contactEmail: String
+    smsCallbackServiceEnabled: Boolean!
+    smsCallbackUri: String
+    smsSenderName: String
+    smsAllowPasswordResetForValidatedNumbers: Boolean!
+    smsAlertOnPasswordChange: Boolean!
+    smsAlertOnMFADeviceChange: Boolean!
+    smsAlertOnAccountStatusChange: Boolean!
+    smsAlertOnRecoveryEmailChange: Boolean!
     systemCategories: [SystemCategory!]!
 }
 
@@ -1445,11 +1455,12 @@ input TenantCreateInput {
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    verifyPhoneNumberOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
     federatedAuthenticationConstraint: String!    
     tenantType: String!
     migrateLegacyUsers: Boolean!
-    allowLoginByPhoneNumber: Boolean!
+    allowLoginByPhoneNumber: Boolean!    
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
@@ -1467,6 +1478,7 @@ input TenantUpdateInput {
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    verifyPhoneNumberOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
     federatedAuthenticationConstraint: String!
     tenantType: String!
@@ -1685,6 +1697,7 @@ input UserCreateInput {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -1709,6 +1722,7 @@ input UserUpdateInput {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -1776,6 +1790,14 @@ input SystemSettingsUpdateInput {
     auditRecordRetentionPeriodDays: Int
     noReplyEmail: String
     contactEmail: String
+    smsCallbackServiceEnabled: Boolean!
+    smsCallbackUri: String
+    smsSenderName: String
+    smsAllowPasswordResetForValidatedNumbers: Boolean!
+    smsAlertOnPasswordChange: Boolean!
+    smsAlertOnMFADeviceChange: Boolean!
+    smsAlertOnAccountStatusChange: Boolean!
+    smsAlertOnRecoveryEmailChange: Boolean!
 }
 
 input SystemInitializationInput {

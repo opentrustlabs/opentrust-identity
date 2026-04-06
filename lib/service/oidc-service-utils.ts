@@ -17,7 +17,7 @@ import { SecretShare } from "@/components/email-templates/secret-share-template"
 import { OIDCTokenResponse } from "../models/token-response";
 import { base64Encode } from "@/utils/dao-utils";
 import JwtServiceUtils from "./jwt-service-utils";
-import { SmsMessageBody } from "../models/sms";
+import { SmsCallbackRequest } from "../models/sms";
 import ServiceClientConfig from "./service-client-config";
 
 const {
@@ -205,12 +205,12 @@ class OIDCServiceUtils extends ServiceClientConfig {
         }
     }
 
-    public async sendSms(smsMessageBody: SmsMessageBody, authToken: string): Promise<void>{
+    public async sendSms(smsCallbackRequest: SmsCallbackRequest, authToken: string): Promise<void>{
         if(!SMS_SERVICE_WRAPPER_URI || SMS_SERVICE_WRAPPER_URI === ""){
             logWithDetails("error", "No SMS Service Wrapper URI was configured", {});
         }
         else{
-            const response: AxiosResponse = await this.getAxiosInstance().post(SMS_SERVICE_WRAPPER_URI, smsMessageBody, {
+            const response: AxiosResponse = await this.getAxiosInstance().post(SMS_SERVICE_WRAPPER_URI, smsCallbackRequest, {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${authToken}`

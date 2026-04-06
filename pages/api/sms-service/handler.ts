@@ -1,5 +1,5 @@
 import { logWithDetails } from '@/lib/logging/logger';
-import { SmsMessageBody } from '@/lib/models/sms';
+import { SmsCallbackRequest } from '@/lib/models/sms';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -22,7 +22,7 @@ export default async function handler(
 ) {
 
     if(req.method === "POST"){
-        const smsMessage: SmsMessageBody = req.body as SmsMessageBody;
+        const smsMessage: SmsCallbackRequest = req.body as SmsCallbackRequest;
         logWithDetails("info", "Received SMS", {...smsMessage});
     }
     res.status(200).end();

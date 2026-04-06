@@ -315,23 +315,43 @@ configured for it (see the env.example file for details).
 
 ##### 4. SMS Service Wrapper
 
-This tool does not yet support SMS (for features such as verifying phone numbers or sending one-time passcodes for
-password reset), although it is on the roadmap. The issue with SMS is the great variety of SMS providers,
-each with its own API and authorization. This tool is not intended to support any particular provider, but if an SMS 
-provider is available in your organization, and you want to enable SMS in this tool when the feature is
-ready, then you will need to write a wrapper service around your SMS provider.
+This tool supports SMS for features such as verifying phone numbers, security alerts, or sending one-time 
+passcodes for password reset. SMS __CANNOT__ be used as a secondary factor for MFA in this tool. NIST 
+deprecated SMS as a secondary factor in 2017. Although a number of IdPs may still use SMS for legacy
+reasons, in most cases they are actively encouraging their users to migrate to a more secure solution,
+such as OTPs or security keys.
 
+This tool is not intended to support any particular SMS provider, since each provider will have its own API 
+and authorization. But if an SMS provider is available in your organization, and you want to enable SMS in 
+this tool then you will need to write a wrapper service around your SMS provider.
+
+If enabled, there are several conditions, all configurable, where you can send SMS messages:
+
+- Phone number verification
+- Password reset
+- Alerts on password changes
+- Alerts on MFA changes
+- Alerts on account status changes
+- Alerts on recovery email changes (if recovery emails are enabled)
+
+SmsCallbackRequest {
+    phoneNumber: string,            // E.164 format
+    messageType: MessageType,       // e.g. "phone_verification", "password_reset", etc.
+    languageCode: string,           // ISO language code, ie, en, fr, de, ch, etc
+    senderName: string | null,      // null if not configured
+    body: string,                   // localized, assembled, ready to send
+    bodyEn: string                  // always English, for implementors who translate themselves
+}
 The JSON payload for the SMS service is: 
 
 ```JSON
 {
-    "lines": [
-        "line1",
-        "line2",
-        "line3",
-        "etc"        
-    ],
-    "to": "+123456789012"
+    "phoneNumber": "+123456778901",
+    "messageType": "phone_verification | password_reset | alert_password_change | ... ",
+    "languageCode": "en - or any support ISO language code",
+    "senderName": "Configurable - Name of the org or null",
+    "body": "localized message, ready to send",
+    "bodyEn": "English version of the message, in case you want to translate yourself"
 }
 ```
 
@@ -344,10 +364,10 @@ the endpoint `/api/users/me` (see below for details) or by using PKI identities 
 configured for it (see the env.example file for details).
 
 This tool has a simple implementation of the SMS handler which you can use if you are developing on localhost.
-Set the environment variable as follows:
+You can the set the SMS Callback URI value on the "System Settings" page under "Global Settings" to:
 
 ```bash
-SMS_SERVICE_WRAPPER_URI=http://localhost:3000/api/sms-service/handler
+http://localhost:3000/api/sms-service/handler
 ```
 
 ## Legacy User Migration
