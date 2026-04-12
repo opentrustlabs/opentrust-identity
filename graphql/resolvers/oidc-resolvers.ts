@@ -930,6 +930,14 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateHandleUserCodeInput(userCode);
         },
+        authenticateConfigureVerifyPhoneNumber: async(_: any, {authenticationSessionToken, userId, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateConfigureVerifyPhoneNumber(userId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateVerifyPhoneNumber: async(_: any, {authenticationSessionToken, userId, token, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateVerifyPhoneNumber(userId, token, authenticationSessionToken, preAuthToken || null);
+        },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId, recaptchaToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null, recaptchaToken || null);
@@ -965,6 +973,14 @@ const resolvers: Resolvers = {
         registerAddDuressPassword: async(_: any, { userId, password, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerAddDuressPassword(userId, password || null, skip, registrationSessionToken, preAuthToken || null);
+        },
+        registerConfigureVerifyPhoneNumber: async(_: any, { userId, registrationSessionToken, skip, preAuthToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerConfigureVerifyPhoneNumber(userId, registrationSessionToken, preAuthToken || null, skip);
+        },
+        registerVerifyPhoneNumber: async(_: any, { userId, registrationSessionToken, token, preAuthToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerVerifyPhoneNumber(userId, token, registrationSessionToken, preAuthToken || null);
         },
         cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken, deviceCodeId }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);

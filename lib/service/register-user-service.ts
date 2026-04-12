@@ -816,7 +816,7 @@ class RegisterUserService extends IdentityService {
 
     }
 
-    public async registerVerifyPhoneNumber(userId: string, token: string, registrationSessionToken: string, preAuthToken: string): Promise<UserRegistrationStateResponse>{
+    public async registerVerifyPhoneNumber(userId: string, token: string, registrationSessionToken: string, preAuthToken: string | null): Promise<UserRegistrationStateResponse>{
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
                 email: "",

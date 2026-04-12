@@ -231,49 +231,6 @@ class DBIdentityDao extends IdentityDao {
 
         return u;
     }
-
-
-
-    // public async savePasswordResetToken(userId: string, token: string): Promise<void> {
-    //     const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-    //     await passwordResetTokenRepo.insert({
-    //         expiresAtMS: Date.now() + 600000,  // allow 10 minutes
-    //         issuedAtMS:  Date.now(),
-    //         userId: userId,
-    //         token: token,
-    //         verificationType: VERIFICATION_TOKEN_TYPE_PASSWORD_RESET
-    //     });        
-        
-    //     return Promise.resolve();
-    // }
-
-    // public async getUserByPasswordResetToken(token: string): Promise<User | null> {
-    //     const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-    //     const tokenEntity = await passwordResetTokenRepo.findOne({
-    //         where: {
-    //             token: token
-    //         }
-    //     }); 
-    //     if(!tokenEntity){
-    //         return Promise.resolve(null);
-    //     }
-    //     // If the token has expired, then delete it
-    //     if(tokenEntity.expiresAtMS < Date.now()){
-    //         this.deletePasswordResetToken(token);
-    //         return Promise.resolve(null);
-    //     }
-    //     const user = await this.getUserBy("id", tokenEntity.userId);        
-    //     return user;
-    // }
-
-    // public async deletePasswordResetToken(token: string): Promise<void> {
-    //     const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-    //     await passwordResetTokenRepo.delete({
-    //         token: token
-    //     });
-    //     return Promise.resolve();
-    // }
-
     
     public async saveConfirmationToken(userId: string, token: string, tokenVerificationType: string): Promise<void> {
         const userVerificationTokenRepository = await RDBDriver.getInstance().getUserVerificationTokenRepository();

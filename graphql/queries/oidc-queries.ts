@@ -80,6 +80,8 @@ export const TENANT_META_DATA_QUERY = gql(`
             systemSettings {
                 allowDuressPassword
                 allowRecoveryEmail
+                smsCallbackServiceEnabled
+                smsAllowPasswordResetOtp
             }
             socialOIDCProviders {
                 federatedOIDCProviderDescription
@@ -198,6 +200,7 @@ export const TENANT_DETAIL_QUERY = gql(`
             registrationRequireCaptcha
             registrationRequireTermsAndConditions
             termsAndConditionsUri
+            verifyPhoneNumberOnSelfRegistration
         }        
     }
 `);
@@ -351,6 +354,7 @@ export const USER_DETAIL_QUERY = gql(`
             enabled
             nameOrder
             markForDelete
+            phoneNumberVerified
             recoveryEmail {
                 userId
                 email
@@ -761,6 +765,14 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
             auditRecordRetentionPeriodDays
             noReplyEmail
             contactEmail
+            smsCallbackServiceEnabled
+            smsCallbackUri
+            smsSenderName
+            smsAllowPasswordResetOtp
+            smsAlertOnPasswordChange
+            smsAlertOnMFADeviceChange
+            smsAlertOnAccountStatusChange
+            smsAlertOnEmailChange
             systemCategories {
                 categoryName
                 categoryEntries {

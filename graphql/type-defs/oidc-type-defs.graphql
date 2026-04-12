@@ -182,6 +182,7 @@ type Mutation {
     authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateAcceptTermsAndConditions(accepted: Boolean!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateVerifyEmailAddress(userId: String!, token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateConfigureVerifyPhoneNumber(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateVerifyPhoneNumber(userId: String!, token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
@@ -963,6 +964,7 @@ enum AuthenticationState {
     ENTER_EMAIL
     ENTER_USER_CODE
     VALIDATE_EMAIL
+    CONFIGURE_VALIDATE_PHONE_NUMBER
     VALIDATE_PHONE_NUMBER
 }
 

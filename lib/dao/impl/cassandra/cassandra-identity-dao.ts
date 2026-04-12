@@ -187,19 +187,7 @@ class CassandraIdentityDao extends IdentityDao {
         }
 
     }
-
-    // public async savePasswordResetToken(userId: string, token: string): Promise<void> {        
-    //     await this.saveUserVerificationToken(userId, token, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, 10);
-    //     return; 
-    // }
-
-    // public async getUserByPasswordResetToken(token: string): Promise<User | null> {
-    //     return this.getUserByUserVerificationToken(token);
-    // }
-
-    // public async deletePasswordResetToken(token: string): Promise<void> {
-    //     await this.deleteUserVerificationToken(token);
-    // }
+ 
 
     public async saveConfirmationToken(userId: string, token: string, confirmationType: string): Promise<void> {
         await this.saveUserVerificationToken(userId, token, confirmationType, 60);

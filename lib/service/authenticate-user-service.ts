@@ -4,7 +4,7 @@ import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantM
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER } from "@/utils/consts";
 import { createVerificationToken, generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail, VerificationToken } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -457,6 +457,7 @@ class AuthenticateUserService extends IdentityService {
         // 9.   There is no provider, so we either need to register the user if they do not exist, or
         //      authenticate with username/password + other MFA types, or migrate from legacy system
         else {
+            
             if(user === null && !canMigrateUser){                
                 response.userAuthenticationState.authenticationState = AuthenticationState.Register;                
                 response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantId}&username=${email.toLowerCase()}`;
@@ -485,9 +486,23 @@ class AuthenticateUserService extends IdentityService {
             if(user && user.emailVerified === false && tenant.verifyEmailOnSelfRegistration === true){
                 stateOrder.push(AuthenticationState.ValidateEmail);
             }
+
+            // Next verification: phone number.
+            // Has the user configured a phone number that has not been verified? 
+            // Does the tenant require phone number verification (for users who have phone numbers) before the user can be authenticated?
+            // Is the system even enabled for SMS verification?
+            if(user?.phoneNumber && user.phoneNumber.length > 0 && !user.phoneNumberVerified){
+                if(tenant.verifyPhoneNumberOnSelfRegistration === true){
+                    const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+                    if(systemSettings.smsCallbackServiceEnabled){
+                        stateOrder.push(AuthenticationState.ConfigureValidatePhoneNumber);
+                        stateOrder.push(AuthenticationState.ValidatePhoneNumber);
+                    }
+                }
+            }
             
+            // Check for missing Multi-factor authentication types.
             const passwordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
-            
             let requiredMfaTypes: Array<string> = [];
             if(passwordConfig && passwordConfig.requireMfa){
                 requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
@@ -533,9 +548,7 @@ class AuthenticateUserService extends IdentityService {
             ){
                 stateOrder.push(AuthenticationState.RotatePassword);
             }
-            // if(!canMigrateUser && userCredential && this.requirePasswordRotation(userCredential, passwordConfig)){
-            //     stateOrder.push(AuthenticationState.RotatePassword);
-            // }
+            
             if(preAuthToken){
                 stateOrder.push(AuthenticationState.RedirectBackToApplication);
             }
@@ -1357,6 +1370,66 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError = ERROR_CODES.EC00128;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
         }
+        return response;
+    }
+
+    public async authenticateConfigureVerifyPhoneNumber(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ConfigureValidatePhoneNumber);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        // Need to send an SMS message with 8 alpha-numeric characters
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user || !user.phoneNumber){
+            response.authenticationError = ERROR_CODES.EC00235;
+            return response;            
+        }
+
+        this.generateAndSendPhoneNumberValidationToken(user, user.phoneNumber, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER);
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
+        return response;
+    }
+
+    public async authenticateVerifyPhoneNumber(userId: string, token: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidatePhoneNumber);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+
+        const verificationToken: VerificationToken = createVerificationToken(token);
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
+        if(!user || user.userId !== userId){
+            response.authenticationError = ERROR_CODES.EC00135;
+            return response;
+        }
+
+        // Go ahead and delete the token, and  update the user in the db
+        identityDao.deleteConfirmationToken(verificationToken.hashedToken);
+        user.phoneNumberVerified = true;
+        await identityDao.updateUser(user);
+        
+        // Update the existing state
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+
+        const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
+            const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
+            response.passwordConfig = passwordConfig;
+        }                
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+
         return response;
     }
 
