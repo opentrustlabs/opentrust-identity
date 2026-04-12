@@ -1,5 +1,5 @@
 import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
-import IdentityDao, { UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
+import IdentityDao, { TokenConfirmationType, UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
 import { UserFido2CounterRel } from "@/lib/entities/user-fido2-counter-rel-entity";
 import RDBDriver from "@/lib/data-sources/rdb";
@@ -234,63 +234,63 @@ class DBIdentityDao extends IdentityDao {
 
 
 
-    public async savePasswordResetToken(userId: string, token: string): Promise<void> {
-        const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-        await passwordResetTokenRepo.insert({
-            expiresAtMS: Date.now() + 600000,  // allow 10 minutes
-            issuedAtMS:  Date.now(),
-            userId: userId,
-            token: token,
-            verificationType: VERIFICATION_TOKEN_TYPE_PASSWORD_RESET
-        });        
+    // public async savePasswordResetToken(userId: string, token: string): Promise<void> {
+    //     const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
+    //     await passwordResetTokenRepo.insert({
+    //         expiresAtMS: Date.now() + 600000,  // allow 10 minutes
+    //         issuedAtMS:  Date.now(),
+    //         userId: userId,
+    //         token: token,
+    //         verificationType: VERIFICATION_TOKEN_TYPE_PASSWORD_RESET
+    //     });        
         
-        return Promise.resolve();
-    }
+    //     return Promise.resolve();
+    // }
 
-    public async getUserByPasswordResetToken(token: string): Promise<User | null> {
-        const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-        const tokenEntity = await passwordResetTokenRepo.findOne({
-            where: {
-                token: token
-            }
-        }); 
-        if(!tokenEntity){
-            return Promise.resolve(null);
-        }
-        // If the token has expired, then delete it
-        if(tokenEntity.expiresAtMS < Date.now()){
-            this.deletePasswordResetToken(token);
-            return Promise.resolve(null);
-        }
-        const user = await this.getUserBy("id", tokenEntity.userId);        
-        return user;
-    }
+    // public async getUserByPasswordResetToken(token: string): Promise<User | null> {
+    //     const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
+    //     const tokenEntity = await passwordResetTokenRepo.findOne({
+    //         where: {
+    //             token: token
+    //         }
+    //     }); 
+    //     if(!tokenEntity){
+    //         return Promise.resolve(null);
+    //     }
+    //     // If the token has expired, then delete it
+    //     if(tokenEntity.expiresAtMS < Date.now()){
+    //         this.deletePasswordResetToken(token);
+    //         return Promise.resolve(null);
+    //     }
+    //     const user = await this.getUserBy("id", tokenEntity.userId);        
+    //     return user;
+    // }
 
-    public async deletePasswordResetToken(token: string): Promise<void> {
-        const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-        await passwordResetTokenRepo.delete({
-            token: token
-        });
-        return Promise.resolve();
-    }
+    // public async deletePasswordResetToken(token: string): Promise<void> {
+    //     const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
+    //     await passwordResetTokenRepo.delete({
+    //         token: token
+    //     });
+    //     return Promise.resolve();
+    // }
 
     
-    public async saveEmailConfirmationToken(userId: string, token: string): Promise<void> {
-        const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-        await passwordResetTokenRepo.insert({
+    public async saveConfirmationToken(userId: string, token: string, tokenVerificationType: string): Promise<void> {
+        const userVerificationTokenRepository = await RDBDriver.getInstance().getUserVerificationTokenRepository();
+        await userVerificationTokenRepository.insert({
             expiresAtMS: Date.now() + (60 * 60 * 1000),  // allow 60 minutes
             issuedAtMS:  Date.now(),
             userId: userId,
             token: token,
-            verificationType: VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL
+            verificationType: tokenVerificationType
         });        
         
         return Promise.resolve();
     }
 
-    public async getUserByEmailConfirmationToken(token: string): Promise<User | null> {
-        const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-        const tokenEntity = await passwordResetTokenRepo.findOne({
+    public async getUserByConfirmationToken(token: string): Promise<User | null> {
+        const userVerificationTokenRepository = await RDBDriver.getInstance().getUserVerificationTokenRepository();
+        const tokenEntity = await userVerificationTokenRepository.findOne({
             where: {
                 token: token
             }
@@ -300,16 +300,16 @@ class DBIdentityDao extends IdentityDao {
         }
         // If the token has expired, then delete it
         if(tokenEntity.expiresAtMS < Date.now()){
-            this.deletePasswordResetToken(token);
+            this.deleteConfirmationToken(token);
             return Promise.resolve(null);
         }
         const user: User | null = await this.getUserBy("id", tokenEntity.userId)
         return user;
     }
     
-    public async deleteEmailConfirmationToken(token: string): Promise<void> {
-        const passwordResetTokenRepo = await RDBDriver.getInstance().getUserVerificationTokenRepository();
-        await passwordResetTokenRepo.delete({
+    public async deleteConfirmationToken(token: string): Promise<void> {
+        const userVerificationTokenRepository = await RDBDriver.getInstance().getUserVerificationTokenRepository();
+        await userVerificationTokenRepository.delete({
             token: token
         })
         return Promise.resolve();

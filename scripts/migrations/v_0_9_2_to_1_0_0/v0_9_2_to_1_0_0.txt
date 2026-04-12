@@ -28,6 +28,20 @@ alter TABLE tenant_look_and_feel ADD COLUMN imagepanelposition VARCHAR(16);
 alter TABLE tenant_look_and_feel ADD COLUMN buttonborderradius VARCHAR(16);
 alter TABLE tenant_look_and_feel ADD COLUMN headerlogoposition VARCHAR(16);
 
+alter TABLE tenant ADD COLUMN verifyphonenumberonselfregistration BOOLEAN NOT NULL;
+
+alter TABLE system_settings ADD COLUMN smscallbackserviceenabled BOOLEAN NOT NULL;
+alter TABLE system_settings ADD COLUMN smscallbackuri VARCHAR(256);
+alter TABLE system_settings ADD COLUMN smssendername VARCHAR(64);
+alter TABLE system_settings ADD COLUMN smsallowpasswordresetotp BOOLEAN NOT NULL;
+alter TABLE system_settings ADD COLUMN smsalertonpasswordchange BOOLEAN NOT NULL
+alter TABLE system_settings ADD COLUMN smsalertonmfadevicechange BOOLEAN NOT NULL
+alter TABLE system_settings ADD COLUMN smsalertonaccountstatuschange BOOLEAN NOT NULL
+alter TABLE system_settings ADD COLUMN smsalertonemailchange BOOLEAN NOT NULL
+
+alter TABLE users ADD COLUMN phonenumberverified BOOLEAN NOT NULL;
+
+
 
 For Oracle:
 ===========
@@ -56,6 +70,21 @@ alter TABLE tenant_look_and_feel ADD marketingtext VARCHAR2(1024);
 alter TABLE tenant_look_and_feel ADD imagepanelposition VARCHAR2(16);
 alter TABLE tenant_look_and_feel ADD buttonborderradius VARCHAR2(16);
 alter TABLE tenant_look_and_feel ADD headerlogoposition VARCHAR2(16);
+
+alter TABLE tenant ADD verifyphonenumberonselfregistration NUMBER(1) NOT NULL;
+
+alter TABLE system_settings ADD smscallbackserviceenabled NUMBER(1) NOT NULL;
+alter TABLE system_settings ADD smscallbackuri VARCHAR2(256);
+alter TABLE system_settings ADD smssendername VARCHAR2(64);
+alter TABLE system_settings ADD smsallowpasswordresetotp NUMBER(1) NOT NULL;
+alter TABLE system_settings ADD smsalertonpasswordchange NUMBER(1) NOT NULL
+alter TABLE system_settings ADD smsalertonmfadevicechange NUMBER(1) NOT NULL
+alter TABLE system_settings ADD smsalertonaccountstatuschange NUMBER(1) NOT NULL
+alter TABLE system_settings ADD smsalertonemailchange NUMBER(1) NOT NULL
+
+alter TABLE users ADD phonenumberverified NUMBER(1) NOT NULL;
+
+
 
 
 For MSSQL:
@@ -93,7 +122,18 @@ alter TABLE tenant_look_and_feel ADD buttonborderradius VARCHAR(16);
 alter TABLE tenant_look_and_feel ADD headerlogoposition VARCHAR(16);
 
 
+alter TABLE tenant ADD verifyphonenumberonselfregistration BIT NOT NULL;
 
+alter TABLE system_settings ADD smscallbackserviceenabled BIT NOT NULL;
+alter TABLE system_settings ADD smscallbackuri VARCHAR(256);
+alter TABLE system_settings ADD smssendername VARCHAR(64);
+alter TABLE system_settings ADD smsallowpasswordresetotp BIT NOT NULL;
+alter TABLE system_settings ADD smsalertonpasswordchange BIT NOT NULL;
+alter TABLE system_settings ADD smsalertonmfadevicechange BIT NOT NULL;
+alter TABLE system_settings ADD smsalertonaccountstatuschange BIT NOT NULL;
+alter TABLE system_settings ADD smsalertonemailchange BIT NOT NULL;
+
+alter TABLE users ADD phonenumberverified BIT NOT NULL;
 
 
 For Cassandra:
@@ -141,3 +181,23 @@ alter TABLE tenant_look_and_feel ADD marketingtext TEXT;
 alter TABLE tenant_look_and_feel ADD imagepanelposition TEXT;
 alter TABLE tenant_look_and_feel ADD buttonborderradius TEXT;
 alter TABLE tenant_look_and_feel ADD headerlogoposition TEXT;
+
+-------------------------
+alter TABLE tenant ADD verifyphonenumberonselfregistration BOOLEAN;
+alter TABLE root_tenant ADD verifyphonenumberonselfregistration BOOLEAN;
+
+alter TABLE system_settings ADD smscallbackserviceenabled BOOLEAN;
+alter TABLE system_settings ADD smscallbackuri TEXT;
+alter TABLE system_settings ADD smssendername TEXT;
+alter TABLE system_settings ADD smsallowpasswordresetotp BOOLEAN;
+alter TABLE system_settings ADD smsalertonpasswordchange BOOLEAN;
+alter TABLE system_settings ADD smsalertonmfadevicechange BOOLEAN;
+alter TABLE system_settings ADD smsalertonaccountstatuschange BOOLEAN;
+alter TABLE system_settings ADD smsalertonemailchange BOOLEAN;
+
+alter TABLE users ADD phonenumberverified BOOLEAN;
+alter TABLE users_by_email ADD phonenumberverified BOOLEAN;
+alter TABLE users_by_phone_number ADD phonenumberverified BOOLEAN;
+alter TABLE users_by_federated_oidc_id ADD phonenumberverified BOOLEAN;
+
+

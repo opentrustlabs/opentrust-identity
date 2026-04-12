@@ -552,6 +552,7 @@ export const DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED="_-!@#[]<>=?+*.,%/:;";
 
 export const VERIFICATION_TOKEN_TYPE_PASSWORD_RESET="PASSWORD_RESET";
 export const VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL="VALIDATE_EMAIL";
+export const VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER="VALIDATE_PHONE_NUMBER";
 
 // Client-related constants
 export const CLIENT_SECRET_ENCODING = "base64";
@@ -1029,6 +1030,7 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         tenantType: "",
         tenanttypeid: undefined,
         verifyEmailOnSelfRegistration: true,
+        verifyPhoneNumberOnSelfRegistration: true,
         registrationRequireCaptcha: false,
         registrationRequireTermsAndConditions: false,
         termsAndConditionsUri: ""
@@ -1041,6 +1043,17 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         rootClientId: "",
         enablePortalAsLegacyIdp: false,
         softwareVersion: OPENTRUST_IDENTITY_VERSION,
+        smsAlertOnAccountStatusChange: false,
+        smsAlertOnEmailChange: false,
+        smsAlertOnMFADeviceChange: false,
+        smsAlertOnPasswordChange: false,
+        smsAllowPasswordResetOtp: false,
+        smsCallbackServiceEnabled: false,
+        contactEmail: null,
+        auditRecordRetentionPeriodDays: 90,
+        noReplyEmail: null,
+        smsCallbackUri: null,
+        smsSenderName: null,
         systemCategories: []
     },
     socialOIDCProviders: []

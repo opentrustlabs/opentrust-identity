@@ -29,7 +29,7 @@ import PasswordRulesDisplay from "./password-rules-display";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import Link from "next/link";
-import { MuiTelInput } from "mui-tel-input";
+import { MuiTelInput, matchIsValidTel } from "mui-tel-input";
 import RecoveryEmailConfiguration from "./recovery-email";
 import DuressPasswordConfiguration from "./duress-password";
 import { ERROR_CODES } from "@/lib/models/error";
@@ -121,6 +121,7 @@ const RegisterInnerComponent: React.FC = () => {
         federatedOIDCProviderSubjectId: "",
         middleName: "",
         phoneNumber: "",
+        phoneNumberVerified: false,
         postalCode: "",
         preferredLanguageCode: "",
         stateRegionProvince: "",
@@ -293,7 +294,10 @@ const RegisterInnerComponent: React.FC = () => {
         if(!repeatPassword || repeatPassword.length < 8 || repeatPassword !== userInput.password){
             bRetVal = false;
         }
-        
+        if(userInput.phoneNumber && !matchIsValidTel(userInput.phoneNumber)){
+            bRetVal = false;
+        }
+
         return bRetVal;
     }
 

@@ -134,7 +134,7 @@
     "ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION": "Die Authentifizierung kann aufgrund eines fehlenden oder ungültigen Mandanten nicht abgeschlossen werden.",
     "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION": "Beim Abschließen Ihrer Authentifizierung ist ein Fehler aufgetreten.",
     "ERROR_REGISTRATION_FOR_USER_ALREADY_IN_PROGRESS": "Die Registrierung kann nicht gestartet werden. Für dieses Konto läuft bereits eine aktive Registrierung.",
-    "ERROR_REGISTRATION_NO_USER_FOUND_FOR_EMAIL_VALIDATION_TOKEN": "Der eingegebene Validierungstoken ist ungültig.",
+    "ERROR_REGISTRATION_NO_USER_FOUND_FOR_VALIDATION_TOKEN": "Der eingegebene Validierungstoken ist ungültig.",
     "ERROR_INVALID_USER_FOUND_FOR_TOKEN": "Der eingegebene Validierungstoken ist ungültig.",
     "ERROR_NO_RECOVERY_EMAIL_FOUND": "Ihre Wiederherstellungs-E-Mail-Adresse wurde nicht gefunden.",
     "ERROR_NO_DURESS_PASSWORD_SUPPLIED": "Es wurde kein Zwangspasswort angegeben.",
@@ -359,5 +359,8 @@
     "ERROR_CLIENT_CERTIFICATE_IDENTIFIER_ALREADY_ASSIGNED_TO_CLIENT": "The client certificate identifier is already assigned to a client.",
     "ERROR_FAPI_CONFIGURATION_NOT_ALLOWED_FOR_DEVICE_CLIENTS": "FAPI Configuration is not allowed for device clients.",
     "ERROR_INVALID_CLIENT_TYPE_FOR_TOKEN_ENRICHMENT_CALLBACK": "The client type is not valid for the token enrichment callback.",
-    "ERROR_INVALID_URI_FOR_TOKEN_ENRICHMENT_CALLBACK": "The URI is not valid for the token enrichment callback."
+    "ERROR_INVALID_URI_FOR_TOKEN_ENRICHMENT_CALLBACK": "The URI is not valid for the token enrichment callback.",
+    "USE_THE_FOLLOWING_CODE_TO_RESET_YOUR_PASSWORD" : "Use the following code to reset your password.",
+    "UNAUTHORIZED_PASSWORD_RESET" : "If you did not initiate a password reset please report it.",
+    "REPORT_UNAUTHORIZED_PASSWORD_RESET" : "Report unauthorized password reset."
 }

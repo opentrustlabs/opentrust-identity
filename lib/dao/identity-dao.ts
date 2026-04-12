@@ -3,6 +3,8 @@ import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2
 export type UserLookupType = "id" | "email" | "phone" | "federatedoidcproviderid";
 
 export type UserRecoveryLookupType = "id" | "email";
+
+export type TokenConfirmationType = "password_reset" | "validate_email" | "validate_phone_number"
 abstract class IdentityDao {
 
     abstract getFailedLogins(userId: string): Promise<Array<UserFailedLogin>>;
@@ -51,17 +53,11 @@ abstract class IdentityDao {
 
     abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 
-    abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
+    abstract saveConfirmationToken(userId: string, token: string, tokenVerificationType: string): Promise<void>;
 
-    abstract getUserByPasswordResetToken(token: string): Promise<User | null>;
+    abstract getUserByConfirmationToken(token: string): Promise<User | null>;
 
-    abstract deletePasswordResetToken(token: string): Promise<void>;
-
-    abstract saveEmailConfirmationToken(userId: string, token: string): Promise<void>;
-
-    abstract getUserByEmailConfirmationToken(token: string): Promise<User | null>;
-
-    abstract deleteEmailConfirmationToken(token: string): Promise<void>;
+    abstract deleteConfirmationToken(token: string): Promise<void>;
 
     /**
      * Creates a user (if they user does not already exist based on email or phone number) 

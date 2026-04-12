@@ -188,29 +188,29 @@ class CassandraIdentityDao extends IdentityDao {
 
     }
 
-    public async savePasswordResetToken(userId: string, token: string): Promise<void> {        
-        await this.saveUserVerificationToken(userId, token, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, 10);
-        return; 
-    }
+    // public async savePasswordResetToken(userId: string, token: string): Promise<void> {        
+    //     await this.saveUserVerificationToken(userId, token, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, 10);
+    //     return; 
+    // }
 
-    public async getUserByPasswordResetToken(token: string): Promise<User | null> {
-        return this.getUserByUserVerificationToken(token);
-    }
+    // public async getUserByPasswordResetToken(token: string): Promise<User | null> {
+    //     return this.getUserByUserVerificationToken(token);
+    // }
 
-    public async deletePasswordResetToken(token: string): Promise<void> {
-        await this.deleteUserVerificationToken(token);
-    }
+    // public async deletePasswordResetToken(token: string): Promise<void> {
+    //     await this.deleteUserVerificationToken(token);
+    // }
 
-    public async saveEmailConfirmationToken(userId: string, token: string): Promise<void> {
-        await this.saveUserVerificationToken(userId, token, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, 60);
+    public async saveConfirmationToken(userId: string, token: string, confirmationType: string): Promise<void> {
+        await this.saveUserVerificationToken(userId, token, confirmationType, 60);
         return;
     }
 
-    public async getUserByEmailConfirmationToken(token: string): Promise<User | null> {
-        return this.getUserByUserVerificationToken(token);
+    public async getUserByConfirmationToken(token: string): Promise<User | null> {
+        return this.getUserByVerificationToken(token);
     }
 
-    public async deleteEmailConfirmationToken(token: string): Promise<void> {
+    public async deleteConfirmationToken(token: string): Promise<void> {
         await this.deleteUserVerificationToken(token);
     }
 
@@ -770,7 +770,7 @@ class CassandraIdentityDao extends IdentityDao {
         return; 
     }
 
-    protected async getUserByUserVerificationToken(token: string): Promise<User | null> {
+    protected async getUserByVerificationToken(token: string): Promise<User | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_verification_token");
         const result = await mapper.get({
             token: token

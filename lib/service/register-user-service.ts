@@ -5,8 +5,8 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
-import {  generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER } from "@/utils/consts";
+import {  createVerificationToken, generateRandomToken, generateUserCredential, getDomainFromEmail, VerificationToken } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthDao from "../dao/auth-dao";
@@ -21,6 +21,7 @@ import { RecaptchaResponse } from "../models/recaptcha";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
 import { containsScope } from "@/utils/authz-utils";
+import { getCountryCallingCode, isValidPhoneNumber } from 'libphonenumber-js';
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -140,6 +141,23 @@ class RegisterUserService extends IdentityService {
             stateOrder.push(RegistrationState.ValidateEmail);
         }
 
+        // Rules for verifying phone numbers.
+        // 1.   The user added their optional phone number
+        // 2.   SMS has to be enabled system wide
+        // 3.   Does the tenant require phone number validation on registration or is it optional?
+        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        if(userCreateInput.phoneNumber && userCreateInput.phoneNumber.length > 0){
+            if(systemSettings.smsCallbackServiceEnabled && systemSettings.smsCallbackUri){
+                if(tenant.verifyEmailOnSelfRegistration){
+                    stateOrder.push(RegistrationState.ConfigurePhoneNumberValidationRequired);
+                    stateOrder.push(RegistrationState.ValidatePhoneNumber);
+                }
+                else{
+                    stateOrder.push(RegistrationState.ConfigurePhoneNumberValidationOptional);
+                    stateOrder.push(RegistrationState.ValidatePhoneNumber);
+                }
+            }
+        }
         
         if(tenantPasswordConfig.requireMfa === true){
             const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
@@ -169,7 +187,7 @@ class RegisterUserService extends IdentityService {
             stateOrder.push(RegistrationState.ValidateSecurityKey);
         }
 
-        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        
         if(systemSettings.allowRecoveryEmail){
             stateOrder.push(RegistrationState.AddRecoveryEmailOptional);
             if(tenant.verifyEmailOnSelfRegistration === true){
@@ -239,14 +257,28 @@ class RegisterUserService extends IdentityService {
         const index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidateEmail);
         if(index < 0){
             return Promise.resolve(response);
-        }        
+        }    
+        const verificationToken: VerificationToken = createVerificationToken(token);
+        
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
 
-        const validationError: ErrorDetail | null = await this.validateEmailToken(userId, token);
-        if(validationError){
+        if(user === null){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError = validationError;
+            response.registrationError = ERROR_CODES.EC00134;
             return Promise.resolve(response);
         }
+        else if(user.userId !== userId){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError = ERROR_CODES.EC00135;
+            return Promise.resolve(response);
+        }            
+        
+        // Go ahead and delete the token, and  update the user in the db and search index
+        identityDao.deleteConfirmationToken(verificationToken.hashedToken);
+        user.emailVerified = true;
+        await identityDao.updateUser(user);
+        // No need to wait on the search index updates
+        searchDao.updateSearchIndexUserDocuments(user);        
         
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
@@ -278,11 +310,12 @@ class RegisterUserService extends IdentityService {
         const index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidateRecoveryEmail);
         if(index < 0){
             return Promise.resolve(response);
-        }        
+        }
 
-        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        const verificationToken: VerificationToken = createVerificationToken(token);
+
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
         if(user === null){
-            await identityDao.deleteEmailConfirmationToken(token);
             response.userRegistrationState.registrationState = RegistrationState.Error;
             response.registrationError = ERROR_CODES.EC00134;
             return Promise.resolve(response);
@@ -294,8 +327,10 @@ class RegisterUserService extends IdentityService {
             return Promise.resolve(response);
         }
 
-        // For the one-time token, need to delete it in success case and        
-        await identityDao.deleteEmailConfirmationToken(token);
+        // For the one-time token, need to delete it at this point, even if we have subsequent
+        // errors. 
+        await identityDao.deleteConfirmationToken(verificationToken.hashedToken);
+
         const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", userId);
         if(!userRecoveryEmail){
             response.userRegistrationState.registrationState = RegistrationState.Error;
@@ -444,7 +479,7 @@ class RegisterUserService extends IdentityService {
 
             await identityDao.addRecoveryEmail({userId: arrUserRegistrationState[index].userId, email: recoveryEmail, emailVerified: false});
             if(tenant.verifyEmailOnSelfRegistration === true){
-                this.sentEmailValidationToken(user, recoveryEmail);
+                this.generateAndSendEmailValidationToken(user, recoveryEmail, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
             }
 
             arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
@@ -453,7 +488,7 @@ class RegisterUserService extends IdentityService {
             const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 1];
             if(nextRegistrationState.registrationState === RegistrationState.ValidateRecoveryEmail){
                 const token: string = generateRandomToken(8, "hex").toUpperCase();
-                await identityDao.saveEmailConfirmationToken(userId, token);
+                await identityDao.saveConfirmationToken(userId, token, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
             }
             response.userRegistrationState = nextRegistrationState;
                     
@@ -706,6 +741,137 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve(response);
     }
 
+    public async registerConfigureVerifyPhoneNumber(userId: string, registrationSessionToken: string, preAuthToken: string | null, skip: boolean): Promise<UserRegistrationStateResponse> {
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: skip ? RegistrationState.ConfigurePhoneNumberValidationOptional : RegistrationState.ConfigurePhoneNumberValidationRequired,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: ERROR_CODES.DEFAULT,
+        };
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+
+        let index: number = -1;
+        // If the user has elected to skip this step, then it must be an optional step and should be validated as such
+        if(skip === true){
+            index = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigurePhoneNumberValidationOptional);
+        }
+        // Otherwise this could either be a required step or an optional step that the user is selecting.
+        // If either one is >= 0 then use it as the index.
+        else{
+            const idxOptional = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigurePhoneNumberValidationOptional);
+            const idxRequired = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigurePhoneNumberValidationRequired);
+            if(idxOptional >= 0){
+                index = idxOptional;
+            }
+            else if(idxRequired >= 0){
+                index = idxRequired;
+            }
+        }
+        if(index < 0){            
+            return Promise.resolve(response);
+        }
+
+        if(skip === true){
+            // Then we can mark this as complete, as well as the validation step, which we do not need,
+            // and go to the step after. Since configuration and validation could be the last steps
+            // in the registration process, we may have to either generate an access token for the
+            // user or generate a redirect URI
+            arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+            arrUserRegistrationState[index + 1].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index + 1]);
+            const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 2];
+            response.userRegistrationState = nextRegistrationState;
+
+            if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
+            }
+        }
+        else {
+            // Need to send an SMS message with 8 alpha-numeric characters
+            const user: User | null = await identityDao.getUserBy("id", userId);
+            if(user && user.phoneNumber){
+
+                this.generateAndSendPhoneNumberValidationToken(user, user.phoneNumber, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER);
+
+                arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+                await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+                response.userRegistrationState = arrUserRegistrationState[index + 1];
+            }
+            else{
+                response.userRegistrationState = arrUserRegistrationState[index];
+                response.registrationError = ERROR_CODES.EC00235;
+            }
+        }
+        return Promise.resolve(response);
+
+    }
+
+    public async registerVerifyPhoneNumber(userId: string, token: string, registrationSessionToken: string, preAuthToken: string): Promise<UserRegistrationStateResponse>{
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: RegistrationState.ValidatePhoneNumber,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: ERROR_CODES.DEFAULT,
+        };
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+
+        let index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidatePhoneNumber);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+
+        const verificationToken: VerificationToken = createVerificationToken(token);
+
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
+        if(user === null){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError = ERROR_CODES.EC00134;
+            return Promise.resolve(response);
+        }
+               
+        if(user.userId !== userId){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError = ERROR_CODES.EC00135;
+            return Promise.resolve(response);
+        }
+
+        // Delete the confirmation token and update the user with a verified phone number.
+        await identityDao.deleteConfirmationToken(verificationToken.hashedToken);
+        user.phoneNumberVerified === true;
+        await identityDao.updateUser(user);
+
+        arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+        const nextRegistrationState = arrUserRegistrationState[index + 1];
+        response.userRegistrationState = nextRegistrationState;
+
+        if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+            await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
+        }
+
+        return Promise.resolve(response); 
+
+    }
+
     public async profileHandleEmailChange(email: string): Promise<ProfileEmailChangeResponse> {
         const formattedEmail = this.formatEmail(email);
 
@@ -788,7 +954,7 @@ class RegisterUserService extends IdentityService {
         // Do not change the email yet. Only do that when the user has validated
         // their email in the next step.
         const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
+        await identityDao.saveConfirmationToken(user.userId, emailConfirmationToken, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
 
         response.profileEmailChangeState = arrStates[0];
         return response;
@@ -870,7 +1036,7 @@ class RegisterUserService extends IdentityService {
         // Do not add the recovery email to the table yet. Only do that when the user has validated
         // their email in the next step.
         const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
+        await identityDao.saveConfirmationToken(user.userId, emailConfirmationToken, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
         
         // Send an email to the user with the token value.        
         let fromEmailAddr: string = "";        
@@ -926,7 +1092,7 @@ class RegisterUserService extends IdentityService {
             return response;            
         }
 
-        const userByConfirmationToken: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(token);
         if(userByConfirmationToken === null){
             response.profileEmailChangeError = ERROR_CODES.EC00134;
             return response;  
@@ -950,7 +1116,7 @@ class RegisterUserService extends IdentityService {
             }
             await identityDao.addRecoveryEmail(userRecoveryEmail);
         }
-        await identityDao.deleteEmailConfirmationToken(token);
+        await identityDao.deleteConfirmationToken(token);
 
         currentState.changeStateStatus = STATUS_COMPLETE;
         await identityDao.updateProfileEmailChangeState(currentState);
@@ -988,6 +1154,7 @@ class RegisterUserService extends IdentityService {
         }
         return response;
     }
+
 
     /**
      * 
@@ -1145,10 +1312,14 @@ class RegisterUserService extends IdentityService {
         if (existingUser || recoveryAccount) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
         }
-        if(userCreateInput.phoneNumber){
+        if(userCreateInput.phoneNumber && userCreateInput.phoneNumber.length > 0){
             const userByPhone: User | null = await identityDao.getUserBy("phone", userCreateInput.phoneNumber);
             if(userByPhone){
                 throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
+            }
+            const isValidPhoneFormat: boolean = isValidPhoneNumber(userCreateInput.phoneNumber);
+            if(!isValidPhoneFormat){
+                throw new GraphQLError(ERROR_CODES.EC00234.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00234}});
             }
         }
 
@@ -1237,6 +1408,7 @@ class RegisterUserService extends IdentityService {
             countryCode: userCreateInput.countryCode,
             middleName: userCreateInput.middleName,
             phoneNumber: userCreateInput.phoneNumber,
+            phoneNumberVerified: userCreateInput.phoneNumberVerified,
             preferredLanguageCode: userCreateInput.preferredLanguageCode,
             federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
             markForDelete: false,
@@ -1257,7 +1429,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.addUserCredential(userCredential);
 
         if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
-            this.sentEmailValidationToken(user, user.email);            
+            this.generateAndSendEmailValidationToken(user, user.email, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
         }
         await searchDao.updateObjectSearchIndex(tenant, user);
         await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, user);

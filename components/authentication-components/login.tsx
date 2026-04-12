@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_TENANT_META_DATA, LAYOUT_TYPE_SINGLE_COLUMN, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, AuthenticationRequestedScope, ScopeTranslation } from "@/graphql/generated/graphql-types";
+import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, AuthenticationRequestedScope, ScopeTranslation, ForgotPasswordCommunicationMethod } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -101,7 +101,7 @@ const Login: React.FC<LoginProps>= ({
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
     const [showRecoveryEmailDialog, setShowRecoveryEmailDialog] = React.useState<boolean>(false);
-    const [useRecoveryEmail, setUseRecoveryEmail] = React.useState<boolean>(false);
+    const [forgotPasswordCommunicationMethod, setForgotPasswordCommunicationMethod] = React.useState<ForgotPasswordCommunicationMethod>(ForgotPasswordCommunicationMethod.Email);
     const [isLoginDisabled] = React.useState<boolean>( !(authorizationError === null || authorizationError === "") );
     const [authorizationScopeApprovalData, setAuthorizationScopeApprovalData] = React.useState<AuthorizationScopeApprovalData | null>(null);
     const [openLanguageSelector, setOpenLanguageSelector] = React.useState<boolean>(false);
@@ -484,21 +484,37 @@ const Login: React.FC<LoginProps>= ({
                                 <Grid2 size={1}>
                                     <RadioStyledCheckbox 
                                         onChange={() => {
-                                            setUseRecoveryEmail(false);
+                                            setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.Email)
+                                            
                                         }}
-                                        checked={useRecoveryEmail === false}                                    
+                                        checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.Email}
                                     />
                                 </Grid2>
                                 <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
                                 <Grid2 size={1}>
                                     <RadioStyledCheckbox 
                                         onChange={() => {
-                                            setUseRecoveryEmail(true);
+                                            setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.RecoveryEmail)
+                                            
                                         }}
-                                        checked={useRecoveryEmail === true}
+                                        checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.RecoveryEmail}
                                     />
 
                                 </Grid2>
+                                {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled && tenantBean.getTenantMetaData().systemSettings.smsAllowPasswordResetOtp &&
+                                    <>
+                                        <Grid2 size={11}>Use Phone{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
+                                        <Grid2 size={1}>
+                                            <RadioStyledCheckbox 
+                                                onChange={() => {
+                                                    setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.RecoveryEmail)
+                                                    
+                                                }}
+                                                checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.RecoveryEmail}
+                                            />
+                                        </Grid2>
+                                    </>
+                                }
                             </Grid2>
                         </DialogContent>
                         <DialogActions>
@@ -517,7 +533,7 @@ const Login: React.FC<LoginProps>= ({
                                         variables: {
                                             authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
                                             preAuthToken: preAuthToken,
-                                            useRecoveryEmail: useRecoveryEmail
+                                            forgotPasswordCommunicationMethod: forgotPasswordCommunicationMethod
                                         }
                                     });
                                 }}

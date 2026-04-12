@@ -289,6 +289,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         userByFederatedSubjectId.email = userInfo.email;
         userByFederatedSubjectId.domain = getDomainFromEmail(userInfo.email);
         userByFederatedSubjectId.emailVerified = userInfo.email_verified || false;
+        userByFederatedSubjectId.phoneNumberVerified = userInfo.phone_number_verified || false;
         userByFederatedSubjectId.firstName = userInfo.given_name;
         userByFederatedSubjectId.lastName = userInfo.family_name;
         userByFederatedSubjectId.middleName = userInfo.middle_name;
@@ -397,6 +398,7 @@ function userInfoToUser(userInfo: FederatedOIDCUserInfo): User {
         middleName: userInfo.middle_name,
         federatedOIDCProviderSubjectId: userInfo.sub,
         phoneNumber: userInfo.phone_number,
+        phoneNumberVerified: userInfo.phone_number_verified,
         recoveryEmail: null,
         address: userInfo.address?.street_address,
         countryCode: countryCode,

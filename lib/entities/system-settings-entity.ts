@@ -58,6 +58,60 @@ const SystemSettingsEntity = new EntitySchema({
             nullable: true,
             name: "contactemail"
         },
+        smsCallbackServiceEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "smscallbackserviceenabled",
+            transformer: BooleanTransformer
+        },
+        smsCallbackUri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "smscallbackuri"
+        },
+        smsSenderName: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "smssendername"
+        },
+        smsAllowPasswordResetOtp: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "smsallowpasswordresetotp",
+            transformer: BooleanTransformer
+        },
+        smsAlertOnPasswordChange: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "smsalertonpasswordchange",
+            transformer: BooleanTransformer
+        },
+        smsAlertOnMFADeviceChange: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "smsalertonmfadevicechange",
+            transformer: BooleanTransformer
+        },
+        smsAlertOnAccountStatusChange: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "smsalertonaccountstatuschange",
+            transformer: BooleanTransformer
+        },
+        smsAlertOnEmailChange: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "smsalertonemailchange",
+            transformer: BooleanTransformer
+        },
     },
 
     tableName: "system_settings",

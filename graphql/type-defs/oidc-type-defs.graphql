@@ -173,7 +173,7 @@ type Mutation {
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String, deviceCodeId: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!    
-    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String, useRecoveryEmail: Boolean!): UserAuthenticationStateResponse!
+    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String, forgotPasswordCommunicationMethod: ForgotPasswordCommunicationMethod!): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -182,6 +182,7 @@ type Mutation {
     authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateAcceptTermsAndConditions(accepted: Boolean!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateVerifyEmailAddress(userId: String!, token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateVerifyPhoneNumber(userId: String!, token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
 
@@ -198,6 +199,8 @@ type Mutation {
     registerAddRecoveryEmail(userId: String!, recoveryEmail: String, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerVerifyRecoveryEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerAddDuressPassword(userId: String!, password: String, skip: Boolean!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureVerifyPhoneNumber(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerVerifyPhoneNumber(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String, deviceCodeId: String): UserRegistrationStateResponse!
 
     ## MFA Utilities
@@ -296,6 +299,12 @@ type Mutation {
     initializeSystem(systemInitializationInput: SystemInitializationInput!): SystemInitializationResponse!
     createFederatedAuthTest(clientId: String!, clientSecret: String, usePkce: Boolean!, scope: String!, wellKnownUri: String!, clientAuthType: String!, responseType: String!): String!
 
+}
+
+enum ForgotPasswordCommunicationMethod {
+    EMAIL
+    RECOVERY_EMAIL
+    PHONE_NUMBER
 }
 
 enum ScopeFilterCriteria {
@@ -954,6 +963,7 @@ enum AuthenticationState {
     ENTER_EMAIL
     ENTER_USER_CODE
     VALIDATE_EMAIL
+    VALIDATE_PHONE_NUMBER
 }
 
 type ErrorDetail {
@@ -1005,6 +1015,9 @@ enum RegistrationState {
     VALIDATE_RECOVERY_EMAIL
     ADD_DURESS_PASSWORD_OPTIONAL
     UNREGISTERED
+    CONFIGURE_PHONE_NUMBER_VALIDATION_OPTIONAL
+    CONFIGURE_PHONE_NUMBER_VALIDATION_REQUIRED
+    VALIDATE_PHONE_NUMBER
 }
 
 type UserRegistrationStateResponse {
@@ -1247,11 +1260,11 @@ type SystemSettings {
     smsCallbackServiceEnabled: Boolean!
     smsCallbackUri: String
     smsSenderName: String
-    smsAllowPasswordResetForValidatedNumbers: Boolean!
+    smsAllowPasswordResetOtp: Boolean!
     smsAlertOnPasswordChange: Boolean!
     smsAlertOnMFADeviceChange: Boolean!
     smsAlertOnAccountStatusChange: Boolean!
-    smsAlertOnRecoveryEmailChange: Boolean!
+    smsAlertOnEmailChange: Boolean!
     systemCategories: [SystemCategory!]!
 }
 
@@ -1793,11 +1806,11 @@ input SystemSettingsUpdateInput {
     smsCallbackServiceEnabled: Boolean!
     smsCallbackUri: String
     smsSenderName: String
-    smsAllowPasswordResetForValidatedNumbers: Boolean!
+    smsAllowPasswordResetOtp: Boolean!
     smsAlertOnPasswordChange: Boolean!
     smsAlertOnMFADeviceChange: Boolean!
     smsAlertOnAccountStatusChange: Boolean!
-    smsAlertOnRecoveryEmailChange: Boolean!
+    smsAlertOnEmailChange: Boolean!
 }
 
 input SystemInitializationInput {

@@ -19,6 +19,7 @@ export const TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
             "allowsociallogin": "allowSocialLogin",
             "allowanonymoususers": "allowAnonymousUsers",
             "verifyemailonselfregistration": "verifyEmailOnSelfRegistration",
+            "verifyphonenumberonselfregistration": "verifyPhoneNumberOnSelfRegistration",
             "federatedauthenticationconstraint": "federatedAuthenticationConstraint",
             "markfordelete": "markForDelete",
             "tenanttype": "tenantType",
@@ -52,6 +53,7 @@ export const ROOT_TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} 
             "allowsociallogin": "allowSocialLogin",
             "allowanonymoususers": "allowAnonymousUsers",
             "verifyemailonselfregistration": "verifyEmailOnSelfRegistration",
+            "verifyphonenumberonselfregistration": "verifyPhoneNumberOnSelfRegistration",
             "federatedauthenticationconstraint": "federatedAuthenticationConstraint",
             "markfordelete": "markForDelete",
             "tenanttype": "tenantType",
@@ -838,7 +840,15 @@ export const SYSTEM_SETTINGS_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
 			"enableportalaslegacyidp": "enablePortalAsLegacyIdp",
 			"auditrecordretentionperioddays": "auditRecordRetentionPeriodDays",
 			"noreplyemail": "noReplyEmail",
-			"contactemail": "contactEmail"
+			"contactemail": "contactEmail",
+            "smscallbackserviceenabled": "smsCallbackServiceEnabled",
+            "smscallbackuri": "smsCallbackUri",
+            "smssendername": "smsSenderName",
+            "smsallowpasswordresetotp": "smsAllowPasswordResetOtp",
+            "smsalertonpasswordchange": "smsAlertOnPasswordChange",
+            "smsalertonmfadevicechange": "smsAlertOnMFADeviceChange",
+            "smsalertonaccountstatuschange": "smsAlertOnAccountStatusChange",
+            "smsalertonemailchange": "smsAlertOnEmailChange",
         }
     }
 };
@@ -1142,7 +1152,7 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 			"countrycode": "countryCode",
 			"domain": "domain",
 			"email": "email",
-			"emailverified": "emailVerified",
+			"emailverified": "emailVerified",            
 			"enabled": "enabled",
 			"federatedoidcprovidersubjectid": "federatedOIDCProviderSubjectId",
 			"firstname": "firstName",
@@ -1151,6 +1161,7 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": "phoneNumberVerified",
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete",
             "forcepasswordresetafterauthentication": "forcePasswordResetAfterAuthentication"
@@ -1185,6 +1196,7 @@ export const USERS_BY_EMAIL_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": "phoneNumberVerified",
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }
@@ -1218,6 +1230,7 @@ export const USERS_BY_FEDERATED_OIDC_ID_MODEL:  {[key: string]: cassandra.mappin
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": "phoneNumberVerified",
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }
@@ -1251,6 +1264,7 @@ export const USERS_BY_PHONE_NUMBER_MODEL:  {[key: string]: cassandra.mapping.Mod
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": "phoneNumberVerified",
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }

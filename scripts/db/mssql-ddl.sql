@@ -31,6 +31,7 @@ create TABLE tenant (
     allowanonymoususers BIT NOT NULL,
     allowsociallogin BIT NOT NULL,
     verifyemailonselfregistration BIT NOT NULL,
+    verifyphonenumberonselfregistration BIT NOT NULL,
     federatedauthenticationconstraint VARCHAR(128) NOT NULL,
     markfordelete BIT NOT NULL,
     tenanttype VARCHAR(128) NOT NULL,
@@ -125,6 +126,7 @@ create TABLE users (
     lastname NVARCHAR(128) NOT NULL,
     middlename NVARCHAR(128),
     phonenumber VARCHAR(32),
+    phonenumberverified BIT NOT NULL,
     address NVARCHAR(128),
     addressline1 NVARCHAR(128),
     city NVARCHAR(128),
@@ -726,6 +728,14 @@ create TABLE system_settings (
     auditrecordretentionperioddays INT,
     noreplyemail VARCHAR(64),
     contactemail VARCHAR(64),
+    smscallbackserviceenabled BIT NOT NULL,
+    smscallbackuri VARCHAR(256),
+    smssendername VARCHAR(64),
+    smsallowpasswordresetotp BIT NOT NULL,
+    smsalertonpasswordchange BIT NOT NULL,
+    smsalertonmfadevicechange BIT NOT NULL,
+    smsalertonaccountstatuschange BIT NOT NULL,
+    smsalertonemailchange BIT NOT NULL,
     FOREIGN KEY (rootclientid) REFERENCES client(clientid)
 );
 

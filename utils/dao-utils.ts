@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
-import { randomBytes, hash, pbkdf2Sync, scryptSync, createHmac, X509Certificate } from "node:crypto";
+import { randomBytes, hash, pbkdf2Sync, scryptSync, createHmac, X509Certificate, timingSafeEqual } from "node:crypto";
 import bcrypt from "bcrypt";
 import { UserCredential } from "@/graphql/generated/graphql-types";
 import { PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, ALL_OIDC_SUPPORTED_SCOPE_VALUES } from "./consts";
@@ -55,6 +55,37 @@ export function generateRandomToken(lengthInBytes: number, encoding?: TokenEncod
     }
     return randomBytes(lengthInBytes).toString(encoding);
 }
+
+
+const VERIFICATION_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+export interface VerificationToken {
+    token: string;
+    hashedToken: string;
+}
+
+/**
+ * Generates a new random verification token (or hashes a provided one) and returns
+ * both the plaintext token (to send to the user) and its SHA-256 hex hash (to store in the DB).
+ *
+ * @param existingToken - Optional. If provided, skips generation and hashes this token instead.
+ */
+export function createVerificationToken(existingToken?: string): VerificationToken {
+    let token: string;
+    if (existingToken) {
+        token = existingToken;
+    } 
+    else {
+        token = "";
+        const randomValues = randomBytes(length);
+        for (let i = 0; i < length; i++) {
+            token += VERIFICATION_CHARSET[randomValues[i] % VERIFICATION_CHARSET.length];
+        }
+    }
+    const hashedToken = hash("sha256", token, "hex");
+    return { token, hashedToken };
+}
+
 
 /**
  * 

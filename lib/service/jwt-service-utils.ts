@@ -135,11 +135,12 @@ class JwtServiceUtils {
                 middleName: null,
                 phoneNumber: null,
                 expiresAtMs: principal.exp * 1000,
-                principalType: principal.principal_type,
+                principalType: principal.principal_type,                
                 addressLine1: null,
                 city: null,
                 postalCode: null,
                 stateRegionProvince: null,
+                phoneNumberVerified: principal.phone_number_verified,
                 exts: principal.exts
             }
         }
@@ -183,6 +184,7 @@ class JwtServiceUtils {
                 city: null,
                 postalCode: null,
                 stateRegionProvince: null,
+                phoneNumberVerified: principal.phone_number_verified,
                 exts: principal.exts
             }
         }
@@ -258,6 +260,7 @@ class JwtServiceUtils {
                 city: user.city || null,
                 postalCode: user.postalCode || null,
                 stateRegionProvince: user.stateRegionProvince || null,
+                phoneNumberVerified: user.phoneNumberVerified,
                 exts: principal.exts
             }
         }            

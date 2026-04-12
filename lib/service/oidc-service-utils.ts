@@ -19,6 +19,7 @@ import { base64Encode } from "@/utils/dao-utils";
 import JwtServiceUtils from "./jwt-service-utils";
 import { SmsCallbackRequest } from "../models/sms";
 import ServiceClientConfig from "./service-client-config";
+import { ForgotPasswordOtp } from "@/components/email-templates/forgot-password-otp-template";
 
 const {
     SECURITY_EVENT_CALLBACK_URI,
@@ -269,6 +270,19 @@ class OIDCServiceUtils extends ServiceClientConfig {
         this.invokeSecurityEventCallback(securityEvent, authToken);        
     }
 
+    public async invokeSmsCallback(authToken: string, smsCallbackRequest: SmsCallbackRequest, smsCallbackUri: string) {
+        this.getAxiosInstance().post(
+            smsCallbackUri, 
+            smsCallbackRequest,
+            {
+                headers: {
+                    "Authorization": `Bearer ${authToken}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        )
+    }
+
     public async invokeSecurityEventCallback(securityEvent: SecurityEvent, authToken: string | null){
         // Fire asynchronously, but if there is an error, log the error.
         if(SECURITY_EVENT_CALLBACK_URI){
@@ -334,6 +348,24 @@ class OIDCServiceUtils extends ServiceClientConfig {
         );
 
         this.sendEmail(from, to, "Verify Email", undefined, html);
+    }
+
+    public async sendEmailForgotPasswordOpt(from: string, to: string, name: string, token: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string, contactEmail?: string): Promise<void> {
+        const html = await render(
+            React.createElement(
+                ForgotPasswordOtp, 
+                {
+                    name: name, 
+                    token: token, 
+                    tenantLookAndFeel: tenantLookAndFeel, 
+                    contactEmail: contactEmail,
+                    languageCode: languageCode
+                }
+            )
+        );
+
+        this.sendEmail(from, to, "Forgot Password", undefined, html);
+        
     }
 
     public async sendSecretEntryEmail(from: string, to: string, url: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string): Promise<void>{

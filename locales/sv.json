@@ -134,7 +134,7 @@
 	"ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION": "Autentiseringen kan inte slutföras på grund av en saknad eller ogiltig hyresgäst.",
 	"ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION": "Det uppstod ett fel när autentiseringen slutfördes.",
 	"ERROR_REGISTRATION_FOR_USER_ALREADY_IN_PROGRESS": "Registreringen kan inte startas. Det finns redan en aktiv registrering för det här kontot.",
-	"ERROR_REGISTRATION_NO_USER_FOUND_FOR_EMAIL_VALIDATION_TOKEN": "Valideringstoken du angav är ogiltig.",
+	"ERROR_REGISTRATION_NO_USER_FOUND_FOR_VALIDATION_TOKEN": "Valideringstoken du angav är ogiltig.",
 	"ERROR_INVALID_USER_FOUND_FOR_TOKEN": "Valideringstoken du angav är ogiltig.",
 	"ERROR_NO_RECOVERY_EMAIL_FOUND": "Din återställningsadress hittades inte.",
 	"ERROR_NO_DURESS_PASSWORD_SUPPLIED": "Inget lösenord för hot angavs.",
@@ -359,5 +359,8 @@
     "ERROR_CLIENT_CERTIFICATE_IDENTIFIER_ALREADY_ASSIGNED_TO_CLIENT": "The client certificate identifier is already assigned to a client.",
     "ERROR_FAPI_CONFIGURATION_NOT_ALLOWED_FOR_DEVICE_CLIENTS": "FAPI Configuration is not allowed for device clients.",
     "ERROR_INVALID_CLIENT_TYPE_FOR_TOKEN_ENRICHMENT_CALLBACK": "The client type is not valid for the token enrichment callback.",
-    "ERROR_INVALID_URI_FOR_TOKEN_ENRICHMENT_CALLBACK": "The URI is not valid for the token enrichment callback."
+    "ERROR_INVALID_URI_FOR_TOKEN_ENRICHMENT_CALLBACK": "The URI is not valid for the token enrichment callback.",
+    "USE_THE_FOLLOWING_CODE_TO_RESET_YOUR_PASSWORD" : "Use the following code to reset your password.",
+    "UNAUTHORIZED_PASSWORD_RESET" : "If you did not initiate a password reset please report it.",
+    "REPORT_UNAUTHORIZED_PASSWORD_RESET" : "Report unauthorized password reset."
 }

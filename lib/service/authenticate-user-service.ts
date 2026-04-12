@@ -1,11 +1,11 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel, UserFailedPasswordResetAttempts, PreAuthenticationStateProtocolType } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel, UserFailedPasswordResetAttempts, PreAuthenticationStateProtocolType, ForgotPasswordCommunicationMethod, SystemSettings } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
-import { generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
+import { createVerificationToken, generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail, VerificationToken } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import JwtServiceUtils from "./jwt-service-utils";
@@ -68,7 +68,7 @@ class AuthenticateUserService extends IdentityService {
     }
 
     
-    public async authenticateHandleForgotPassword(authenticationSessionToken: string, preAuthToken: string | null, useRecoveryEmail: boolean): Promise<UserAuthenticationStateResponse> {
+    public async authenticateHandleForgotPassword(authenticationSessionToken: string, preAuthToken: string | null, forgotPasswordCommunicationMethod: ForgotPasswordCommunicationMethod): Promise<UserAuthenticationStateResponse> {
         // Outline of the logic
         // There must be an existing authentication session (that is, the user has selected a tenant and gone to the next page where they have tried to enter
         // their password and have likely failed). 
@@ -92,11 +92,27 @@ class AuthenticateUserService extends IdentityService {
             return Promise.resolve(response);
         }
         let userRecoveryEmail: UserRecoveryEmail | null = null;
-        if(useRecoveryEmail === true){
+        if(forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.RecoveryEmail){
             userRecoveryEmail = await identityDao.getUserRecoveryEmailBy("id", user.userId);
             if(userRecoveryEmail === null){
                 response.authenticationError = ERROR_CODES.EC00098;
                 return Promise.resolve(response);
+            }
+        }
+
+        // Check to see if sending tokens via sms is enabled system wide. 
+        // If the user has elected to use their phone for recovery, but they neglected to add a
+        // phone number to their profile, or they have not validated their phone number, then
+        // return an error.
+        if(forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.PhoneNumber){
+            const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+            if(!systemSettings.smsCallbackServiceEnabled || !systemSettings.smsAllowPasswordResetOtp) {
+                response.authenticationError = ERROR_CODES.EC00236;
+                return Promise.resolve(response);                  
+            }
+            if(!user.phoneNumber || user.phoneNumber === "" || !user.phoneNumberVerified){
+                response.authenticationError = ERROR_CODES.EC00235;
+                return Promise.resolve(response);                
             }
         }
 
@@ -115,26 +131,21 @@ class AuthenticateUserService extends IdentityService {
         // Finally, put the last one on the list
         newArrayAuthenticationState.push(arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState);
         
-        const token: string = generateRandomToken(8, "hex").toUpperCase();        
-        
-        
-        // Send email to the user with the token value using either their primary email or backup email
+        // Send email or sms to the user with the token value using either their primary email or backup email
         // and hash the value of the token when saving it
-        const hashedToken = generateHash(token);
-        await identityDao.savePasswordResetToken(arrUserAuthenticationStates[0].userId, hashedToken);
 
-        const toEmailAddr = useRecoveryEmail && userRecoveryEmail ? userRecoveryEmail.email : user.email;
-        let fromEmailAddr: string = "";
-        const systemSettings = await tenantDao.getSystemSettings();
-        if(systemSettings && systemSettings.noReplyEmail){
-            fromEmailAddr = systemSettings.noReplyEmail;
+        if(forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.RecoveryEmail || forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.Email){
+            const toEmailAddr = forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.RecoveryEmail && userRecoveryEmail ? userRecoveryEmail.email : user.email;
+            await this.generateAndSendEmailValidationToken(user, toEmailAddr, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET);
         }
         else{
-            fromEmailAddr = this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
+            if(!user.phoneNumber){
+                response.authenticationError = ERROR_CODES.EC00235;
+                return Promise.resolve(response);  
+            }
+            await this.generateAndSendPhoneNumberValidationToken(user, user.phoneNumber, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET);
         }
-        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, toEmailAddr, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+        
 
         // Delete the old entries for the authentication state and create new ones.
         for(let i = 0; i < arrUserAuthenticationStates.length; i++){
@@ -184,8 +195,9 @@ class AuthenticateUserService extends IdentityService {
             return Promise.resolve(response);
         }
 
-        const hashedToken = generateHash(token);
-        const user = await identityDao.getUserByPasswordResetToken(hashedToken);
+        const verificationToken: VerificationToken = createVerificationToken(token);
+
+        const user = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
         if(user === null){
             // If we already have some failed attempts, then increment the count
             if(userFailedPasswordResetAttempt){
@@ -205,7 +217,7 @@ class AuthenticateUserService extends IdentityService {
             return Promise.resolve(response);
         }
         // Make sure we delete the reset token and failed password reset attempts before continuing...
-        await identityDao.deletePasswordResetToken(hashedToken);
+        await identityDao.deleteConfirmationToken(verificationToken.hashedToken);
         await identityDao.removeFailedPasswordResetAttempt(arrUserAuthenticationStates[index].userId)
         if(user.markForDelete || user.enabled === false){
             response.authenticationError = ERROR_CODES.EC00097;
@@ -562,7 +574,8 @@ class AuthenticateUserService extends IdentityService {
                     markForDelete: true,                        
                     nameOrder: "",
                     userId: userId,
-                    forcePasswordResetAfterAuthentication: false
+                    forcePasswordResetAfterAuthentication: false,
+                    phoneNumberVerified: false
                 }
                 await identityDao.createUser(u);
             }
@@ -860,7 +873,8 @@ class AuthenticateUserService extends IdentityService {
                         markForDelete: true,                        
                         nameOrder: "",
                         userId: userId,
-                        forcePasswordResetAfterAuthentication: false
+                        forcePasswordResetAfterAuthentication: false,
+                        phoneNumberVerified: false
                     }
                     await identityDao.createUser(u);
                 }
@@ -950,7 +964,7 @@ class AuthenticateUserService extends IdentityService {
         // Note that the email validation is coded above to occur always after the password entry step. If that
         // ordering ever changes, then this block will need to be moved to the appropriate place.
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.ValidateEmail){
-            this.sentEmailValidationToken(user, user.email);
+            this.generateAndSendEmailValidationToken(user, user.email, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
         }
 
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
@@ -1068,18 +1082,28 @@ class AuthenticateUserService extends IdentityService {
         }
         
         // Does the user exist and have credentials?
-        const user: User | null = await identityDao.getUserBy("id", userId);
+        // const user: User | null = await identityDao.getUserBy("id", userId);
+        // if(user === null){
+        //     response.authenticationError = ERROR_CODES.EC00013;
+        //     return response;
+        // }
+        const verificationToken: VerificationToken = createVerificationToken(token);
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
         if(user === null){
-            response.authenticationError = ERROR_CODES.EC00013;
-            return response;
-        }
-
-        const validationError: ErrorDetail | null = await this.validateEmailToken(userId, token);
-        if(validationError){
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            response.authenticationError = validationError;
+            response.authenticationError = ERROR_CODES.EC00134;
             return Promise.resolve(response);
         }
+                
+        if(user.userId !== userId){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            response.authenticationError = ERROR_CODES.EC00135;
+            return Promise.resolve(response);
+        }
+        
+        // For the one-time token, need to delete it at this point, even if we have subsequent
+        // errors. 
+        await identityDao.deleteConfirmationToken(verificationToken.hashedToken);
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);

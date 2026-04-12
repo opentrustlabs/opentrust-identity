@@ -259,7 +259,8 @@ const resolvers: Resolvers = {
                 allowForgotPassword: false,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri,
+                verifyPhoneNumberOnSelfRegistration: tenantInput.verifyPhoneNumberOnSelfRegistration
             }
             await tenantService.updateRootTenant(tenant);        
             return tenant;
@@ -286,7 +287,8 @@ const resolvers: Resolvers = {
                 defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri,
+                verifyPhoneNumberOnSelfRegistration: tenantInput.verifyPhoneNumberOnSelfRegistration
             }
             await tenantService.createTenant(tenant);         
             return tenant; 
@@ -313,7 +315,8 @@ const resolvers: Resolvers = {
                 defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri,
+                verifyPhoneNumberOnSelfRegistration: tenantInput.verifyPhoneNumberOnSelfRegistration
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);          
             return updatedTenant;
@@ -767,7 +770,8 @@ const resolvers: Resolvers = {
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
                 markForDelete: false,
-                forcePasswordResetAfterAuthentication: false
+                forcePasswordResetAfterAuthentication: false,
+                phoneNumberVerified: userInput.phoneNumberVerified
             }
             await service.updateUser(user);
             return user;
@@ -874,9 +878,9 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
         },
-        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, useRecoveryEmail }, oidcContext) => {
+        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, forgotPasswordCommunicationMethod }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, useRecoveryEmail);
+            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, forgotPasswordCommunicationMethod);
         },
         authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);

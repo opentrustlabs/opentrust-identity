@@ -787,8 +787,8 @@ export const AUTHENTICATE_USER = gql`
 `;
 
 export const AUTHENTICATE_HANDLE_FORGOT_PASSWORD = gql`
-    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String, $useRecoveryEmail: Boolean!) {
-        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken, useRecoveryEmail: $useRecoveryEmail){
+    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String, $forgotPasswordCommunicationMethod: ForgotPasswordCommunicationMethod!) {
+        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken, forgotPasswordCommunicationMethod: $forgotPasswordCommunicationMethod){
             ...UserAuthenticationStateResponseFragment
         }
     }
