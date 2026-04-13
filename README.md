@@ -317,13 +317,14 @@ configured for it (see the env.example file for details).
 
 This tool supports SMS for features such as verifying phone numbers, security alerts, or sending one-time 
 passcodes for password reset. SMS __CANNOT__ be used as a secondary factor for MFA in this tool. NIST 
-deprecated SMS as a secondary factor in 2017. Although a number of IdPs may still use SMS for legacy
-reasons, in most cases they are actively encouraging their users to migrate to a more secure solution,
-such as OTPs or security keys.
+deprecated SMS as a secondary factor in 2017. Although a number of IdPs may still use SMS as a second
+factor for legacy reasons, in most cases they are actively encouraging their users to migrate to a more 
+secure solution, such as OTPs or security keys.
 
-This tool is not intended to support any particular SMS provider, since each provider will have its own API 
-and authorization. But if an SMS provider is available in your organization, and you want to enable SMS in 
-this tool then you will need to write a wrapper service around your SMS provider.
+This tool is not intended to support any particular SMS provider, since there are 100s of providers,
+each provider will have its own API and authorization. But if an SMS provider is available in 
+your organization, and you want to enable SMS in this tool then you will need to write a wrapper 
+service around your SMS provider.
 
 If enabled, there are several conditions, all configurable, where you can send SMS messages:
 
@@ -348,7 +349,7 @@ The JSON payload for the SMS service is:
 {
     "phoneNumber": "+123456778901",
     "messageType": "phone_verification | password_reset | alert_password_change | ... ",
-    "languageCode": "en - or any support ISO language code",
+    "languageCode": "en - or any supported ISO language code",
     "senderName": "Configurable - Name of the org or null",
     "body": "localized message, ready to send",
     "bodyEn": "English version of the message, in case you want to translate yourself"
