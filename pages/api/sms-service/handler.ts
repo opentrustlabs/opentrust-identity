@@ -5,9 +5,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 /**
  * A trivial implementation of the sms service wrapper functionality.
  * 
- * To enable security callbacks, you need to specify the following in your .env file:
+ * To enable security callbacks, you need to specify the following in the
+ * application in the system settings configuration screen:
  * 
- * SMS_SERVICE_WRAPPER_URI=http://localhost:3000/api/sms-service/handler
+ * SMS Callbakc URI: http://localhost:3000/api/sms-service/handler
  * 
  * This implementation will just print out the security event to the console. 
  * 
@@ -23,7 +24,7 @@ export default async function handler(
 
     if(req.method === "POST"){
         const smsMessage: SmsCallbackRequest = req.body as SmsCallbackRequest;
-        logWithDetails("info", "Received SMS", {...smsMessage});
+        logWithDetails("info", "Debugging Implementation of the SMS service wrapper", {...smsMessage});
     }
     res.status(200).end();
 }
