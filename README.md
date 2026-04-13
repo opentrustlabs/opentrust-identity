@@ -321,8 +321,8 @@ deprecated SMS as a secondary factor in 2017. Although a number of IdPs may stil
 factor for legacy reasons, in most cases they are actively encouraging their users to migrate to a more 
 secure solution, such as OTPs or security keys.
 
-This tool is not intended to support any particular SMS provider, since there are 100s of providers,
-each provider will have its own API and authorization. But if an SMS provider is available in 
+This tool is not intended to support any particular SMS provider, since there are 100s of providers
+and each provider will have its own API and authorization. But if an SMS provider is available in 
 your organization, and you want to enable SMS in this tool then you will need to write a wrapper 
 service around your SMS provider.
 
