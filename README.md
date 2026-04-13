@@ -335,14 +335,7 @@ If enabled, there are several conditions, all configurable, where you can send S
 - Alerts on account status changes
 - Alerts on recovery email changes (if recovery emails are enabled)
 
-SmsCallbackRequest {
-    phoneNumber: string,            // E.164 format
-    messageType: MessageType,       // e.g. "phone_verification", "password_reset", etc.
-    languageCode: string,           // ISO language code, ie, en, fr, de, ch, etc
-    senderName: string | null,      // null if not configured
-    body: string,                   // localized, assembled, ready to send
-    bodyEn: string                  // always English, for implementors who translate themselves
-}
+
 The JSON payload for the SMS service is: 
 
 ```JSON
