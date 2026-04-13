@@ -18,7 +18,12 @@ export const TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
             "allowuserselfregistration": "allowUserSelfRegistration",
             "allowsociallogin": "allowSocialLogin",
             "allowanonymoususers": "allowAnonymousUsers",
-            "verifyemailonselfregistration": "verifyEmailOnSelfRegistration",
+            "verifyemailonselfregistration": {
+                name: "verifyEmailOnSelfRegistration",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
             "verifyphonenumberonselfregistration": "verifyPhoneNumberOnSelfRegistration",
             "federatedauthenticationconstraint": "federatedAuthenticationConstraint",
             "markfordelete": "markForDelete",
@@ -52,7 +57,12 @@ export const ROOT_TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} 
             "allowuserselfregistration": "allowUserSelfRegistration",
             "allowsociallogin": "allowSocialLogin",
             "allowanonymoususers": "allowAnonymousUsers",
-            "verifyemailonselfregistration": "verifyEmailOnSelfRegistration",
+            "verifyemailonselfregistration": {
+                name: "verifyEmailOnSelfRegistration",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
             "verifyphonenumberonselfregistration": "verifyPhoneNumberOnSelfRegistration",
             "federatedauthenticationconstraint": "federatedAuthenticationConstraint",
             "markfordelete": "markForDelete",
@@ -1161,7 +1171,12 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
-            "phonenumberverified": "phoneNumberVerified",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete",
             "forcepasswordresetafterauthentication": "forcePasswordResetAfterAuthentication"
@@ -1196,7 +1211,12 @@ export const USERS_BY_EMAIL_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
-            "phonenumberverified": "phoneNumberVerified",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }
@@ -1230,7 +1250,12 @@ export const USERS_BY_FEDERATED_OIDC_ID_MODEL:  {[key: string]: cassandra.mappin
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
-            "phonenumberverified": "phoneNumberVerified",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }
@@ -1264,7 +1289,12 @@ export const USERS_BY_PHONE_NUMBER_MODEL:  {[key: string]: cassandra.mapping.Mod
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
-            "phonenumberverified": "phoneNumberVerified",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }

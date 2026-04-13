@@ -1,6 +1,8 @@
 
+// At the moment, only phone_verification and password_reset have had their implementations completed.
+// The others will be implemented in future iterations of this project.
 type MessageType = "phone_verification" | "password_reset" | "alert_password_change" | "alert_mfa_change" |
-                    "alert_account_status_change" | "alert_recovery_email_change";
+                    "alert_account_status_change" | "alert_email_change";
 
 export interface SmsCallbackRequest {
     phoneNumber: string,            // E.164 format
@@ -18,26 +20,6 @@ export function fillTemplate (template: string, params: Record<string, string>):
     );
 };
 
-// ["zh", "cs", "da", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "nl", "no", "pl", "pt", "ru", "sv", "fi", "vi"];
-    // ["zh", "中國人"],
-    // ["cs", "český"],
-    // ["da", "Dansk"],
-    // ["de", "Deutsch"],
-    // ["en", "English"],
-    // ["es", "Español"],
-    // ["fr", "Français"],
-    // ["hi", "हिंदी"],
-    // ["it", "Italiano"],
-    // ["ja", "日本語"],
-    // ["ko", "한국인"],
-    // ["pt", "Português"], 
-    // ["nl", "Nederlands"],
-    // ["no", "Norsk"],
-    // ["pl", "Polski"],
-    // ["ru", "Русский"],
-    // ["sv", "Svenska"],
-    // ["fi", "Suomi"],    
-    // ["vi", "Tiếng Việt"]
 export const PHONE_VERIFICATION_TRANSLATIONS: Record<string, string> = {
     "en": "Your verification code is {VERIFICATION_CODE}. It expires in 15 minutes. If you did not request this code, you can ignore this message.",
     "fr": "Votre code de vérification est {VERIFICATION_CODE}. Il expire dans 15 minutes. Si vous n'avez pas demandé ce code, vous pouvez ignorer ce message.",

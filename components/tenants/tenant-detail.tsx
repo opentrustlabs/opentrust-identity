@@ -107,7 +107,8 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         defaultRateLimitPeriodMinutes: tenant.defaultRateLimitPeriodMinutes,
         registrationRequireCaptcha: tenant.registrationRequireCaptcha,
         registrationRequireTermsAndConditions: tenant.registrationRequireTermsAndConditions,
-        termsAndConditionsUri: tenant.termsAndConditionsUri
+        termsAndConditionsUri: tenant.termsAndConditionsUri,
+        verifyPhoneNumberOnSelfRegistration: tenant.verifyPhoneNumberOnSelfRegistration
     }
 
     // STATE VARIABLES
@@ -386,6 +387,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                         tenantInput.registrationRequireCaptcha = false;
                                                         tenantInput.allowLoginByPhoneNumber = false;
                                                         tenantInput.verifyEmailOnSelfRegistration = false;
+                                                        tenantInput.verifyPhoneNumberOnSelfRegistration = false;
                                                         tenantInput.migrateLegacyUsers = false;
                                                     }
                                                     setTenantInput({ ...tenantInput });
@@ -527,6 +529,24 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
                                                     labelPlacement="start"
                                                 />
+                                                <Box>
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Switch
+                                                                disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                                checked={tenantInput.verifyPhoneNumberOnSelfRegistration === true}
+                                                                onChange={(_, checked: boolean) => {tenantInput.verifyPhoneNumberOnSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                            />
+                                                        }
+                                                        label="Verify phone number on registration"                                                    
+                                                        sx={{ ml: 0, justifyContent: 'space-between', width: '100%' }}
+                                                        labelPlacement="start"
+                                                    />
+                                                    <Typography variant="caption" fontSize={"0.85em"} color="text.secondary">
+                                                        (Only applies to user accounts that have phone numbers.)
+                                                    </Typography>
+                                                </Box>
+
                                                 <FormControlLabel
                                                     control={
                                                         <Switch

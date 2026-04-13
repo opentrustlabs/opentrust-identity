@@ -33,6 +33,8 @@ import LanguageIcon from '@mui/icons-material/Language';
 import { useIntl } from 'react-intl';
 import { ValidateEmailOnAuthentication } from "./validate-email";
 import LoginLayout from "./login-layout";
+import { AuthenticationConfigureValidatePhoneNumber } from "./configure-validate-phone-number";
+import { AuthenticationValidatePhoneNumber } from "./validate-phone-number";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -787,14 +789,7 @@ const Login: React.FC<LoginProps>= ({
                                         <Button
                                             disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
                                             variant="contained"
-                                            onClick={() => {
-                                                // const form = document.getElementById("loginForm") as HTMLFormElement;
-                                                // (form.elements.namedItem("username") as HTMLInputElement).value = username || "";
-                                                // (form.elements.namedItem("password") as HTMLInputElement).value = password || "";
-                                                // setTimeout(() => {
-                                                //     form.submit()
-                                                // }, 50);
-                                                
+                                            onClick={() => {                                                
                                                 setErrorMessage(null);
                                                 authenticateUser({
                                                     variables: {
@@ -1021,6 +1016,38 @@ const Login: React.FC<LoginProps>= ({
                                 onUpdateStart={() => {
                                     setErrorMessage(null);
                                     setShowMutationBackdrop(true);
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ConfigureValidatePhoneNumber &&
+                            <AuthenticationConfigureValidatePhoneNumber
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ValidatePhoneNumber &&
+                            <AuthenticationValidatePhoneNumber
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
                                 }}
                             />
                         }

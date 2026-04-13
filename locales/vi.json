@@ -362,5 +362,8 @@
     "ERROR_INVALID_URI_FOR_TOKEN_ENRICHMENT_CALLBACK": "The URI is not valid for the token enrichment callback.",
     "USE_THE_FOLLOWING_CODE_TO_RESET_YOUR_PASSWORD" : "Use the following code to reset your password.",
     "UNAUTHORIZED_PASSWORD_RESET" : "If you did not initiate a password reset please report it.",
-    "REPORT_UNAUTHORIZED_PASSWORD_RESET" : "Report unauthorized password reset."
+    "REPORT_UNAUTHORIZED_PASSWORD_RESET" : "Report unauthorized password reset.",
+    "PHONE_NUMBER_VALIDATION_REQUIRED_FOR_ACCESS": "For access to this tenant you will need to validate the phone number associated with your account.",
+    "PHONE_NUMBER_VALIDATION_SEND_CODE": "Send code to my phone",
+    "PHONE_NUMBER_VALIDATION_OPTIONAL": "Do you want to validate your phone number? It is not required, but is recommended."
 }

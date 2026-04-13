@@ -890,6 +890,7 @@ class TenantService {
     }
 
     public async updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput): Promise<SystemSettings> {
+        
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [SYSTEM_SETTINGS_UPDATE_SCOPE], null);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
@@ -924,7 +925,15 @@ class TenantService {
             systemId: existingSystemSettings.systemId !== "" ? existingSystemSettings.systemId : randomUUID().toString(),
             auditRecordRetentionPeriodDays: systemSettingsUpdateInput.auditRecordRetentionPeriodDays,
             contactEmail: systemSettingsUpdateInput.contactEmail,
-            noReplyEmail: systemSettingsUpdateInput.noReplyEmail
+            noReplyEmail: systemSettingsUpdateInput.noReplyEmail,
+            smsAlertOnAccountStatusChange: systemSettingsUpdateInput.smsAlertOnAccountStatusChange,
+            smsAlertOnEmailChange: systemSettingsUpdateInput.smsAlertOnEmailChange,
+            smsAlertOnMFADeviceChange: systemSettingsUpdateInput.smsAlertOnMFADeviceChange,
+            smsAlertOnPasswordChange: systemSettingsUpdateInput.smsAlertOnPasswordChange,
+            smsAllowPasswordResetOtp: systemSettingsUpdateInput.smsAllowPasswordResetOtp,
+            smsCallbackServiceEnabled: systemSettingsUpdateInput.smsCallbackServiceEnabled,
+            smsCallbackUri: systemSettingsUpdateInput.smsCallbackUri,
+            smsSenderName: systemSettingsUpdateInput.smsSenderName
         }
         
         await tenantDao.updateSystemSettings(systemSettings);

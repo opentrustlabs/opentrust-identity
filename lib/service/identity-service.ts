@@ -1193,12 +1193,13 @@ class IdentityService {
      * @param validationType 
      */
     protected async generateAndSendPhoneNumberValidationToken(user: User, to: string, validationType: string): Promise<void> {
+
         const { token, hashedToken } = createVerificationToken();
 
-        await identityDao.saveConfirmationToken(user.userId, hashedToken, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER);
-
-        const systemSettings = await tenantDao.getSystemSettings();
-
+        // Note that the message is sent in either of these cases is identital because it is so generic.
+        // "Your verification code is {VERIFICATION_CODE}. It expires in 15 minutes. If you did not request this code, you can ignore this message"
+        // See the sms.ts file for details.
+        await identityDao.saveConfirmationToken(user.userId, hashedToken, validationType);
         const bodyEn = fillTemplate(PHONE_VERIFICATION_TRANSLATIONS.en, {"VERIFICATION_CODE": token});
        
         // Try to get the tranlsation, but if one does not exist then fallback to english.
@@ -1206,6 +1207,7 @@ class IdentityService {
             fillTemplate(PHONE_VERIFICATION_TRANSLATIONS[user.preferredLanguageCode],  {"VERIFICATION_CODE": token}) :
             bodyEn;
 
+        const systemSettings = await tenantDao.getSystemSettings();
         const smsCallbackRequest: SmsCallbackRequest = {
             languageCode: user.preferredLanguageCode || "en",
             body: body,
@@ -1216,7 +1218,6 @@ class IdentityService {
         }
         const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
         oidcServiceUtils.invokeSmsCallback(authToken || "", smsCallbackRequest, systemSettings.smsCallbackUri || "");
-
     }
 
     /**

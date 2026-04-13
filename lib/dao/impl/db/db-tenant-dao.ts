@@ -539,6 +539,14 @@ class DBTenantDao extends TenantDao {
             enablePortalAsLegacyIdp: false,
             auditRecordRetentionPeriodDays: DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
+            smsAlertOnAccountStatusChange: false,
+            smsAlertOnEmailChange: false,
+            smsAlertOnMFADeviceChange: false,
+            smsAlertOnPasswordChange: false,
+            smsAllowPasswordResetOtp: false,
+            smsCallbackServiceEnabled: false,
+            smsCallbackUri: "",
+            smsSenderName: "",
             systemCategories: []
         }
         
@@ -555,6 +563,14 @@ class DBTenantDao extends TenantDao {
             systemSettings.auditRecordRetentionPeriodDays = first.auditRecordRetentionPeriodDays ? first.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS;
             systemSettings.contactEmail = first.contactEmail;
             systemSettings.noReplyEmail = first.noReplyEmail;
+            systemSettings.smsAlertOnAccountStatusChange = first.smsAlertOnAccountStatusChange;
+            systemSettings.smsAlertOnEmailChange = first.smsAlertOnEmailChange;
+            systemSettings.smsAlertOnMFADeviceChange = first.smsAlertOnMFADeviceChange;
+            systemSettings.smsAlertOnPasswordChange = first.smsAlertOnPasswordChange;
+            systemSettings.smsAllowPasswordResetOtp = first.smsAllowPasswordResetOtp;
+            systemSettings.smsCallbackServiceEnabled = first.smsCallbackServiceEnabled;
+            systemSettings.smsCallbackUri = first.smsCallbackUri;
+            systemSettings.smsSenderName = first.smsSenderName;
         }
         // DB Settings
         const dbCategory: SystemCategory = {
@@ -604,40 +620,21 @@ class DBTenantDao extends TenantDao {
    
     
     public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {
+        
         const systemSettingsRepo = await RDBDriver.getInstance().getSystemSettingsRepository();
 
+        const {softwareVersion, systemCategories, ...entity} = systemSettings;
         const arr = await systemSettingsRepo.find();
-        if(arr && arr.length > 0){         
+        if(arr && arr.length > 0){
             await systemSettingsRepo.update(
                 {
                     systemId: systemSettings.systemId
                 },
-                {
-                    systemId: systemSettings.systemId,
-                    allowRecoveryEmail: systemSettings.allowRecoveryEmail,
-                    allowDuressPassword: systemSettings.allowDuressPassword,
-                    rootClientId: systemSettings.rootClientId,
-                    enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
-                    auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays ? systemSettings.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
-                    contactEmail: systemSettings.contactEmail,
-                    noReplyEmail: systemSettings.noReplyEmail,
-                } 
+                entity
             );
         }
         else{
-            await systemSettingsRepo.insert(
-                {
-                    systemId: systemSettings.systemId,
-                    allowRecoveryEmail: systemSettings.allowRecoveryEmail,
-                    allowDuressPassword: systemSettings.allowDuressPassword,
-                    rootClientId: systemSettings.rootClientId,
-                    enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
-                    auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays ? systemSettings.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
-                    contactEmail: systemSettings.contactEmail,
-                    noReplyEmail: systemSettings.noReplyEmail,
-                } 
-            );
-            
+            await systemSettingsRepo.insert(entity);            
         }        
         return systemSettings;        
     }

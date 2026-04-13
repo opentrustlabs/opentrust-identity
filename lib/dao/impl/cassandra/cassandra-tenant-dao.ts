@@ -358,6 +358,14 @@ class CassandraTenantDao extends TenantDao {
             enablePortalAsLegacyIdp: false,
             auditRecordRetentionPeriodDays: DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
+            smsAlertOnAccountStatusChange: false,
+            smsAlertOnEmailChange: false,
+            smsAlertOnMFADeviceChange: false,
+            smsAlertOnPasswordChange: false,
+            smsAllowPasswordResetOtp: false,
+            smsCallbackServiceEnabled: false,
+            smsCallbackUri: "",
+            smsSenderName: "",
             systemCategories: []
         }
         const mapper = await CassandraDriver.getInstance().getModelMapper("system_settings");
@@ -371,7 +379,15 @@ class CassandraTenantDao extends TenantDao {
             systemSettings.contactEmail = existingSettings.contactEmail;
             systemSettings.noReplyEmail = existingSettings.noReplyEmail;
             systemSettings.rootClientId = existingSettings.rootClientId;
-            systemSettings.enablePortalAsLegacyIdp = existingSettings.enablePortalAsLegacyIdp;            
+            systemSettings.enablePortalAsLegacyIdp = existingSettings.enablePortalAsLegacyIdp;
+            systemSettings.smsAlertOnAccountStatusChange = existingSettings.smsAlertOnAccountStatusChange;
+            systemSettings.smsAlertOnEmailChange = existingSettings.smsAlertOnEmailChange;
+            systemSettings.smsAlertOnMFADeviceChange = existingSettings.smsAlertOnMFADeviceChange;
+            systemSettings.smsAlertOnPasswordChange = existingSettings.smsAlertOnPasswordChange;
+            systemSettings.smsAllowPasswordResetOtp = existingSettings.smsAllowPasswordResetOtp;
+            systemSettings.smsCallbackServiceEnabled = existingSettings.smsCallbackServiceEnabled;
+            systemSettings.smsCallbackUri = existingSettings.smsCallbackUri;
+            systemSettings.smsSenderName = existingSettings.smsSenderName;
         }
 
         const { CASSANDRA_CONTACT_POINTS, CASSANDRA_KEY_SPACE, CASSANDRA_LOCAL_DATA_CENTER } = process.env;

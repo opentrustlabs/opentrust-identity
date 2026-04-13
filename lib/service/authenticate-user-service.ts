@@ -822,6 +822,19 @@ class AuthenticateUserService extends IdentityService {
                 if(user && user.emailVerified === false && tenantsToProcess[0].verifyEmailOnSelfRegistration === true){
                     stateOrder.push(AuthenticationState.ValidateEmail);                    
                 }
+                // Next verification: phone number.
+                // Has the user configured a phone number that has not been verified? 
+                // Does the tenant require phone number verification (for users who have phone numbers) before the user can be authenticated?
+                // Is the system even enabled for SMS verification?
+                if(user?.phoneNumber && user.phoneNumber.length > 0 && !user.phoneNumberVerified){
+                    if(tenantsToProcess[0].verifyPhoneNumberOnSelfRegistration === true){
+                        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+                        if(systemSettings.smsCallbackServiceEnabled){
+                            stateOrder.push(AuthenticationState.ConfigureValidatePhoneNumber);
+                            stateOrder.push(AuthenticationState.ValidatePhoneNumber);
+                        }
+                    }
+                }
                 // If the user has configured totp, always use it first
                 if(userMfaRelTotp){
                     stateOrder.push(AuthenticationState.ValidateTotp);

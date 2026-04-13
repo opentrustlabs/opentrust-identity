@@ -846,6 +846,26 @@ export const AUTHENTICATE_REGISTER_SECURITY_KEY = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_CONFIGURE_VALIDATE_PHONE_NUMBER = gql`
+    mutation authenticateConfigureVerifyPhoneNumber($userId: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateConfigureVerifyPhoneNumber(userId: $userId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_VALIDATE_PHONE_NUMBER = gql`
+    mutation authenticateVerifyPhoneNumber($userId: String!, $token: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateVerifyPhoneNumber(userId: $userId, token: $token, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN = gql`
     mutation authenticateValidatePasswordResetToken($token: String!, $authenticationSessionToken: String!, $preAuthToken: String){
         authenticateValidatePasswordResetToken(token: $token, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
@@ -1014,6 +1034,26 @@ export const REGISTER_VALIDATE_TOTP = gql`
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const REGISTER_CONFIGURE_VALIDATE_PHONE_NUMBER = gql`
+    mutation registerConfigureVerifyPhoneNumber($userId: String!, $registrationSessionToken: String!, $preAuthToken: String) {
+        registerConfigureVerifyPhoneNumber(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const REGISTER_VALIDATE_PHONE_NUMBER = gql`
+    mutation registerVerifyPhoneNumber($userId: String!, $registrationSessionToken: String!, $token: String!, $preAuthToken: String) {
+        registerVerifyPhoneNumber(userId: $userId, registrationSessionToken: $registrationSessionToken, token: $token, preAuthToken: $preAuthToken) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const REGISTER_CONFIGURE_SECURITY_KEY = gql`
     mutation registerConfigureSecurityKey($userId: String!, $registrationSessionToken: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput, $preAuthToken: String, $skip: Boolean!) {
         registerConfigureSecurityKey(userId: $userId, registrationSessionToken: $registrationSessionToken, fido2KeyRegistrationInput: $fido2KeyRegistrationInput, preAuthToken: $preAuthToken, skip: $skip) {
@@ -1055,6 +1095,14 @@ export const UPDATE_SYSTEM_SETTINGS_MUTATION = gql(`
             auditRecordRetentionPeriodDays
             noReplyEmail
             contactEmail
+            smsAlertOnAccountStatusChange
+            smsAlertOnEmailChange
+            smsAlertOnMFADeviceChange
+            smsAlertOnPasswordChange
+            smsAllowPasswordResetOtp
+            smsCallbackServiceEnabled
+            smsCallbackUri
+            smsSenderName
         }
     }
 `);

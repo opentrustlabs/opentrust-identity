@@ -355,6 +355,9 @@ The JSON payload for the SMS service is:
 }
 ```
 
+As of version 1.0.0 of this tool only password-reset has been implemented. The other conditions will
+be implemented in future versions of this tool.
+
 More details can be found in the file `/lib/models/sms.ts`.
 
 This service call will be invoked with a Bearer Authorization header for the client which is defined as the root

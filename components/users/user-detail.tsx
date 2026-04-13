@@ -82,7 +82,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
         federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
         middleName: user.middleName || "",
         phoneNumber: user.phoneNumber,
-        preferredLanguageCode: user.preferredLanguageCode
+        preferredLanguageCode: user.preferredLanguageCode,
+        phoneNumberVerified: user.phoneNumberVerified
     }
     // STATE VARIABLES
     const [userInput, setUserInput] = React.useState<UserUpdateInput>(initInput);
@@ -444,7 +445,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                             {user.recoveryEmail &&
                                                 <React.Fragment>
-                                                    <TextField name="email" id="email"
+                                                    <TextField name="recoveryEmail" id="recoveryEmail"
                                                         disabled={true}
                                                         value={user.recoveryEmail.email}
                                                         fullWidth={true}
@@ -478,6 +479,20 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 fullWidth={true}
                                                 disabled={disableInputs}
                                             />
+                                            <React.Fragment>                                                
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            name="phoneNumberVerified"
+                                                            disabled={true}
+                                                            checked={user.phoneNumberVerified}
+                                                        />
+                                                    }
+                                                    label="Phone Number Verified"
+                                                    sx={{ margin: "4px", justifyContent: 'space-between', width: '100%' }}
+                                                    labelPlacement="start"
+                                                />
+                                            </React.Fragment>
 
                                             <Autocomplete
                                                 disabled={disableInputs}

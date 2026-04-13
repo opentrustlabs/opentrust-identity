@@ -57,7 +57,8 @@ export function generateRandomToken(lengthInBytes: number, encoding?: TokenEncod
 }
 
 
-const VERIFICATION_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const VERIFICATION_CODE_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const VERIFICATION_CODE_LENGTH = 8;
 
 export interface VerificationToken {
     token: string;
@@ -77,9 +78,9 @@ export function createVerificationToken(existingToken?: string): VerificationTok
     } 
     else {
         token = "";
-        const randomValues = randomBytes(length);
-        for (let i = 0; i < length; i++) {
-            token += VERIFICATION_CHARSET[randomValues[i] % VERIFICATION_CHARSET.length];
+        const randomValues = randomBytes(VERIFICATION_CODE_LENGTH);
+        for (let i = 0; i < VERIFICATION_CODE_LENGTH; i++) {
+            token += VERIFICATION_CODE_CHARSET[randomValues[i] % VERIFICATION_CODE_CHARSET.length];
         }
     }
     const hashedToken = hash("sha256", token, "hex");
