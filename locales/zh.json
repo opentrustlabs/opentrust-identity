@@ -368,5 +368,8 @@
     "PHONE_NUMBER_VALIDATION_OPTIONAL": "Do you want to validate your phone number? It is not required, but is recommended.",
     "PHONE_NUMBER_VALIDATION_ENTER_VALIDATION_CODE": "Enter the validation code from your phone",
     "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER": "Optional - If provided, verification required",
-    "OPTIONAL":"Optional"
+    "OPTIONAL":"Optional",
+    "ERROR_INVALID_PHONE_NUMBER_FORMAT": "The phone number does not have a valid format.",
+    "ERROR_UNABLE_SEND_PHONE_NUMBER_VALIDATION_CODE": "A error occurred when sending a validation code due to a missing or invalid phone number.",
+    "ERROR_SMS_NOT_ENABLED_FOR_PASSWORD_RESET_TOKEN": "Password reset tokens cannot be sent via SMS."
 }

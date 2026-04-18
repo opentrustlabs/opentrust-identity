@@ -49,7 +49,6 @@ const DetailSectionActionHandler: React.FC<DetailSectionActionHandlerProps> = ({
                     <Button
                         onClick={() => onUpdateClickedHandler()}
                         disabled={disableSubmit ? disableSubmit : !markDirty}
-                        sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }}
                     >
                         Update
                     </Button>

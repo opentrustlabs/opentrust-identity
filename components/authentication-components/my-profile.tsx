@@ -5,7 +5,7 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { ME_QUERY, TENANT_META_DATA_QUERY, USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { Alert, Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { getDefaultLanguageCodeDef, getDefaultCountryCodeDef } from "@/utils/client-utils";
 import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI, USER_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
@@ -63,7 +63,8 @@ const MyProfile: React.FC = () => {
         federatedOIDCProviderSubjectId: null,
         middleName: "",
         phoneNumber: "",
-        preferredLanguageCode: ""
+        preferredLanguageCode: "",
+        phoneNumberVerified: false
     }
     // STATE VARIABLES
     const [userInput, setUserInput] = React.useState<UserUpdateInput>(initInput);
@@ -111,6 +112,7 @@ const MyProfile: React.FC = () => {
                 initInput.federatedOIDCProviderSubjectId = userProfile.federatedOIDCProviderSubjectId;
                 initInput.phoneNumber = userProfile.phoneNumber
                 initInput.preferredLanguageCode = userProfile.preferredLanguageCode;
+                initInput.phoneNumberVerified = userProfile.phoneNumberVerified;
                 
                 if(userProfile.recoveryEmail){
                     setRecoveryEmail(userProfile.recoveryEmail);
@@ -160,7 +162,8 @@ const MyProfile: React.FC = () => {
                 countryCode: user.countryCode,
                 federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
                 phoneNumber: user.phoneNumber,
-                preferredLanguageCode: user.preferredLanguageCode
+                preferredLanguageCode: user.preferredLanguageCode,
+                phoneNumberVerified: user.phoneNumberVerified
             };            
             
             setUserInput(input);
@@ -442,42 +445,49 @@ const MyProfile: React.FC = () => {
                                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                     <Grid2>
                                         <Grid2 paddingLeft={"8px"} marginBottom={"16px"} container size={12}>
-                                            <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox
-                                                    disabled={true}
-                                                    name="enabled"
-                                                    checked={userInput.enabled}
-                                                    onChange={(_, checked) => {
-                                                        userInput.enabled = checked;
-                                                        setMarkDirty(true);
-                                                        setUserInput({ ...userInput });
-                                                    }}
+                                            <Grid2 size={12}>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            name="enabled"
+                                                            disabled={true}
+                                                            checked={userInput.enabled}
+                                                        />
+                                                    }
+                                                    label="Enabled"
+                                                    sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Email verified</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox
-                                                    disabled={true}
-                                                    name="emailVerified"
-                                                    checked={userInput.emailVerified}
-                                                    onChange={(_, checked) => {
-                                                        userInput.emailVerified = checked;
-                                                        setMarkDirty(true);
-                                                        setUserInput({ ...userInput });
-                                                    }}
+                                            </Grid2>                                            
+                                            <Grid2 size={12}>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            name="emailVerified"
+                                                            disabled={true}
+                                                            checked={userInput.emailVerified}
+                                                        />
+                                                    }
+                                                    label="Email Verified"
+                                                    sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
+                                                    labelPlacement="start"
                                                 />
                                             </Grid2>
                                             {recoveryEmail &&   
-                                                <React.Fragment>
-                                                    <Grid2 alignContent={"center"} size={10}>Recovery Email verified</Grid2>
-                                                    <Grid2 size={2} >                                                            
-                                                        <Checkbox name="recoveryEmailVerified" id="recoveryEmailVerified" 
-                                                            disabled={true}
-                                                            checked={recoveryEmail.emailVerified}
-                                                        />
-                                                    </Grid2>
-                                                </React.Fragment>                                                
+                                                <Grid2 size={12}>
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Switch
+                                                                name="recoveryEmailVerified"
+                                                                disabled={true}
+                                                                checked={recoveryEmail.emailVerified}
+                                                            />
+                                                        }
+                                                        label="Recovery Email Verified"
+                                                        sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
+                                                        labelPlacement="start"
+                                                    />
+                                                </Grid2>                                           
                                             }                                            
                                         </Grid2>
                                     </Grid2>
@@ -610,6 +620,11 @@ const MyProfile: React.FC = () => {
                                     }
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Phone Number</div>
+                                        {tenantBean.getTenantMetaData().tenant.verifyPhoneNumberOnSelfRegistration === true &&                                                        
+                                            <Typography variant="caption" color="text.secondary">
+                                                ({intl.formatMessage({id: "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER"})})
+                                            </Typography>                                                        
+                                        }
                                         <MuiTelInput
                                             name="phoneNumber"
                                             id="phoneNumber"
@@ -623,6 +638,20 @@ const MyProfile: React.FC = () => {
                                             fullWidth={true}
                                             size="small"
                                         />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    name="phoneNumberVerified"
+                                                    disabled={true}
+                                                    checked={userInput.phoneNumberVerified}
+                                                />
+                                            }
+                                            label="Phone Number Verified"
+                                            sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
+                                            labelPlacement="start"
+                                        />                                        
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Preferred Language</div>

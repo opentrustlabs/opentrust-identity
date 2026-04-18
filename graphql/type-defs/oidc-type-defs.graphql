@@ -166,6 +166,8 @@ type Mutation {
     swapPrimaryAndRecoveryEmail: Boolean!
     # If user id is absent then take the user id of the user requesting the deletion.    
     deleteRecoveryEmail(userId: String!): Boolean!
+    profileHandlePhoneNumberChange(newPhoneNumber: String!): ProfilePhoneNumberChangeResponse!
+    profileValidatePhoneNumberChange(token: String!, changePhoneNumberSessionToken: String!): ProfilePhoneNumberChangeResponse!
     
 
     ## Authentication Flows
@@ -481,6 +483,7 @@ type PortalUserProfile {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -1065,6 +1068,27 @@ type ProfileEmailChangeState {
 type ProfileEmailChangeResponse {
     profileEmailChangeState: ProfileEmailChangeState!
     profileEmailChangeError: ErrorDetail
+}
+
+enum PhoneNumberChangeState {
+    ENTER_PHONE
+    ERROR
+    VALIDATE_PHONE_NUMBER
+    COMPLETED
+}
+
+type ProfilePhoneNumberChangeState {
+    changePhoneNumberSessionToken: String!
+    changePhoneNumberState: PhoneNumberChangeState!
+    phoneNumber: String!
+    userId: String!
+    changeOrder: Int!
+    changeStateStatus: String!
+    expiresAtMs: Float!
+}
+type ProfilePhoneNumberChangeResponse {
+    profilePhoneNumberChangeState: ProfilePhoneNumberChangeState!
+    profilePhoneNumberChangeError: ErrorDetail
 }
 
 

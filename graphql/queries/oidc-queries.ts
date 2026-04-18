@@ -136,6 +136,7 @@ export const ME_QUERY = gql(`
             lastName
             middleName
             phoneNumber
+            phoneNumberVerified
             address
             addressLine1
             city

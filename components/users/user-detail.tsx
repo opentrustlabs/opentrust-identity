@@ -169,21 +169,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
         refetchQueries: [USER_DETAIL_QUERY]
     })
 
-    // HANDLER FUNCTIONS
-    // const hasPrimaryTenant = (rels: Array<UserTenantRelView>): boolean => {
-    //     const rel = rels.find(
-    //         (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
-    //     )
-    //     return rel !== undefined;
-    // }
-
-    // const getPrimaryTenantId = (rels: Array<UserTenantRelView>): string | null => {
-    //     const rel = rels.find(
-    //         (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
-    //     );
-    //     return rel?.tenantId || null;
-    // }
-
     return (
         <Typography component={"div"} >
             <BreadcrumbComponent breadCrumbs={[
@@ -344,7 +329,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Stack spacing={3}>
 
                                             <TextField name="firstName" id="firstName"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
                                                 value={userInput.firstName}
                                                 onChange={(evt) => { userInput.firstName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }) }}
                                                 fullWidth={true}
@@ -352,7 +337,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
 
                                             <TextField name="lastName" id="lastName"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
                                                 value={userInput.lastName}
                                                 onChange={(evt) => { userInput.lastName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
                                                 fullWidth={true}
@@ -360,7 +345,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
 
                                             <TextField name="middleName" id="middleName"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
                                                 value={userInput.middleName}
                                                 onChange={(evt) => { userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
                                                 fullWidth={true}
@@ -369,7 +354,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                             <TextField
                                                 select
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
                                                 name="nameOrder"
                                                 value={userInput.nameOrder}
                                                 onChange={(evt) => {
@@ -414,7 +399,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             </Box>
 
                                             <TextField name="email" id="email"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
                                                 value={userInput.email}
                                                 onChange={(evt) => {
                                                     userInput.email = evt.target.value;
@@ -429,7 +414,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <FormControlLabel
                                                 control={
                                                     <Switch
-                                                        disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                        disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
                                                         checked={userInput.emailVerified}
                                                         onChange={(_, checked) => {
                                                             userInput.emailVerified = checked;
@@ -446,7 +431,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             {user.recoveryEmail &&
                                                 <React.Fragment>
                                                     <TextField name="recoveryEmail" id="recoveryEmail"
-                                                        disabled={true}
+                                                        disabled={disableInputs}
                                                         value={user.recoveryEmail.email}
                                                         fullWidth={true}
                                                         label="Recovery Email"
@@ -455,7 +440,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         control={
                                                             <Switch
                                                                 name="recoveryEmailVerified"
-                                                                disabled={true}
+                                                                disabled={disableInputs}
                                                                 checked={user.recoveryEmail.emailVerified}
                                                             />
                                                         }

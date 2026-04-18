@@ -26,6 +26,7 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import ScopeDao from "../dao/scope-dao";
 import { fillTemplate, PHONE_VERIFICATION_TRANSLATIONS, SmsCallbackRequest } from "../models/sms";
+import { isValidPhoneNumber } from "libphonenumber-js";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -105,10 +106,7 @@ class IdentityService {
     public async updateUser(user: User): Promise<User> {
 
         // Always lower-case the email and format the phone number if it exists
-        user.email = this.formatEmail(user.email);
-        if(user.phoneNumber){
-            user.phoneNumber = this.formatPhoneNumber(user.phoneNumber)
-        }
+        user.email = this.formatEmail(user.email);        
 
         // If the user is making the update request on their own behalf, they still need user.update scope
         if(user.userId === this.oidcContext.portalUserProfile?.userId){
@@ -182,12 +180,18 @@ class IdentityService {
             user.domain = domain;
             user.emailVerified = false;            
         }
-        // Did the phone number change, and if so, is it unique?
+        // Did the phone number change, and if so, is it unique and does it pass the formatting requirement?
+        // 
         if(user.phoneNumber && user.phoneNumber !== existingUser.phoneNumber){
+            const isValidPhoneFormat: boolean = isValidPhoneNumber(user.phoneNumber);
+            if(!isValidPhoneFormat){
+                throw new GraphQLError(ERROR_CODES.EC00234.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00234}});
+            }
             const userByPhone: User | null = await identityDao.getUserBy("phone", user.phoneNumber);
             if(userByPhone){
                 throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
             }
+            user.phoneNumberVerified = false;
         }
 
         // Only the user themselves can reset this value by actually enter a new password during 
@@ -1091,6 +1095,12 @@ class IdentityService {
         if(!this.oidcContext.portalUserProfile){
             return null;
         }
+        // Rules for returning profiles or null
+        // 1.   Is the user on the /my-profile page or not? 
+        // 2.   If they are NOT on the profile page, it means they are either 
+        //          a.  Logged into the IAM tool itsef
+        //          b.  A service account requesting additional metadata about the account (such as scope)
+        //      In these 2 cases, return the profile. Otherwise return null
         else if(isMyProfileView === null || isMyProfileView === false){
             if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_IAM_PORTAL_USER || this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
                 return this.oidcContext.portalUserProfile;
@@ -1099,6 +1109,10 @@ class IdentityService {
                 return null;                            
             }
         }
+        // 3.   If they ARE on the /my-profile page then they MUST be a user who has
+        //      previous logged in using OIDC from a 3rd party. If they are an internal
+        //      user, then they cannot use the /my-profile page to view their profile,
+        //      they MUST use the user detail page of their account to modify their profile.
         else{            
             if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_END_USER){
                 return this.oidcContext.portalUserProfile;
@@ -1258,12 +1272,7 @@ class IdentityService {
 
     protected formatEmail(email: string): string {
         return email.toLowerCase();
-    }
-
-    protected formatPhoneNumber(phoneNumber: string): string {
-        const s = phoneNumber.replace(/\D/g, "");
-        return `+${s}`;
-    }
+    }    
     
 }
 

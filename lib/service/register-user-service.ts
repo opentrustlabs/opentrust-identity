@@ -21,7 +21,7 @@ import { RecaptchaResponse } from "../models/recaptcha";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
 import { containsScope } from "@/utils/authz-utils";
-import { getCountryCallingCode, isValidPhoneNumber } from 'libphonenumber-js';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -49,10 +49,7 @@ class RegisterUserService extends IdentityService {
     public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User> {
 
         // Always lower-case the email and format the phone number if it exists
-        userCreateInput.email = this.formatEmail(userCreateInput.email);
-        if(userCreateInput.phoneNumber){
-            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
-        }
+        userCreateInput.email = this.formatEmail(userCreateInput.email);        
 
         // Who is allowed to create a user and how? 
         // 1.   A service client with a scope of user.create
@@ -102,10 +99,7 @@ class RegisterUserService extends IdentityService {
         
         // Always lower-case the email and format the phone number if it exists
         // Always lower-case the email and format the phone number if it exists
-        userCreateInput.email = this.formatEmail(userCreateInput.email);
-        if(userCreateInput.phoneNumber){
-            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
-        }
+        userCreateInput.email = this.formatEmail(userCreateInput.email);        
 
         // Need to check to see if there is an active registration session happening with the
         // user, based on their email. If so, then return error if the session has not expired.
@@ -1307,11 +1301,14 @@ class RegisterUserService extends IdentityService {
             }
         }
 
+        // Does the email exist either as a primary email or a recovery email? If so, then fail.
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
         const recoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("email", userCreateInput.email);
         if (existingUser || recoveryAccount) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
         }
+
+        // If there is a phone number supplied, then does it meet the formatting requirements?
         if(userCreateInput.phoneNumber && userCreateInput.phoneNumber.length > 0){
             const userByPhone: User | null = await identityDao.getUserBy("phone", userCreateInput.phoneNumber);
             if(userByPhone){

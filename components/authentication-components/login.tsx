@@ -112,7 +112,13 @@ const Login: React.FC<LoginProps>= ({
     const router = useRouter();
 
     // PAGE-LEVEL VARIABLES
-    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
+    // Capture layoutType once at mount. If tenantId was in the URL, tenant data is already
+    // loaded and the correct layout type is available. If tenant data loads later (after email
+    // entry), we keep the initial value to prevent the card from changing width mid-flow.
+    const [layoutType] = React.useState<string>(
+        tenantBean.getTenantMetaData().tenantLookAndFeel?.layouttype ?? LAYOUT_TYPE_SINGLE_COLUMN
+    );
+    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : layoutType === LAYOUT_TYPE_SINGLE_COLUMN ? "650px" : "1280px";
 
 
     // GRAPHQL FUNCTIONS
