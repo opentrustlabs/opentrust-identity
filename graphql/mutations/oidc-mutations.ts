@@ -1035,8 +1035,8 @@ export const REGISTER_VALIDATE_TOTP = gql`
 `;
 
 export const REGISTER_CONFIGURE_VALIDATE_PHONE_NUMBER = gql`
-    mutation registerConfigureVerifyPhoneNumber($userId: String!, $registrationSessionToken: String!, $preAuthToken: String) {
-        registerConfigureVerifyPhoneNumber(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
+    mutation registerConfigureVerifyPhoneNumber($userId: String!, $registrationSessionToken: String!, $preAuthToken: String, $skip: Boolean!) {
+        registerConfigureVerifyPhoneNumber(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken, skip: $skip) {
             ...UserRegistrationStateResponseFragment
         }
     }

@@ -366,5 +366,7 @@
     "PHONE_NUMBER_VALIDATION_REQUIRED_FOR_ACCESS": "For access to this tenant you will need to validate the phone number associated with your account.",
     "PHONE_NUMBER_VALIDATION_SEND_CODE": "Send code to my phone",
     "PHONE_NUMBER_VALIDATION_OPTIONAL": "Do you want to validate your phone number? It is not required, but is recommended.",
-    "PHONE_NUMBER_VALIDATION_ENTER_VALIDATION_CODE": "Enter the validation code from your phone"
+    "PHONE_NUMBER_VALIDATION_ENTER_VALIDATION_CODE": "Enter the validation code from your phone",
+    "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER": "Optional - If provided, verification required",
+    "OPTIONAL": "Optional"
 }

@@ -39,6 +39,8 @@ import { useIntl } from 'react-intl';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import ReCAPTCHA from "react-google-recaptcha";
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+import { RegistrationConfigureValidatePhoneNumber } from "./configure-validate-phone-number";
+import { RegistrationValidatePhoneNumber } from "./validate-phone-number";
 
 
 
@@ -306,23 +308,14 @@ const RegisterInnerComponent: React.FC = () => {
         if(!userInput.preferredLanguageCode || userInput.preferredLanguageCode.length < 2){
             bRetVal = false;
         }
-        if(!userInput.address || userInput.address.length < 3){
-            bRetVal = false;
-        }
-        if(!userInput.city || userInput.city.length < 2){
-            bRetVal = false;
-        }
         if(!userInput.countryCode || userInput.countryCode.length < 2){
-            bRetVal = false;
-        }
-        if(!userInput.postalCode || userInput.postalCode.length < 3){
             bRetVal = false;
         }
         if(tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions && !userInput.termsAndConditionsAccepted){
             bRetVal = false;
         }
         if(
-            tenantBean.getTenantMetaData().recaptchaMetaData && 
+            tenantBean.getTenantMetaData().recaptchaMetaData &&
             tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === false &&
             recaptchaToken === null
         ){
@@ -559,7 +552,14 @@ const RegisterInnerComponent: React.FC = () => {
                                                 />
                                             </Grid2>
                                             <Grid2 marginBottom={"8px"} size={12}>
-                                                <div>{intl.formatMessage({id: "PHONE_NUMBER"})}</div>
+                                                <div>
+                                                    <div>{intl.formatMessage({id: "PHONE_NUMBER"})}</div>
+                                                    {tenantBean.getTenantMetaData().tenant.verifyPhoneNumberOnSelfRegistration === true &&                                                        
+                                                        <Typography variant="caption" fontSize={"0.85em"} color="text.secondary">
+                                                            ({intl.formatMessage({id: "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER"})})
+                                                        </Typography>                                                        
+                                                    }
+                                                </div>
                                                 <MuiTelInput
                                                     value={userInput.phoneNumber || ""}
                                                     onChange={(newValue) => { userInput.phoneNumber = newValue; setUserInput({ ...userInput }); }}
@@ -597,15 +597,15 @@ const RegisterInnerComponent: React.FC = () => {
                                     <Grid2 size={12} container spacing={1}>
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <div>{intl.formatMessage({id: "PREFERRED_LANGUAGE"})}</div>
-                                            <Autocomplete                                                
+                                            <Autocomplete
                                                 id="defaultLanguage"
                                                 sx={{ paddingTop: "8px" }}
                                                 size="small"
-                                                renderInput={(params) => 
-                                                    <TextField 
-                                                        {...params} 
-                                                        label="" 
-                                                        error={!userInput.preferredLanguageCode || userInput.preferredLanguageCode === ""} 
+                                                renderInput={(params) =>
+                                                    <TextField
+                                                        {...params}
+                                                        label=""
+                                                        error={!userInput.preferredLanguageCode || userInput.preferredLanguageCode === ""}
                                                     />}
                                                 options={
                                                     [{ languageCode: "", language: "" }, ...LANGUAGE_CODES].map(
@@ -618,35 +618,8 @@ const RegisterInnerComponent: React.FC = () => {
                                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={(_, value: any) => {
                                                     userInput.preferredLanguageCode = value.id;
-
                                                     setUserInput({ ...userInput });
                                                 }}
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "ADDRESS"})}</div>
-                                            <TextField name="address" id="address"
-                                                error={!userInput.address || userInput.address.length < 3}
-                                                value={userInput.address} fullWidth={true} size="small"
-                                                onChange={(evt) => { userInput.address = evt.target.value; setUserInput({ ...userInput }); }}
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "ADDRESS_LINE_1"})}</div>
-                                            <TextField name="addressline1" id="addressline1"
-                                                value={userInput.addressLine1}
-                                                onChange={(evt) => { userInput.addressLine1 = evt.target.value; setUserInput({ ...userInput }); }}
-                                                fullWidth={true} size="small"
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "CITY"})}</div>
-                                            <TextField name="city" id="city"
-                                                error={!userInput.city || userInput.city.length < 3}
-                                                value={userInput.city}
-                                                onChange={(evt) => { userInput.city = evt.target.value; setUserInput({ ...userInput }); }}
-                                                fullWidth={true} size="small"
-
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
@@ -677,6 +650,37 @@ const RegisterInnerComponent: React.FC = () => {
                                                 }}
                                             />
                                         </Grid2>
+                                        <Grid2 size={12}>
+                                            <div style={{ fontWeight: "bold", fontSize: "0.95em", marginTop: "8px", marginBottom: "4px" }}>
+                                                {intl.formatMessage({id: "ADDRESS"})}
+                                                <span style={{ fontWeight: "normal", fontSize: "0.9em", marginLeft: "8px", color: "text.secondary" }}>
+                                                    ({intl.formatMessage({id: "OPTIONAL"})})
+                                                </span>
+                                            </div>
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>{intl.formatMessage({id: "ADDRESS"})}</div>
+                                            <TextField name="address" id="address"
+                                                value={userInput.address} fullWidth={true} size="small"
+                                                onChange={(evt) => { userInput.address = evt.target.value; setUserInput({ ...userInput }); }}
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>{intl.formatMessage({id: "ADDRESS_LINE_1"})}</div>
+                                            <TextField name="addressline1" id="addressline1"
+                                                value={userInput.addressLine1}
+                                                onChange={(evt) => { userInput.addressLine1 = evt.target.value; setUserInput({ ...userInput }); }}
+                                                fullWidth={true} size="small"
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>{intl.formatMessage({id: "CITY"})}</div>
+                                            <TextField name="city" id="city"
+                                                value={userInput.city}
+                                                onChange={(evt) => { userInput.city = evt.target.value; setUserInput({ ...userInput }); }}
+                                                fullWidth={true} size="small"
+                                            />
+                                        </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <div>{intl.formatMessage({id: "STATE_PROVINCE_REGION"})}</div>
                                             <StateProvinceRegionSelector
@@ -692,7 +696,6 @@ const RegisterInnerComponent: React.FC = () => {
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <div>{intl.formatMessage({id: "POSTAL_CODE"})}</div>
                                             <TextField name="postalCode" id="postalCode"
-                                                error={!userInput.postalCode || userInput.postalCode.length < 3}
                                                 value={userInput.postalCode}
                                                 fullWidth={true} size="small"
                                                 onChange={(evt) => { userInput.postalCode = evt.target.value; setUserInput({ ...userInput }); }}
@@ -798,6 +801,42 @@ const RegisterInnerComponent: React.FC = () => {
                                     }}
                                     isRecoveryEmail={userRegistrationState.registrationState === RegistrationState.ValidateRecoveryEmail}
                                 />                                
+                            }
+                            {
+                                (
+                                    userRegistrationState.registrationState === RegistrationState.ConfigurePhoneNumberValidationOptional || 
+                                    userRegistrationState.registrationState === RegistrationState.ConfigurePhoneNumberValidationRequired
+                                ) &&
+                                <RegistrationConfigureValidatePhoneNumber 
+                                    initialUserRegistrationState={userRegistrationState}
+                                    onRegistrationCancelled={() => {
+                                        handleCancelRegistration();
+                                    }} 
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true);
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }}
+                                />
+                            }
+                            {userRegistrationState.registrationState === RegistrationState.ValidatePhoneNumber &&
+                                <RegistrationValidatePhoneNumber
+                                    initialUserRegistrationState={userRegistrationState}
+                                    onRegistrationCancelled={() => {
+                                        handleCancelRegistration();
+                                    }}
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true);
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }}
+                                />
                             }
                             {userRegistrationState.registrationState === RegistrationState.AddRecoveryEmailOptional &&
                                 <RecoveryEmailConfiguration

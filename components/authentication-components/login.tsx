@@ -112,8 +112,7 @@ const Login: React.FC<LoginProps>= ({
     const router = useRouter();
 
     // PAGE-LEVEL VARIABLES
-    const layoutType = tenantBean.getTenantMetaData().tenantLookAndFeel?.layouttype ?? LAYOUT_TYPE_SINGLE_COLUMN;
-    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : layoutType === LAYOUT_TYPE_SINGLE_COLUMN ? "650px" : "1280px";
+    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
 
     // GRAPHQL FUNCTIONS
@@ -650,6 +649,11 @@ const Login: React.FC<LoginProps>= ({
                                 </Grid2>
                                 
                                 <Grid2 size={{ xs: 12 }}>
+                                    <Stack direction={"row-reverse"}>
+                                        <span style={{ fontWeight: "bold", fontSize: "0.9em", visibility: "hidden" }}>&nbsp;</span>
+                                    </Stack>
+                                </Grid2>
+                                <Grid2 size={{ xs: 12 }}>
                                     <Stack
                                         direction={"row-reverse"}
                                         spacing={2}
@@ -728,25 +732,27 @@ const Login: React.FC<LoginProps>= ({
                         }                    
                         {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                             <React.Fragment>
-                                <Grid2 container size={12}>                                
-                                        <div style={{display: "hidden"}}>
+                                <Grid2 container size={12} spacing={1}>
+                                        <div style={{display: "none"}}>
                                             <TextField
                                                 name="username"
                                                 autoComplete="username"
                                                 value={username}
                                                 type="hidden"
                                                 sx={{
-                                                    width: 0, // Sets the width to 0
-                                                    height: 0, // Sets the height to 0
-                                                    overflow: 'hidden', // Hides any overflowing content
-                                                    position: 'absolute', // Ensures it doesn't affect layout
-                                                    opacity: 0, // Makes it completely transparent
-                                                    pointerEvents: 'none', // Prevents interaction
+                                                    width: 0,
+                                                    height: 0,
+                                                    overflow: 'hidden',
+                                                    position: 'absolute',
+                                                    opacity: 0,
+                                                    pointerEvents: 'none',
                                                 }}
                                             />
                                         </div>
-                                        <Grid2  size={12}>
+                                        <Grid2 size={12}>
                                             <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({ id: "SIGN_IN" })}</div>
+                                        </Grid2>
+                                        <Grid2 size={12}>
                                             <TextField
                                                 type="password"
                                                 id="password"
@@ -757,31 +763,31 @@ const Login: React.FC<LoginProps>= ({
                                                 name="password"
                                                 fullWidth
                                                 onChange={(evt) => setPassword(evt.target.value)}
-                                                value={password}                                            
+                                                value={password}
                                             >
                                             </TextField>
-
                                         </Grid2>
-                                    
                                 </Grid2>
                                 
-                                {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
-                                    <Grid2 size={{ xs: 12 }}>
-                                        <Stack
-                                            direction={"row-reverse"}
+                                <Grid2 size={{ xs: 12 }}>
+                                    <Stack direction={"row-reverse"}>
+                                        <span
+                                            style={{
+                                                fontWeight: "bold",
+                                                fontSize: "0.9em",
+                                                textDecoration: "underline",
+                                                cursor: "pointer",
+                                                visibility: tenantBean.getTenantMetaData().tenant.allowForgotPassword ? "visible" : "hidden"
+                                            }}
+                                            onClick={() => {
+                                                setIsPasswordResetFlow(true);
+                                                setShowRecoveryEmailDialog(true);
+                                            }}
                                         >
-                                            <span 
-                                                style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
-                                                onClick={() => {
-                                                    setIsPasswordResetFlow(true);
-                                                    setShowRecoveryEmailDialog(true);                                                
-                                                }}
-                                            >
-                                                {intl.formatMessage({id: "FORGOT_PASSWORD"})}?
-                                            </span>                                            
-                                        </Stack>
-                                    </Grid2>
-                                }
+                                            {intl.formatMessage({id: "FORGOT_PASSWORD"})}?
+                                        </span>
+                                    </Stack>
+                                </Grid2>
                                 <Grid2 size={12}>
                                     <Stack
                                         direction={"row-reverse"}
