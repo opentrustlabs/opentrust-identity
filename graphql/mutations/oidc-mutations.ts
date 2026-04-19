@@ -1148,19 +1148,19 @@ export const UNLOCK_USER_MUTATION = gql(`
 `);
 
 // Change email flows
-export const PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT = gql(`
-    fragment ProfileEmailChangeResponseFragment on ProfileEmailChangeResponse {
-        profileEmailChangeState {
-            changeEmailSessionToken
-            emailChangeState
-            email
+export const PROFILE_CHANGE_RESPONSE_FRAGMENT = gql(`
+    fragment UserProfileChangeResponseFragment on UserProfileChangeResponse {
+        profileChangeState {
+            changeProfileSessionToken
+            profileState
+            profileProperty
+            profilePropertyValue
             userId
             changeOrder
             changeStateStatus
             expiresAtMs
-            isPrimaryEmail
         }
-        profileEmailChangeError {
+        profileChangeError {
             errorCode
             errorMessage            
         }
@@ -1171,41 +1171,41 @@ export const PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT = gql(`
 export const PROFILE_HANDLE_EMAIL_CHANGE_MUTATION = gql`
     mutation profileHandleEmailChange($newEmail: String!) {
         profileHandleEmailChange(newEmail: $newEmail) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
 export const PROFILE_VALIDATE_EMAIL_MUTATION = gql`
     mutation profileValidateEmail($token: String!, $changeEmailSessionToken: String!) {
         profileValidateEmail(token: $token, changeEmailSessionToken: $changeEmailSessionToken) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
 export const PROFILE_CANCEL_EMAIL_CHANGE_MUTATION = gql`
     mutation profileCancelEmailChange($changeEmailSessionToken: String!) {
         profileCancelEmailChange(changeEmailSessionToken: $changeEmailSessionToken) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
 export const PROFILE_ADD_RECOVERY_EMAIL_MUTATION = gql`
     mutation profileAddRecoveryEmail($recoveryEmail: String!) {
         profileAddRecoveryEmail(recoveryEmail: $recoveryEmail) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
 export const SET_CAPTCHA_CONFIG_MUTATION = gql(`

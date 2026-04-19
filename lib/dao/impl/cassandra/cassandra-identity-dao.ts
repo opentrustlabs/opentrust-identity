@@ -1,10 +1,8 @@
-import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail, AuthenticationGroupUserRel, AuthorizationGroupUserRel, UserScopeRel, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
+import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, AuthenticationGroupUserRel, AuthorizationGroupUserRel, UserScopeRel, UserFailedPasswordResetAttempts, UserProfileChangeState } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import { types } from "cassandra-driver";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
-
-
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP } from "@/utils/consts";
 
 class CassandraIdentityDao extends IdentityDao {
 
@@ -574,37 +572,37 @@ class CassandraIdentityDao extends IdentityDao {
         return userRegistrationState;
     }
 
-    public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
-        const results: Array<ProfileEmailChangeState> = (await mapper.find({changeEmailSessionToken: changeStateToken})).toArray();
+    public async getProfileChangeStates(changeSessionToken: string): Promise<Array<UserProfileChangeState>> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_change_state");
+        const results: Array<UserProfileChangeState> = (await mapper.find({changeProfileSessionToken: changeSessionToken})).toArray();
         return results;
     }
 
-    public async createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
+    public async createProfileChangeStates(arrProfileChangeStates: Array<UserProfileChangeState>): Promise<Array<UserProfileChangeState>> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_change_state");
 
-        const ttlSeconds = arrEmailChangeStates.length > 0 ? 
-                            Math.floor ( (arrEmailChangeStates[0].expiresAtMs - Date.now()) / 1000 ) :
+        const ttlSeconds = arrProfileChangeStates.length > 0 ? 
+                            Math.floor ( (arrProfileChangeStates[0].expiresAtMs - Date.now()) / 1000 ) :
                             300;
 
-        for(let i = 0; i < arrEmailChangeStates.length; i++){
-            await mapper.insert(arrEmailChangeStates[i], {ttl: ttlSeconds});
+        for(let i = 0; i < arrProfileChangeStates.length; i++){
+            await mapper.insert(arrProfileChangeStates[i], {ttl: ttlSeconds});
         }
-        return arrEmailChangeStates
+        return arrProfileChangeStates;
     }
 
-    public async updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
-        const ttlSeconds = Math.floor ( (profileEmailChangeState.expiresAtMs - Date.now()) / 1000 );
-        await mapper.update(profileEmailChangeState, {ttl: ttlSeconds});
-        return profileEmailChangeState;
+    public async updateProfileChangeState(profileChangeState: UserProfileChangeState): Promise<UserProfileChangeState> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_change_state");
+        const ttlSeconds = Math.floor ( (profileChangeState.expiresAtMs - Date.now()) / 1000 );
+        await mapper.update(profileChangeState, {ttl: ttlSeconds});
+        return profileChangeState;
     }
 
-    public async deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
+    public async deleteProfileChangeState(profileChangeState: UserProfileChangeState): Promise<void> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_change_state");
         await mapper.remove({
-            changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken,
-            emailChangeState: profileEmailChangeState.emailChangeState
+            changeProfileSessionToken: profileChangeState.changeProfileSessionToken,
+            profileState: profileChangeState.profileState
         });
         return;
     }

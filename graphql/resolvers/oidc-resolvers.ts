@@ -1028,6 +1028,18 @@ const resolvers: Resolvers = {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.profileCancelEmailChange(changeEmailSessionToken);
         },
+        profileHandlePhoneNumberChange: async(_: any, { newPhoneNumber }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileHandlePhoneNumberChange(newPhoneNumber);
+        },
+        profileValidatePhoneNumberChange: async(_: any, { token, changePhoneNumberSessionToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileValidatePhoneNumberChange(changePhoneNumberSessionToken, token);
+        },
+        profileCancelPhoneNumberChange: async(_: any, {changePhoneNumberSessionToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileCancelPhoneNumberChange(changePhoneNumberSessionToken);
+        },
         setCaptchaConfig: async(_: any, { captchaConfigInput }, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.setCaptchaConfig(captchaConfigInput);

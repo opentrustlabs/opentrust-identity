@@ -1206,6 +1206,11 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00236",
         errorKey: "ERROR_SMS_NOT_ENABLED_FOR_PASSWORD_RESET_TOKEN",
         errorMessage: "Password reset tokens cannot be sent via SMS."
+    },
+    EC00237: {
+        errorCode: "EC00237",
+        errorKey: "ERROR_SMS_NOT_ENABLED",
+        errorMessage: "SMS is not enabled."
     }
 }
 

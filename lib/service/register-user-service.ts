@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail, CaptchaConfig, TenantLookAndFeel, PreAuthenticationStateProtocolType } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, CaptchaConfig, PreAuthenticationStateProtocolType, UserProfileChangeResponse, ProfileState, ProfileProperty, UserProfileChangeState } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -480,10 +480,7 @@ class RegisterUserService extends IdentityService {
             await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
 
             const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 1];
-            if(nextRegistrationState.registrationState === RegistrationState.ValidateRecoveryEmail){
-                const token: string = generateRandomToken(8, "hex").toUpperCase();
-                await identityDao.saveConfirmationToken(userId, token, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
-            }
+            
             response.userRegistrationState = nextRegistrationState;
                     
             if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
@@ -866,245 +863,63 @@ class RegisterUserService extends IdentityService {
 
     }
 
-    public async profileHandleEmailChange(email: string): Promise<ProfileEmailChangeResponse> {
-        const formattedEmail = this.formatEmail(email);
-
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Error,
+    public async profileValidatePhoneNumberChange(changePhoneNumberSessionToken: string, token: string): Promise<UserProfileChangeResponse> {
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
                 changeOrder: 0,
                 changeStateStatus: STATUS_INCOMPLETE,
-                email: "",
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
                 expiresAtMs: 0,
-                isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: ERROR_CODES.DEFAULT,
-        }
-        
-        if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
-            return response;            
-        }
-        const domain: string = getDomainFromEmail(formattedEmail);
-        if(domain.length === 0){
-            response.profileEmailChangeError = ERROR_CODES.EC00017;
-            return response;           
-        }
-
-        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
-        if(user === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00013;
-            return response;            
-        }
-        if(user.locked === true || user.enabled === false){
-            response.profileEmailChangeError = ERROR_CODES.EC00146;
-            return response; 
-        }
-        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
-            response.profileEmailChangeError = ERROR_CODES.EC00147;
-            return response;
-        }
-        const userByEmail: User | null = await identityDao.getUserBy("email", formattedEmail);
-        const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", formattedEmail);
-        if(userByEmail !== null || userByRecoveryEmail !== null){
-            response.profileEmailChangeError = ERROR_CODES.EC00142;
-            return response;            
-        }
-        
-        // Cannot update to an email domain which is tied to an existing external oidc provider. These types of user can ONLY be created
-        // by going through SSO with their provider.
-        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
-        if(federatedOIDCProvider){
-            response.profileEmailChangeError = ERROR_CODES.EC00144;
-            return response;
-        }
-        const sessionToken: string = generateRandomToken(20, "hex");
-        const arrStates: Array<ProfileEmailChangeState> = [];
-        arrStates.push({
-            email: formattedEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.ValidateEmail,
-            changeOrder: 0,
-            changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: true,
-        });
-
-        arrStates.push({
-            email: formattedEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.Completed,
-            changeOrder: 1,
-            changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: true
-        });
-
-        await identityDao.createProfileEmailChangeStates(arrStates);
-        // Do not change the email yet. Only do that when the user has validated
-        // their email in the next step.
-        const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveConfirmationToken(user.userId, emailConfirmationToken, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
-
-        response.profileEmailChangeState = arrStates[0];
-        return response;
-
-    }
-
-    public async profileAddRecoveryEmail(email: string): Promise<ProfileEmailChangeResponse> {   
-        
-        const recoveryEmail = this.formatEmail(email);
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Error,
-                changeOrder: 0,
-                changeStateStatus: STATUS_INCOMPLETE,
-                email: "",
-                expiresAtMs: 0,
-                isPrimaryEmail: false,
-                userId: ""
-            },
-            profileEmailChangeError: ERROR_CODES.DEFAULT,
-        }
-
-        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
-        if(!systemSettings.allowRecoveryEmail){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
-            return response;   
+            profileChangeError: ERROR_CODES.DEFAULT,
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
-            return response;            
-        }
-        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
-        if(user === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00013;
-            return response;            
-        }
-        if(user.locked === true || user.enabled === false){
-            response.profileEmailChangeError = ERROR_CODES.EC00146;
-            return response; 
-        }
-        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
-            response.profileEmailChangeError = ERROR_CODES.EC00147;
-            return response;
-        }
-
-        const recoveryEmailValidationResult = await this.validateRecoveryEmail(user.userId, recoveryEmail);
-        if(recoveryEmailValidationResult.isValid === false){
-            response.profileEmailChangeError = recoveryEmailValidationResult.errorDetail;
-            return response;
-        }
-        
-        const sessionToken: string = generateRandomToken(20, "hex");
-        const arrStates: Array<ProfileEmailChangeState> = [];
-        arrStates.push({
-            email: recoveryEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.ValidateEmail,
-            changeOrder: 0,
-            changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: false,
-        });
-
-        arrStates.push({
-            email: recoveryEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.Completed,
-            changeOrder: 1,
-            changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: false
-        });
-
-        await identityDao.createProfileEmailChangeStates(arrStates);
-        // Do not add the recovery email to the table yet. Only do that when the user has validated
-        // their email in the next step.
-        const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveConfirmationToken(user.userId, emailConfirmationToken, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
-        
-        // Send an email to the user with the token value.        
-        let fromEmailAddr: string = "";        
-        if(systemSettings && systemSettings.noReplyEmail){
-            fromEmailAddr = systemSettings.noReplyEmail;
-        }
-        else{
-            fromEmailAddr = this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
-        }
-        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, emailConfirmationToken, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
-
-        response.profileEmailChangeState = arrStates[0];
-        return response;
-    }
-
-    public async profileValidateEmail(token: string, changeEmailSessionToken: string): Promise<ProfileEmailChangeResponse> {
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Error,
-                changeOrder: 0,
-                changeStateStatus: STATUS_INCOMPLETE,
-                email: "",
-                expiresAtMs: 0,
-                isPrimaryEmail: false,
-                userId: ""
-            },
-            profileEmailChangeError: ERROR_CODES.DEFAULT,
-        }
-
-        if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
+            response.profileChangeError = ERROR_CODES.EC00145;
             return response;            
         }
 
-        const arrChangeStates: Array<ProfileEmailChangeState> = await this.getSortedEmailChangeStates(changeEmailSessionToken);
-        const index: number = await this.validateEmailChangeStep(arrChangeStates, response, EmailChangeState.ValidateEmail);
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changePhoneNumberSessionToken);
+        const index: number = await this.validateProfileChangeStep(arrChangeStates, response, ProfileState.ValidateEmail);
         if(index < 0){
             return response;
         }
 
-        const currentState: ProfileEmailChangeState = arrChangeStates[index];
+        const currentState: UserProfileChangeState = arrChangeStates[index];
         if(currentState.userId !== this.oidcContext.portalUserProfile.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00148;
+            response.profileChangeError = ERROR_CODES.EC00148;
             return response;    
         }
 
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00013;
+            response.profileChangeError = ERROR_CODES.EC00013;
             return response;            
         }
 
         const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(token);
         if(userByConfirmationToken === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00134;
+            response.profileChangeError = ERROR_CODES.EC00134;
             return response;  
         }
         if(userByConfirmationToken.userId !== user.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00135;
+            response.profileChangeError = ERROR_CODES.EC00135;
             return response;  
         }
 
-        // If we made it here, then we can update the email or add a new recovery email
-        if(currentState.isPrimaryEmail){
-            user.email = currentState.email;
-            user.emailVerified = true;
+        // If we made it here, then we can update the phone number and set validation to true
+        if(currentState.profileProperty === ProfileProperty.Email){
+            user.phoneNumber = currentState.profilePropertyValue;
+            user.phoneNumberVerified = true;
             await identityDao.updateUser(user);
         }
         else{
             const userRecoveryEmail: UserRecoveryEmail = {
-                email: currentState.email,
+                email: currentState.profilePropertyValue,
                 emailVerified: true,
                 userId: currentState.userId
             }
@@ -1113,38 +928,398 @@ class RegisterUserService extends IdentityService {
         await identityDao.deleteConfirmationToken(token);
 
         currentState.changeStateStatus = STATUS_COMPLETE;
-        await identityDao.updateProfileEmailChangeState(currentState);
+        await identityDao.updateProfileChangeState(currentState);
         
         // There should always be a final state, so update it as well...
-        const nextState: ProfileEmailChangeState = arrChangeStates[index + 1];
+        const nextState: UserProfileChangeState = arrChangeStates[index + 1];
         nextState.changeStateStatus = STATUS_COMPLETE;
-        response.profileEmailChangeState = nextState;
+        response.profileChangeState = nextState;
         
         // Since there are no more states, delete all of the records
         for(let i = 0; i < arrChangeStates.length; i++){
-            await identityDao.deleteProfileEmailChangeState(arrChangeStates[i]);
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
+        }
+        return response;
+    }
+
+    public async profileCancelPhoneNumberChange(changePhoneNumberSessionToken: string): Promise<UserProfileChangeResponse> {
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changePhoneNumberSessionToken);
+        for(let i = 0; i < arrChangeStates.length; i++){
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
+        }
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Completed,
+                changeOrder: 0,
+                changeStateStatus: STATUS_COMPLETE,
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
+                expiresAtMs: 0,
+                userId: ""
+            },
+            profileChangeError: ERROR_CODES.DEFAULT
+        }
+        return response;
+    }
+
+    public async profileHandlePhoneNumberChange(newPhoneNumber: string): Promise<UserProfileChangeResponse> {
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                profileProperty: ProfileProperty.PhoneNumber,
+                profilePropertyValue: "",
+                userId: "",
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                expiresAtMs: 0
+            },
+            profileChangeError: ERROR_CODES.DEFAULT,
+        }
+
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileChangeError = ERROR_CODES.EC00145;
+            return response;            
+        }
+
+        const isValidPhoneFormat = isValidPhoneNumber(newPhoneNumber);
+        if(!isValidPhoneFormat){
+            response.profileChangeError = ERROR_CODES.EC00234;
+            return response;
+        }
+
+        const systemSetting: SystemSettings = await tenantDao.getSystemSettings();
+        if(!systemSetting.smsCallbackServiceEnabled){
+            response.profileChangeError = ERROR_CODES.EC00237;
+            return response;
+        }
+
+        // If the user does not exist, or is in some disabled to locked status, or whose
+        // profile is managed by a federated OIDC provider, then error.
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileChangeError = ERROR_CODES.EC00013;
+            return response;            
+        }
+        if(user.locked === true || user.enabled === false || user.markForDelete){
+            response.profileChangeError = ERROR_CODES.EC00146;
+            return response; 
+        }
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId.length > 0){
+            response.profileChangeError = ERROR_CODES.EC00147;
+            return response;
+        }
+
+        // Is there already a user tied to this phone number?
+        const userByPhoneNumber: User | null = await identityDao.getUserBy("phone", newPhoneNumber);
+        if(userByPhoneNumber !== null){
+            response.profileChangeError = ERROR_CODES.EC00224;
+            return response;
+        }
+
+        const sessionToken: string = generateRandomToken(20, "hex");
+        const arrStates: Array<UserProfileChangeState> = [];
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.ValidatePhone,
+            profileProperty: ProfileProperty.PhoneNumber,
+            profilePropertyValue: newPhoneNumber,
+            userId: user.userId,
+            changeOrder: 0,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.Completed,
+            profileProperty: ProfileProperty.PhoneNumber,
+            profilePropertyValue: newPhoneNumber,
+            userId: user.userId,
+            changeOrder: 1,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        await identityDao.createProfileChangeStates(arrStates);
+        // Do not change the email yet. Only do that when the user has validated
+        // their email in the next step.
+        await this.generateAndSendPhoneNumberValidationToken(user, newPhoneNumber, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER);
+        
+        response.profileChangeState = arrStates[0];
+        return response;
+
+
+    }
+
+
+    public async profileHandleEmailChange(email: string): Promise<UserProfileChangeResponse> {
+        const formattedEmail = this.formatEmail(email);
+
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: email,
+                userId: "",
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                expiresAtMs: 0
+            },
+            profileChangeError: ERROR_CODES.DEFAULT,
+        }
+        
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileChangeError = ERROR_CODES.EC00145;
+            return response;            
+        }
+        const domain: string = getDomainFromEmail(formattedEmail);
+        if(domain.length === 0){
+            response.profileChangeError = ERROR_CODES.EC00017;
+            return response;           
+        }
+
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileChangeError = ERROR_CODES.EC00013;
+            return response;            
+        }
+        if(user.locked === true || user.enabled === false || user.markForDelete){
+            response.profileChangeError = ERROR_CODES.EC00146;
+            return response; 
+        }
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId.length > 0){
+            response.profileChangeError = ERROR_CODES.EC00147;
+            return response;
+        }
+        const userByEmail: User | null = await identityDao.getUserBy("email", formattedEmail);
+        const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", formattedEmail);
+        if(userByEmail !== null || userByRecoveryEmail !== null){
+            response.profileChangeError = ERROR_CODES.EC00142;
+            return response;            
+        }
+        
+        // Cannot update to an email domain which is tied to an existing external oidc provider. These types of user can ONLY be created
+        // by going through SSO with their provider.
+        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
+        if(federatedOIDCProvider){
+            response.profileChangeError = ERROR_CODES.EC00144;
+            return response;
+        }
+        const sessionToken: string = generateRandomToken(20, "hex");
+        const arrStates: Array<UserProfileChangeState> = [];
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.ValidateEmail,
+            profileProperty: ProfileProperty.Email,
+            profilePropertyValue: formattedEmail,
+            userId: user.userId,
+            changeOrder: 0,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.Completed,
+            profileProperty: ProfileProperty.Email,
+            profilePropertyValue: formattedEmail,
+            userId: user.userId,
+            changeOrder: 1,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        await identityDao.createProfileChangeStates(arrStates);
+        // Do not change the email yet. Only do that when the user has validated
+        // their email in the next step.
+        await this.generateAndSendEmailValidationToken(user, email, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
+        
+        response.profileChangeState = arrStates[0];
+        return response;
+
+    }
+   
+    public async profileAddRecoveryEmail(email: string): Promise<UserProfileChangeResponse> {   
+        
+        const recoveryEmail = this.formatEmail(email);
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                profileProperty: ProfileProperty.RecoveryEmail,
+                profilePropertyValue: email,
+                userId: "",
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                expiresAtMs: 0
+            },
+            profileChangeError: ERROR_CODES.DEFAULT,
+        }
+
+        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        if(!systemSettings.allowRecoveryEmail){
+            response.profileChangeError = ERROR_CODES.EC00145;
+            return response;   
+        }
+
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileChangeError = ERROR_CODES.EC00145;
+            return response;            
+        }
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileChangeError = ERROR_CODES.EC00013;
+            return response;            
+        }
+        if(user.locked === true || user.enabled === false){
+            response.profileChangeError = ERROR_CODES.EC00146;
+            return response; 
+        }
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
+            response.profileChangeError = ERROR_CODES.EC00147;
+            return response;
+        }
+
+        const recoveryEmailValidationResult = await this.validateRecoveryEmail(user.userId, recoveryEmail);
+        if(recoveryEmailValidationResult.isValid === false){
+            response.profileChangeError = recoveryEmailValidationResult.errorDetail;
+            return response;
+        }
+        
+        const sessionToken: string = generateRandomToken(20, "hex");
+        const arrStates: Array<UserProfileChangeState> = [];
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.ValidateEmail,
+            profileProperty: ProfileProperty.RecoveryEmail,
+            profilePropertyValue: email,
+            userId: user.userId,
+            changeOrder: 0,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.Completed,
+            profileProperty: ProfileProperty.RecoveryEmail,
+            profilePropertyValue: email,
+            userId: user.userId,
+            changeOrder: 1,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        await identityDao.createProfileChangeStates(arrStates);
+        // Do not add the recovery email to the table yet. Only do that when the user has validated
+        // their email in the next step.
+        await this.generateAndSendEmailValidationToken(user, user.email, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);        
+
+        response.profileChangeState = arrStates[0];
+        return response;
+    }
+
+    public async profileValidateEmail(token: string, changeProfileSessionToken: string): Promise<UserProfileChangeResponse> {
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
+                expiresAtMs: 0,
+                userId: ""
+            },
+            profileChangeError: ERROR_CODES.DEFAULT,
+        }
+
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileChangeError = ERROR_CODES.EC00145;
+            return response;            
+        }
+
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changeProfileSessionToken);
+        const index: number = await this.validateProfileChangeStep(arrChangeStates, response, ProfileState.ValidateEmail);
+        if(index < 0){
+            return response;
+        }
+
+        const currentState: UserProfileChangeState = arrChangeStates[index];
+        if(currentState.userId !== this.oidcContext.portalUserProfile.userId){
+            response.profileChangeError = ERROR_CODES.EC00148;
+            return response;    
+        }
+
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileChangeError = ERROR_CODES.EC00013;
+            return response;            
+        }
+
+        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(token);
+        if(userByConfirmationToken === null){
+            response.profileChangeError = ERROR_CODES.EC00134;
+            return response;  
+        }
+        if(userByConfirmationToken.userId !== user.userId){
+            response.profileChangeError = ERROR_CODES.EC00135;
+            return response;  
+        }
+
+        // If we made it here, then we can update the email or add a new recovery email
+        if(currentState.profileProperty === ProfileProperty.Email){
+            user.email = currentState.profilePropertyValue;
+            user.emailVerified = true;
+            await identityDao.updateUser(user);
+            searchDao.updateSearchIndexUserDocuments(user);
+        }
+        else{
+            const userRecoveryEmail: UserRecoveryEmail = {
+                email: currentState.profilePropertyValue,
+                emailVerified: true,
+                userId: currentState.userId
+            }
+            await identityDao.addRecoveryEmail(userRecoveryEmail);
+        }
+        await identityDao.deleteConfirmationToken(token);
+
+        currentState.changeStateStatus = STATUS_COMPLETE;
+        await identityDao.updateProfileChangeState(currentState);
+        
+        // There should always be a final state, so update it as well...
+        const nextState: UserProfileChangeState = arrChangeStates[index + 1];
+        nextState.changeStateStatus = STATUS_COMPLETE;
+        response.profileChangeState = nextState;
+        
+        // Since there are no more states, delete all of the records
+        for(let i = 0; i < arrChangeStates.length; i++){
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
         }
         return response;
 
     }
 
-    public async profileCancelEmailChange(changeEmailSessionToken: string): Promise<ProfileEmailChangeResponse> {
-        const arrChangeStates: Array<ProfileEmailChangeState> = await this.getSortedEmailChangeStates(changeEmailSessionToken);
+    public async profileCancelEmailChange(changeProfileSessionToken: string): Promise<UserProfileChangeResponse> {
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changeProfileSessionToken);
         for(let i = 0; i < arrChangeStates.length; i++){
-            await identityDao.deleteProfileEmailChangeState(arrChangeStates[i]);
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
         }
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Completed,
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Completed,
                 changeOrder: 0,
                 changeStateStatus: STATUS_COMPLETE,
-                email: "",
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
                 expiresAtMs: 0,
-                isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: ERROR_CODES.DEFAULT
+            profileChangeError: ERROR_CODES.DEFAULT
         }
         return response;
     }
@@ -1224,43 +1399,45 @@ class RegisterUserService extends IdentityService {
      * @param changeEmailSessionToken 
      * @returns 
      */
-    protected async getSortedEmailChangeStates(changeEmailSessionToken: string): Promise<Array<ProfileEmailChangeState>> {
-        const arrChangeStates: Array<ProfileEmailChangeState> = await identityDao.getProfileEmailChangeStates(changeEmailSessionToken);
+    protected async getSortedProfileChangeStates(changeProfileSessionToken: string): Promise<Array<UserProfileChangeState>> {
+        const arrChangeStates: Array<UserProfileChangeState> = await identityDao.getProfileChangeStates(changeProfileSessionToken);
         arrChangeStates.sort(
-            (a: ProfileEmailChangeState, b: ProfileEmailChangeState) => a.changeOrder - b.changeOrder
+            (a: UserProfileChangeState, b: UserProfileChangeState) => a.changeOrder - b.changeOrder
         );
         return arrChangeStates;
     }
 
-    protected async validateEmailChangeStep(arrEmailChangeStates: Array<ProfileEmailChangeState>, response: ProfileEmailChangeResponse, expectedState: EmailChangeState): Promise<number> {
+    protected async validateProfileChangeStep(arrProfileChangeStates: Array<UserProfileChangeState>, response: UserProfileChangeResponse, expectedState: ProfileState): Promise<number> {
         let stepIndex: number = -1;
-        let expectedChangeState: ProfileEmailChangeState | null = null;
-        for(let i = 0; i < arrEmailChangeStates.length; i++){
-            if(arrEmailChangeStates[i].emailChangeState === expectedState){
+        let expectedChangeState: UserProfileChangeState | null = null;
+        for(let i = 0; i < arrProfileChangeStates.length; i++){
+            if(arrProfileChangeStates[i].profileState === expectedState){
                 stepIndex = i;
-                expectedChangeState = arrEmailChangeStates[i];
+                expectedChangeState = arrProfileChangeStates[i];
                 break;
             }
         }
         if(expectedChangeState === null){
-            response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-            response.profileEmailChangeError = ERROR_CODES.EC00149;
+            response.profileChangeState.profileState = ProfileState.Error;
+            response.profileChangeError = ERROR_CODES.EC00149;
             return stepIndex;
         }
         if(expectedChangeState.expiresAtMs < Date.now()){
-            response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-            response.profileEmailChangeError = ERROR_CODES.EC00149;
-            for(let i = 0; i < arrEmailChangeStates.length; i++){
-                await identityDao.deleteProfileEmailChangeState(arrEmailChangeStates[i]);
+            response.profileChangeState.profileState = ProfileState.Error;
+            response.profileChangeError = ERROR_CODES.EC00149;
+            for(let i = 0; i < arrProfileChangeStates.length; i++){
+                await identityDao.deleteProfileChangeState(arrProfileChangeStates[i]);
             }
             return -1;
         }
+        // If we have found an entry, but one of the previous entries is NOT marked
+        // as complete, then set an error.
         if(stepIndex > 0){
             for(let i = 0; i < stepIndex; i++){
-                const previousState: ProfileEmailChangeState = arrEmailChangeStates[i];
+                const previousState: UserProfileChangeState = arrProfileChangeStates[i];
                 if(previousState.changeStateStatus !== STATUS_COMPLETE){
-                    response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-                    response.profileEmailChangeError = ERROR_CODES.EC00149;
+                    response.profileChangeState.profileState = ProfileState.Error;
+                    response.profileChangeError = ERROR_CODES.EC00149;
                     stepIndex = -1;
                     break;
                 }

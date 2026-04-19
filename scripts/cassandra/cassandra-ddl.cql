@@ -962,18 +962,17 @@ create TABLE user_registration_state_by_email (
 );
 
 
-create TABLE user_profile_email_change_state (
+create TABLE user_profile_change_state (
+    changeprofilesessiontoken TEXT,    
+    profilestate TEXT,
     userid UUID,
-    email TEXT,
-    emailchangestate TEXT,
-    changeemailsessiontoken TEXT,
+    profileproperty TEXT,
+    profilepropertyvalue TEXT,
     changeorder INT,
     changestatestatus TEXT,
     expiresatms BIGINT,
-    isprimaryemail BOOLEAN,
-    PRIMARY KEY (changeemailsessiontoken, emailchangestate)
+    PRIMARY KEY (changeprofilesessiontoken, profilestate)
 );
-
 
 create TABLE captcha_config (
     alias TEXT PRIMARY KEY,

@@ -1,4 +1,4 @@
-import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
+import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, UserFailedPasswordResetAttempts, UserProfileChangeState } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone" | "federatedoidcproviderid";
 
@@ -137,13 +137,13 @@ abstract class IdentityDao {
 
     abstract deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
 
-    abstract getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>;
+    abstract getProfileChangeStates(changeStateToken: string): Promise<Array<UserProfileChangeState>>;
 
-    abstract createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>;
+    abstract createProfileChangeStates(arrProfileChangeStates: Array<UserProfileChangeState>): Promise<Array<UserProfileChangeState>>;
     
-    abstract updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>;
+    abstract updateProfileChangeState(profileChangeState: UserProfileChangeState): Promise<UserProfileChangeState>;
 
-    abstract deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>;
+    abstract deleteProfileChangeState(profileChangeState: UserProfileChangeState): Promise<void>;
 
     abstract deleteExpiredData(): Promise<void>;
 

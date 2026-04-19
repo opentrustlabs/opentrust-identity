@@ -710,6 +710,20 @@ create TABLE user_profile_email_change_state (
     FOREIGN KEY (userid) REFERENCES users(userid) 
 );
 
+create TABLE user_profile_change_state (
+    userid VARCHAR2(64) NOT NULL,    
+    profilestate VARCHAR2(64) NOT NULL,
+    changeprofilesessiontoken VARCHAR2(128) NOT NULL,
+    profileproperty VARCHAR2(64) NOT NULL,
+    profilepropertyvalue VARCHAR2(128) NOT NULL,
+    changeorder INT NOT NULL,
+    changestatestatus VARCHAR2(32) NOT NULL,
+    expiresatms NUMBER NOT NULL,
+    PRIMARY KEY (userid, changeprofilesessiontoken, profilestate),
+    FOREIGN KEY (userid) REFERENCES users(userid) 
+);
+
+
 create TABLE captcha_config (
     alias VARCHAR2(256) PRIMARY KEY,
     projectid VARCHAR2(128),

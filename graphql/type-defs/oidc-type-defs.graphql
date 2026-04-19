@@ -159,15 +159,16 @@ type Mutation {
     # Users can add recovery emails or swap emails only for themselves. The user id will be taken from
     # the requestors access token. This will return a registration response for entering
     # the validation token sent to their email.
-    profileHandleEmailChange(newEmail: String!): ProfileEmailChangeResponse!
-    profileValidateEmail(token: String!, changeEmailSessionToken: String!): ProfileEmailChangeResponse!
-    profileCancelEmailChange(changeEmailSessionToken: String!): ProfileEmailChangeResponse!    
-    profileAddRecoveryEmail(recoveryEmail: String!): ProfileEmailChangeResponse!
+    profileHandleEmailChange(newEmail: String!): UserProfileChangeResponse!
+    profileValidateEmail(token: String!, changeEmailSessionToken: String!): UserProfileChangeResponse!
+    profileCancelEmailChange(changeEmailSessionToken: String!): UserProfileChangeResponse!    
+    profileAddRecoveryEmail(recoveryEmail: String!): UserProfileChangeResponse!
     swapPrimaryAndRecoveryEmail: Boolean!
     # If user id is absent then take the user id of the user requesting the deletion.    
     deleteRecoveryEmail(userId: String!): Boolean!
-    profileHandlePhoneNumberChange(newPhoneNumber: String!): ProfilePhoneNumberChangeResponse!
-    profileValidatePhoneNumberChange(token: String!, changePhoneNumberSessionToken: String!): ProfilePhoneNumberChangeResponse!
+    profileHandlePhoneNumberChange(newPhoneNumber: String!): UserProfileChangeResponse!
+    profileValidatePhoneNumberChange(token: String!, changePhoneNumberSessionToken: String!): UserProfileChangeResponse!
+    profileCancelPhoneNumberChange(changePhoneNumberSessionToken: String!): UserProfileChangeResponse!
     
 
     ## Authentication Flows
@@ -1047,50 +1048,36 @@ type UserRegistrationState {
     deviceCodeId: String
 }
 
-enum EmailChangeState {
+enum ProfileState {
     ENTER_EMAIL
     ERROR
     VALIDATE_EMAIL
-    COMPLETED
-}
-
-type ProfileEmailChangeState {
-    changeEmailSessionToken: String!
-    emailChangeState: EmailChangeState!
-    email: String!
-    userId: String!
-    changeOrder: Int!
-    changeStateStatus: String!
-    expiresAtMs: Float!
-    isPrimaryEmail: Boolean!
-}
-
-type ProfileEmailChangeResponse {
-    profileEmailChangeState: ProfileEmailChangeState!
-    profileEmailChangeError: ErrorDetail
-}
-
-enum PhoneNumberChangeState {
     ENTER_PHONE
-    ERROR
-    VALIDATE_PHONE_NUMBER
+    VALIDATE_PHONE
     COMPLETED
 }
 
-type ProfilePhoneNumberChangeState {
-    changePhoneNumberSessionToken: String!
-    changePhoneNumberState: PhoneNumberChangeState!
-    phoneNumber: String!
+enum ProfileProperty {
+    EMAIL
+    RECOVERY_EMAIL
+    PHONE_NUMBER
+}
+
+type UserProfileChangeState {
+    changeProfileSessionToken: String!
+    profileState: ProfileState!
+    profileProperty: ProfileProperty!
+    profilePropertyValue: String!
     userId: String!
     changeOrder: Int!
     changeStateStatus: String!
     expiresAtMs: Float!
 }
-type ProfilePhoneNumberChangeResponse {
-    profilePhoneNumberChangeState: ProfilePhoneNumberChangeState!
-    profilePhoneNumberChangeError: ErrorDetail
-}
 
+type UserProfileChangeResponse {
+    profileChangeState: UserProfileChangeState!
+    profileChangeError: ErrorDetail
+}
 
 enum SecondFactorType {
     TOTP

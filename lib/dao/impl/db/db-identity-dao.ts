@@ -1,6 +1,6 @@
-import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
+import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, UserFailedPasswordResetAttempts, UserProfileChangeState } from "@/graphql/generated/graphql-types";
 import IdentityDao, { TokenConfirmationType, UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP } from "@/utils/consts";
 import { UserFido2CounterRel } from "@/lib/entities/user-fido2-counter-rel-entity";
 import RDBDriver from "@/lib/data-sources/rdb";
 import { UserEmailRecovery } from "@/lib/entities/user-email-recovery-entity";
@@ -423,7 +423,7 @@ class DBIdentityDao extends IdentityDao {
             userId: userId
         });
 
-        const changeEmailStateRepo = await RDBDriver.getInstance().getUserProfileChangeEmailStateRepository();
+        const changeEmailStateRepo = await RDBDriver.getInstance().getUserProfileChangeStateRepository();
         await changeEmailStateRepo.delete({
             userId: userId
         });
@@ -640,7 +640,7 @@ class DBIdentityDao extends IdentityDao {
             expiresAtMS: LessThan(Date.now())
         });
         
-        const userProfileEmailChangeRepo = await RDBDriver.getInstance().getUserProfileChangeEmailStateRepository();
+        const userProfileEmailChangeRepo = await RDBDriver.getInstance().getUserProfileChangeStateRepository();
         await userProfileEmailChangeRepo.delete({
             expiresAtMs: LessThan(Date.now())
         });
@@ -711,43 +711,43 @@ class DBIdentityDao extends IdentityDao {
         return Promise.resolve();
     }
 
-    public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>{
-        const profileEmailChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeEmailStateRepository();
-        const arr: Array<ProfileEmailChangeState> = await profileEmailChangeStateRepo.find({
+    public async getProfileChangeStates(changeSessionToken: string): Promise<Array<UserProfileChangeState>>{
+        const profileChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeStateRepository();
+        const arr: Array<UserProfileChangeState> = await profileChangeStateRepo.find({
             where: {
-                changeEmailSessionToken: changeStateToken
+                changeProfileSessionToken: changeSessionToken
             }
         });
         return arr;
     }
     
-    public async createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>{
-        const profileEmailChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeEmailStateRepository();
-        for(let i = 0; i < arrEmailChangeStates.length; i++){
-            await profileEmailChangeStateRepo.insert(arrEmailChangeStates[i]);
+    public async createProfileChangeStates(arrProfileChangeStates: Array<UserProfileChangeState>): Promise<Array<UserProfileChangeState>> {
+        const profileChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeStateRepository();
+        for(let i = 0; i < arrProfileChangeStates.length; i++){
+            await profileChangeStateRepo.insert(arrProfileChangeStates[i]);
         }
-        return arrEmailChangeStates;
+        return arrProfileChangeStates;
     }
     
-    public async updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>{
-        const profileEmailChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeEmailStateRepository();
-        await profileEmailChangeStateRepo.update(
+    public async updateProfileChangeState(profileChangeState: UserProfileChangeState): Promise<UserProfileChangeState> {
+        const profileChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeStateRepository();
+        await profileChangeStateRepo.update(
             {
-                userId: profileEmailChangeState.userId,
-                emailChangeState: profileEmailChangeState.emailChangeState,
-                changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken
+                userId: profileChangeState.userId,
+                profileState: profileChangeState.profileState,
+                changeProfileSessionToken: profileChangeState.changeProfileSessionToken
             },
-            profileEmailChangeState,
+            profileChangeState,
         );
-        return profileEmailChangeState;
+        return profileChangeState;
     }
 
-    public async deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>{
-        const profileEmailChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeEmailStateRepository();
-        await profileEmailChangeStateRepo.delete({
-            userId: profileEmailChangeState.userId,
-            emailChangeState: profileEmailChangeState.emailChangeState,
-            changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken
+    public async deleteProfileChangeState(profileChangeState: UserProfileChangeState): Promise<void> {
+        const profileChangeStateRepo = await RDBDriver.getInstance().getUserProfileChangeStateRepository();
+        await profileChangeStateRepo.delete({
+            userId: profileChangeState.userId,
+            profileState: profileChangeState.profileState,
+            changeProfileSessionToken: profileChangeState.changeProfileSessionToken
         });
         return Promise.resolve();
     }
