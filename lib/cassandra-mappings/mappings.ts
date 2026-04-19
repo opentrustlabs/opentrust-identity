@@ -1390,9 +1390,9 @@ export const USER_MFA_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
     }
 };
 
-export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "user_profile_email_change_state": {
-        tables: ["user_profile_email_change_state"],
+export const USER_PROFILE_CHANGE_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
+    "user_profile_change_state": {
+        tables: ["user_profile_change_state"],
         columns: {
             "userid": {
                 name: "userId",
@@ -1400,13 +1400,13 @@ export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.m
                     return columnValue.toString();
                 }
             },
-			"changeemailsessiontoken": "changeEmailSessionToken",
-			"emailchangestate": "emailChangeState",
-			"email": "email",
+			"changeprofilesessiontoken": "changeProfileSessionToken",
+			"profilestate": "profileState",
+            "profileproperty": "profileProperty",
+			"profilepropertyvalue": "profilePropertyValue",
 			"changeorder": "changeOrder",
 			"changestatestatus": "changeStateStatus",
-			"expiresatms": "expiresAtMs",
-			"isprimaryemail": "isPrimaryEmail"
+			"expiresatms": "expiresAtMs"
         }
     }
 };
