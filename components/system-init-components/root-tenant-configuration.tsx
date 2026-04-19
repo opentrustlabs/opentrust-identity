@@ -36,7 +36,8 @@ const RootTenantConfiguration: React.FC<SystemInitializationConfigProps> = ({
         verifyEmailOnSelfRegistration: systemInitInput.rootTenantInput.verifyEmailOnSelfRegistration,
         registrationRequireCaptcha: false,
         registrationRequireTermsAndConditions: false,
-        tenantDescription: systemInitInput.rootTenantInput.tenantDescription
+        tenantDescription: systemInitInput.rootTenantInput.tenantDescription,
+        verifyPhoneNumberOnSelfRegistration: false
     };
     const [tenantInput, setTenantInput] = React.useState<TenantCreateInput>(initInput);
 

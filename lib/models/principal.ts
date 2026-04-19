@@ -102,7 +102,7 @@ export interface LegacyUserProfile {
     lastName: string,
     middleName: string | null,
     phoneNumber: string | null,
-    phoneNumberVerified: string | null,
+    phoneNumberVerified: boolean | null,
     address: string,
     addressLine1: string | null,
     city: string,

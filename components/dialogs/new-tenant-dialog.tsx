@@ -9,8 +9,6 @@ import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
 import { useIntl } from 'react-intl';
 
-
-
 export interface NewTenantDialogProps {
     onCancel: () => void,
     onClose: () => void,
@@ -41,7 +39,8 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
         tenantType: "",
         verifyEmailOnSelfRegistration: false,
         registrationRequireCaptcha: false,
-        registrationRequireTermsAndConditions: false
+        registrationRequireTermsAndConditions: false,
+        verifyPhoneNumberOnSelfRegistration: false
     }
 
     // HOOKS

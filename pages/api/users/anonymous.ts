@@ -153,7 +153,8 @@ export default async function handler(
         middleName: "",
         phoneNumber: "",
         postalCode: "",
-        forcePasswordResetAfterAuthentication: false
+        forcePasswordResetAfterAuthentication: false,
+        phoneNumberVerified: false
     };
 
     const client: Client | null = await clientDao.getClientById(profile.userId);

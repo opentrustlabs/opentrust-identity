@@ -98,7 +98,8 @@ const SystemInit: React.FC = () => {
             tenantName: "",
             tenantType: "",
             termsAndConditionsUri: undefined,
-            verifyEmailOnSelfRegistration: false
+            verifyEmailOnSelfRegistration: false,
+            verifyPhoneNumberOnSelfRegistration: false
         },
         rootUserCreateInput: {
             address: undefined,
@@ -120,7 +121,8 @@ const SystemInit: React.FC = () => {
             postalCode: undefined,
             preferredLanguageCode: undefined,
             stateRegionProvince: undefined,
-            termsAndConditionsAccepted: false
+            termsAndConditionsAccepted: false,
+            phoneNumberVerified: false
         },
         systemSettingsInput: {
             allowDuressPassword: false,
@@ -129,7 +131,15 @@ const SystemInit: React.FC = () => {
             contactEmail: undefined,
             enablePortalAsLegacyIdp: false,
             noReplyEmail: undefined,
-            rootClientId: ""
+            rootClientId: "",
+            smsAlertOnAccountStatusChange: false,
+            smsAlertOnEmailChange: false,
+            smsAlertOnMFADeviceChange: false,
+            smsAlertOnPasswordChange: false,
+            smsAllowPasswordResetOtp: false,
+            smsCallbackServiceEnabled: false,
+            smsCallbackUri: "",
+            smsSenderName: ""
         },
         captchaConfigInput: null,
         rootFederatedOIDCProviderInput: null,

@@ -26,7 +26,15 @@ const InitSystemSettingsConfiguration: React.FC<SystemInitializationConfigProps>
         enablePortalAsLegacyIdp: systemInitInput.systemSettingsInput.enablePortalAsLegacyIdp,
         auditRecordRetentionPeriodDays: systemInitInput.systemSettingsInput.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
         noReplyEmail: systemInitInput.systemSettingsInput.noReplyEmail,
-        contactEmail: systemInitInput.systemSettingsInput.contactEmail
+        contactEmail: systemInitInput.systemSettingsInput.contactEmail,
+        smsCallbackServiceEnabled: false,
+        smsAlertOnAccountStatusChange: false,
+        smsAlertOnEmailChange: false,
+        smsAlertOnMFADeviceChange: false,
+        smsAlertOnPasswordChange: false,
+        smsAllowPasswordResetOtp: false,
+        smsCallbackUri: "",
+        smsSenderName: ""
     };    
     
     const [systemSettingsUpdateInput, setSystemSettingsUpdateInput] = React.useState<SystemSettingsUpdateInput>(initInput);

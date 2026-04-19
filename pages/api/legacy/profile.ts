@@ -90,7 +90,8 @@ export default async function handler(
         stateRegionProvince: user.stateRegionProvince || "",
         countryCode: user.countryCode || "",
         preferredLanguageCode: user.preferredLanguageCode || "",
-        nameOrder: user.nameOrder
+        nameOrder: user.nameOrder,
+        phoneNumberVerified: user.phoneNumberVerified
     }
     res.status(200).json(legacyUserProfile);
 

@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_TENANT_META_DATA, LAYOUT_TYPE_SINGLE_COLUMN, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_TENANT_META_DATA, LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPE_TWO_COLUMN, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, AuthenticationRequestedScope, ScopeTranslation, ForgotPasswordCommunicationMethod } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
@@ -118,8 +118,19 @@ const Login: React.FC<LoginProps>= ({
     const [layoutType] = React.useState<string>(
         tenantBean.getTenantMetaData().tenantLookAndFeel?.layouttype ?? LAYOUT_TYPE_SINGLE_COLUMN
     );
-    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : layoutType === LAYOUT_TYPE_SINGLE_COLUMN ? "650px" : "1280px";
-
+    //const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : layoutType === LAYOUT_TYPE_SINGLE_COLUMN ? "650px" : "1280px";
+    let maxWidth = "650px";
+    if(breakPoints.isSmall){
+        maxWidth = "90vw";
+    }
+    else if(breakPoints.isMedium){
+        maxWidth = "80vw";
+    }
+    else if(preAuthToken){
+        if(layoutType === LAYOUT_TYPE_TWO_COLUMN){
+            maxWidth = "1280px";
+        }
+    }
 
     // GRAPHQL FUNCTIONS
     const [ tenantMetadataLazyQuery ] = useLazyQuery(TENANT_META_DATA_QUERY, {               
@@ -400,7 +411,7 @@ const Login: React.FC<LoginProps>= ({
         return (
             <Paper
                 elevation={4}
-                sx={{ padding: 2, height: "100%", maxWidth: maxWidth }}
+                sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
             >
                 {(i18nContext.hasSelectedLanguage() !== true || openLanguageSelector) &&
                     <Dialog 
@@ -636,28 +647,31 @@ const Login: React.FC<LoginProps>= ({
                                         />
                                     </Grid2>
                                     <Grid2 size={12}>
-                                        <TextField
-                                            id="email"
-                                            required={true}
-                                            autoFocus={true}
-                                            autoComplete="email"
-                                            label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
-                                            name="email"
-                                            fullWidth
-                                            onChange={(evt) => setUsername(evt.target.value)}
-                                            onKeyDown={handleEnterButtonPress}
-                                            value={username}
-                                            disabled={isLoginDisabled}
+                                        <form 
+                                            onSubmit={(e) => {
+                                                e.preventDefault(); 
+                                                if(username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)){
+                                                    return;
+                                                }
+                                                handleUserNameInput();
+                                            }}
                                         >
-                                        </TextField>
+                                            <input type="hidden" name="username" autoComplete="username" />
+                                            <TextField
+                                                id="usrname"
+                                                required={true}
+                                                autoFocus={true}
+                                                autoComplete="username"
+                                                label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
+                                                name="username"
+                                                fullWidth
+                                                onChange={(evt) => setUsername(evt.target.value)}
+                                                onKeyDown={handleEnterButtonPress}
+                                                value={username}
+                                                disabled={isLoginDisabled}
+                                            />
+                                        </form>
                                     </Grid2>
-
-                                </Grid2>
-                                
-                                <Grid2 size={{ xs: 12 }}>
-                                    <Stack direction={"row-reverse"}>
-                                        <span style={{ fontWeight: "bold", fontSize: "0.9em", visibility: "hidden" }}>&nbsp;</span>
-                                    </Stack>
                                 </Grid2>
                                 <Grid2 size={{ xs: 12 }}>
                                     <Stack
@@ -739,20 +753,32 @@ const Login: React.FC<LoginProps>= ({
                         {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                             <React.Fragment>
                                 <Grid2 container size={12} spacing={1}>
+                                    {/* Duplicating the username input to help out with password managers. Otherwise they may not auto-complete */}
+                                    <form 
+                                        style={{width: "100%"}}
+                                        onSubmit={(e) => { 
+                                            e.preventDefault(); /* call authenticateUser */ 
+                                            if(password === null || password.length < PASSWORD_MINIMUM_LENGTH){
+                                                return;
+                                            }
+                                            setErrorMessage(null);
+                                            authenticateUser({
+                                                variables: {
+                                                    username: username,
+                                                    password: password,
+                                                    tenantId: userAuthenticationState.tenantId,
+                                                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                    preAuthToken: userAuthenticationState.preAuthToken
+                                                }
+                                            });                                            
+                                        }}
+                                    >
                                         <div style={{display: "none"}}>
-                                            <TextField
+                                            <input
                                                 name="username"
                                                 autoComplete="username"
-                                                value={username}
-                                                type="hidden"
-                                                sx={{
-                                                    width: 0,
-                                                    height: 0,
-                                                    overflow: 'hidden',
-                                                    position: 'absolute',
-                                                    opacity: 0,
-                                                    pointerEvents: 'none',
-                                                }}
+                                                value={username || ""}
+                                                type="hidden"                                                
                                             />
                                         </div>
                                         <Grid2 size={12}>
@@ -773,6 +799,7 @@ const Login: React.FC<LoginProps>= ({
                                             >
                                             </TextField>
                                         </Grid2>
+                                    </form>
                                 </Grid2>
                                 
                                 <Grid2 size={{ xs: 12 }}>
