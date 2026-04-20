@@ -89,6 +89,8 @@ const MyProfile: React.FC = () => {
             isMyProfileView: true
         },
         onCompleted(data) {
+            console.log("found the user profile data from the me query");
+            console.log(data.me);
             if (data && data.me && data.me.userId) {
                 setUserId(data.me.userId);
                 setUserTenantId(data.me.tenantId);
@@ -458,37 +460,7 @@ const MyProfile: React.FC = () => {
                                                     sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
                                                     labelPlacement="start"
                                                 />
-                                            </Grid2>                                            
-                                            <Grid2 size={12}>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Switch
-                                                            name="emailVerified"
-                                                            disabled={true}
-                                                            checked={userInput.emailVerified}
-                                                        />
-                                                    }
-                                                    label="Email Verified"
-                                                    sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
-                                                    labelPlacement="start"
-                                                />
                                             </Grid2>
-                                            {recoveryEmail &&   
-                                                <Grid2 size={12}>
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Switch
-                                                                name="recoveryEmailVerified"
-                                                                disabled={true}
-                                                                checked={recoveryEmail.emailVerified}
-                                                            />
-                                                        }
-                                                        label="Recovery Email Verified"
-                                                        sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
-                                                        labelPlacement="start"
-                                                    />
-                                                </Grid2>                                           
-                                            }                                            
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
@@ -543,8 +515,7 @@ const MyProfile: React.FC = () => {
                                             <Grid2 size={profileIs3rdPartyControlled || isReadOnly ? 12 : 11}>
                                                 <TextField name="email" id="email"
                                                     disabled={true}
-                                                    value={userInput.email}
-                                                    
+                                                    value={userInput.email}                                                    
                                                     fullWidth={true} size="small"
                                                 />
                                             </Grid2>
@@ -560,6 +531,20 @@ const MyProfile: React.FC = () => {
                                             }
                                         </Grid2>
                                     </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    name="emailVerified"
+                                                    disabled={true}
+                                                    checked={userInput.emailVerified}
+                                                />
+                                            }
+                                            label="Email Verified"
+                                            sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
+                                            labelPlacement="start"
+                                        />
+                                    </Grid2>
                                     {!recoveryEmail && tenantBean.getTenantMetaData().systemSettings.allowRecoveryEmail === true && !profileIs3rdPartyControlled &&
                                         <Grid2 marginTop={"24px"} marginBottom={"24px"} container spacing={1}>
                                             <Grid2  size={11}>
@@ -574,7 +559,7 @@ const MyProfile: React.FC = () => {
                                                         setShowAddRecoveryEmailDialog(true);
                                                     }}
                                                 />
-                                            </Grid2>
+                                            </Grid2>                                            
                                         </Grid2>
                                     }
                                     {recoveryEmail &&  
@@ -615,17 +600,53 @@ const MyProfile: React.FC = () => {
                                                         />
                                                     </Grid2>
                                                 }
-                                            </Grid2>
+                                            </Grid2>                                            
+                                            <Grid2 size={12}>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            name="recoveryEmailVerified"
+                                                            disabled={true}
+                                                            checked={recoveryEmail.emailVerified}
+                                                        />
+                                                    }
+                                                    label="Recovery Email Verified"
+                                                    sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
+                                                    labelPlacement="start"
+                                                />
+                                            </Grid2>                                            
                                         </Grid2>
                                     }
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Phone Number</div>
-                                        {tenantBean.getTenantMetaData().tenant.verifyPhoneNumberOnSelfRegistration === true &&                                                        
+                                        <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
+                                        {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&                                                        
                                             <Typography variant="caption" color="text.secondary">
                                                 ({intl.formatMessage({id: "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER"})})
                                             </Typography>                                                        
                                         }
-                                        <MuiTelInput
+                                        <Grid2 size={profileIs3rdPartyControlled || isReadOnly ? 12 : 11}>
+                                            <TextField name="phoneNumber" id="phoneNumber"
+                                                disabled={true}
+                                                value={userInput.phoneNumber}
+                                                fullWidth={true} size="small"
+                                            />
+                                        </Grid2>
+                                        {!(profileIs3rdPartyControlled || isReadOnly) &&
+                                            <Grid2 size={1}>
+                                                <EditOutlinedIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        //setShowPhoneNumberEditDialog(true);
+                                                    }}
+                                                />
+                                            </Grid2>
+                                        }
+                                        </Grid2>
+
+                                        
+                                        
+                                        {/* <MuiTelInput
                                             name="phoneNumber"
                                             id="phoneNumber"
                                             disabled={profileIs3rdPartyControlled || isReadOnly}
@@ -637,7 +658,7 @@ const MyProfile: React.FC = () => {
                                             }}
                                             fullWidth={true}
                                             size="small"
-                                        />
+                                        /> */}
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>
                                         <FormControlLabel

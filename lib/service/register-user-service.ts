@@ -901,7 +901,8 @@ class RegisterUserService extends IdentityService {
             return response;            
         }
 
-        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(token);
+        const { hashedToken } = createVerificationToken(token);
+        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(hashedToken);
         if(userByConfirmationToken === null){
             response.profileChangeError = ERROR_CODES.EC00134;
             return response;  
@@ -1223,6 +1224,7 @@ class RegisterUserService extends IdentityService {
     }
 
     public async profileValidateEmail(token: string, changeProfileSessionToken: string): Promise<UserProfileChangeResponse> {
+        
         const response: UserProfileChangeResponse = {
             profileChangeState: {
                 changeProfileSessionToken: "",
@@ -1260,7 +1262,8 @@ class RegisterUserService extends IdentityService {
             return response;            
         }
 
-        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(token);
+        const { hashedToken } = createVerificationToken(token);
+        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(hashedToken);
         if(userByConfirmationToken === null){
             response.profileChangeError = ERROR_CODES.EC00134;
             return response;  

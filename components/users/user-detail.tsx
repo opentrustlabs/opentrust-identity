@@ -96,7 +96,11 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
     const [showUnlockConfirmationDialog, setShowUnlockConfirmationDialog] = React.useState<boolean>(false);
     const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
-    const [disableInputs] = React.useState<boolean>(user.markForDelete || !containsScope(USER_UPDATE_SCOPE, profile?.scope || []));
+    const [disableInputs] = React.useState<boolean>(
+        user.markForDelete || 
+        !containsScope(USER_UPDATE_SCOPE, profile?.scope || []) || 
+        (user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId !== "")
+    );
     const [canDeleteUser] = React.useState<boolean>(containsScope(USER_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
@@ -329,7 +333,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Stack spacing={3}>
 
                                             <TextField name="firstName" id="firstName"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
+                                                disabled={disableInputs}
                                                 value={userInput.firstName}
                                                 onChange={(evt) => { userInput.firstName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }) }}
                                                 fullWidth={true}
@@ -337,7 +341,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
 
                                             <TextField name="lastName" id="lastName"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
+                                                disabled={disableInputs}
                                                 value={userInput.lastName}
                                                 onChange={(evt) => { userInput.lastName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
                                                 fullWidth={true}
@@ -345,7 +349,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
 
                                             <TextField name="middleName" id="middleName"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
+                                                disabled={disableInputs}
                                                 value={userInput.middleName}
                                                 onChange={(evt) => { userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
                                                 fullWidth={true}
@@ -354,7 +358,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                             <TextField
                                                 select
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
+                                                disabled={disableInputs}
                                                 name="nameOrder"
                                                 value={userInput.nameOrder}
                                                 onChange={(evt) => {
@@ -399,7 +403,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             </Box>
 
                                             <TextField name="email" id="email"
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
+                                                disabled={disableInputs}
                                                 value={userInput.email}
                                                 onChange={(evt) => {
                                                     userInput.email = evt.target.value;
@@ -414,7 +418,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <FormControlLabel
                                                 control={
                                                     <Switch
-                                                        disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== null}
+                                                        disabled={disableInputs}
                                                         checked={userInput.emailVerified}
                                                         onChange={(_, checked) => {
                                                             userInput.emailVerified = checked;
@@ -469,13 +473,13 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     control={
                                                         <Switch
                                                             name="phoneNumberVerified"
-                                                            disabled={true}
+                                                            disabled={disableInputs}
                                                             checked={user.phoneNumberVerified}
                                                         />
                                                     }
                                                     label="Phone Number Verified"
                                                     sx={{ margin: "4px", justifyContent: 'space-between', width: '100%' }}
-                                                    labelPlacement="start"
+                                                    labelPlacement="start"                                                    
                                                 />
                                             </React.Fragment>
 

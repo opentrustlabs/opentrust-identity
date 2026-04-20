@@ -1,10 +1,10 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel, UserFailedPasswordResetAttempts, PreAuthenticationStateProtocolType, ForgotPasswordCommunicationMethod, SystemSettings } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, TenantLookAndFeel, UserFailedPasswordResetAttempts, PreAuthenticationStateProtocolType, ForgotPasswordCommunicationMethod, SystemSettings, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_MAX_PASSWORD_RESET_ATTEMPTS, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER, USER_TENANT_REL_TYPE_GUEST } from "@/utils/consts";
 import { createVerificationToken, generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail, VerificationToken } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -1883,7 +1883,7 @@ class AuthenticateUserService extends IdentityService {
                 // If there is an existing refresh token assigned to this user + tenant + client, then clear it out.
                 // This should not happen often. The deletion will happen before the client can call the
                 // token endpoint to issue a new access token/refresh token based on the same user/tenant/client
-                authDao.deleteRefreshData(userAuthenticationState.userId, userAuthenticationState.tenantId, preAuthenticationState.clientId);
+                authDao.deleteRefreshData(userAuthenticationState.userId, userAuthenticationState.tenantId, preAuthenticationState.clientId);                
             }
             catch(err: unknown){
                 const e = err as Error;
@@ -1951,7 +1951,27 @@ class AuthenticateUserService extends IdentityService {
             }
         }
         identityDao.addUserAuthenticationHistory(user.userId, Date.now());
-    }    
+        // Make sure that the user is assigned properly to this tenant 
+        await this.checkAndAssignUserTenantRel(user, userAuthenticationState.tenantId);
+    }
+
+    /**
+     * 
+     * @param userId 
+     * @param tenantId 
+     */
+    protected async checkAndAssignUserTenantRel(user: User, tenantId: string): Promise<void>{
+        
+        const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(user.userId);
+        const existingRel = userTenantRels.find(rel => rel.tenantId === tenantId);
+        
+        // Need to add it in case it does not exist
+        if(!existingRel){
+            // Set the relation type as primary if there are ZERO existing rel types
+            await identityDao.assignUserToTenant(tenantId, user.userId, userTenantRels.length === 0 ? USER_TENANT_REL_TYPE_PRIMARY : USER_TENANT_REL_TYPE_GUEST);
+            await searchDao.updateUserTenantRelSearchIndex(tenantId, user);
+        }
+    }
 
     protected requirePasswordRotation(userCredential: UserCredential, tenantPasswordConfig: TenantPasswordConfig): boolean {
         let bRetVal = false;
