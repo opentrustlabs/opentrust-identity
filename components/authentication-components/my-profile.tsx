@@ -620,45 +620,76 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Phone Number</div>
                                         <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
-                                        {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&                                                        
-                                            <Typography variant="caption" color="text.secondary">
-                                                ({intl.formatMessage({id: "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER"})})
-                                            </Typography>                                                        
-                                        }
-                                        <Grid2 size={profileIs3rdPartyControlled || isReadOnly ? 12 : 11}>
-                                            <TextField name="phoneNumber" id="phoneNumber"
-                                                disabled={true}
-                                                value={userInput.phoneNumber}
-                                                fullWidth={true} size="small"
-                                            />
+                                            {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&                                                        
+                                                <Typography variant="caption" color="text.secondary">
+                                                    ({intl.formatMessage({id: "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER"})})
+                                                </Typography>                                                        
+                                            }
+                                            {profileIs3rdPartyControlled || isReadOnly &&
+                                                <Grid2 size={12}>
+                                                    <TextField name="phoneNumber" id="phoneNumber"
+                                                        disabled={true}
+                                                        value={userInput.phoneNumber}
+                                                        fullWidth={true} 
+                                                        size="small"                                                
+                                                    />
+                                                </Grid2>
+                                            }
+                                            {/* If the user CAN edit their phone number, then how to display? If there is an SMS callback enalbed,
+                                                then only allow the user to edit via the validation dialog. If there is NOT an SMS callback enabled
+                                                then show the user the standard telephone input control. Note that this has nothing to do with 
+                                                how the TENANT is configured with respect to the validation of phone number, but the global SYSTEM
+                                                SETTINGS take precedence on the user profile page. The reasons are:
+                                                    1.  It confirms ownership at the point of intent. The user is actively making a change, which is
+                                                        the right moment to confirm they own the number. Storing an unverified number and waiting 
+                                                        for a policy trigger means we may never know if it's even real.
+                                                    2.  It avoids confusing gaps. If a user adds a phone number and then tries to log in by 
+                                                        phone at a tenant that allows it, getting blocked because the number is unverified is 
+                                                        confusing, they will wonder why their phone number "doesn't work" when they already set it.
+                                                    3.  It keeps the mid-login validation flow as the exception, not the rule. That flow exists 
+                                                        for cases we cannot control (policy changes, provisioned accounts). Profile edits are 
+                                                        something we can control, so we should handle them cleanly upfront
+                                            */}
+                                            {!(profileIs3rdPartyControlled || isReadOnly) && tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&                                                
+                                                <>
+                                                    <Grid2 size={11}>
+                                                        <TextField name="phoneNumber" id="phoneNumber"
+                                                            disabled={true}
+                                                            value={userInput.phoneNumber}
+                                                            fullWidth={true} 
+                                                            size="small"                                                
+                                                        />
+                                                    </Grid2>
+                                                    <Grid2 size={1}>
+                                                        <EditOutlinedIcon 
+                                                            sx={{cursor: "pointer"}}
+                                                            onClick={() => {
+                                                                //setShowPhoneNumberEditDialog(true);
+                                                            }}
+                                                        />
+                                                    </Grid2>
+                                                </>                                                    
+                                            }
+                                            {!(profileIs3rdPartyControlled || isReadOnly) && tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled !== true &&                                                
+                                                <>
+                                                    <Grid2 size={12}>
+                                                        <MuiTelInput
+                                                            name="phoneNumber"
+                                                            id="phoneNumber"
+                                                            disabled={profileIs3rdPartyControlled || isReadOnly}
+                                                            value={userInput.phoneNumber || ""}
+                                                            onChange={(newValue) => {
+                                                                userInput.phoneNumber = newValue;
+                                                                setMarkDirty(true);
+                                                                setUserInput({ ...userInput });
+                                                            }}
+                                                            fullWidth={true}
+                                                            size="small"
+                                                        />
+                                                    </Grid2>
+                                                </>                                                    
+                                            }
                                         </Grid2>
-                                        {!(profileIs3rdPartyControlled || isReadOnly) &&
-                                            <Grid2 size={1}>
-                                                <EditOutlinedIcon 
-                                                    sx={{cursor: "pointer"}}
-                                                    onClick={() => {
-                                                        //setShowPhoneNumberEditDialog(true);
-                                                    }}
-                                                />
-                                            </Grid2>
-                                        }
-                                        </Grid2>
-
-                                        
-                                        
-                                        {/* <MuiTelInput
-                                            name="phoneNumber"
-                                            id="phoneNumber"
-                                            disabled={profileIs3rdPartyControlled || isReadOnly}
-                                            value={userInput.phoneNumber || ""}
-                                            onChange={(newValue) => {
-                                                userInput.phoneNumber = newValue;
-                                                setMarkDirty(true);
-                                                setUserInput({ ...userInput });
-                                            }}
-                                            fullWidth={true}
-                                            size="small"
-                                        /> */}
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>
                                         <FormControlLabel
@@ -813,6 +844,7 @@ const MyProfile: React.FC = () => {
                                                 setUserInput({ ...userInput });
                                                 setMarkDirty(true);
                                             }}
+                                            small={true}
                                         />
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>

@@ -12,13 +12,15 @@ interface StateProvinceRegionSelectorProps {
     initValue?: string,
     isDisabled: boolean,
     onChange: (stateProvinceRegion: StateProvinceRegion | null) => void
+    small?: boolean
 }
 
 const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = ({
     countryCode,
     initValue,
     isDisabled,
-    onChange
+    onChange,
+    small
 }) => {
 
     // STATE VARIABLES
@@ -55,6 +57,7 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
                 <Alert severity="error" >{error.message}</Alert>
             }            
             <Autocomplete
+                size={small ? "small" : undefined}
                 disabled={isDisabled}                                           
                 sx={{paddingTop: "8px"}}
                 freeSolo={true}
