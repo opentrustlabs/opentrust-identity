@@ -56,7 +56,7 @@ const Register: React.FC = () => {
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const i18nContext = useInternationalizationContext();
 
-    if(tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha === true && tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === true) return (
+    if(tenantBean.getTenantMetaData().recaptchaMetaData?.captchaEnabled && tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha === true && tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === true) return (
         <GoogleReCaptchaProvider
             reCaptchaKey={tenantBean.getTenantMetaData().recaptchaMetaData?.recaptchaSiteKey || ""}
             language={i18nContext.getLanguage()}
@@ -68,13 +68,6 @@ const Register: React.FC = () => {
                 appendTo: 'body', // optional, default to "head", can be "head" or "body",
                 nonce: undefined // optional, default undefined
             }}
-            // container={{ // optional to render inside custom element
-            // element: "[required_id_or_htmlelement]",
-            // parameters: {
-            //     badge: '[inline|bottomright|bottomleft]', // optional, default undefined
-            //     theme: 'dark', // optional, default undefined
-            // }
-            // }}
         >
             <RegisterInnerComponent />
         </GoogleReCaptchaProvider>

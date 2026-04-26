@@ -41,21 +41,22 @@ alter TABLE system_settings ADD COLUMN smsalertonemailchange BOOLEAN NOT NULL DE
 
 alter TABLE users ADD COLUMN phonenumberverified BOOLEAN NOT NULL DEFAULT FALSE;
 
+alter TABLE captcha_config ADD COLUMN captchaenabled BOOLEAN NOT NULL;
 
 
 For Oracle:
 ===========
-alter table tenant_look_and_feel drop column adminheaderbackgroundcolor;
-alter table tenant_look_and_feel drop column adminheadertextcolor;
-alter table tenant_look_and_feel drop column adminlogo;
-alter table tenant_look_and_feel drop column adminheadertext;
-alter table tenant_look_and_feel drop column authenticationlogo;
-alter table tenant_look_and_feel drop column authenticationlogomimetype;
+alter TABLE tenant_look_and_feel drop column adminheaderbackgroundcolor;
+alter TABLE tenant_look_and_feel drop column adminheadertextcolor;
+alter TABLE tenant_look_and_feel drop column adminlogo;
+alter TABLE tenant_look_and_feel drop column adminheadertext;
+alter TABLE tenant_look_and_feel drop column authenticationlogo;
+alter TABLE tenant_look_and_feel drop column authenticationlogomimetype;
 
-alter table tenant_look_and_feel rename column authenticationheaderbackgroundcolor to headerbackgroundcolor;
-alter table tenant_look_and_feel rename column authenticationheadertextcolor to headertextcolor;
-alter table tenant_look_and_feel rename column authenticationheadertext to headertext;
-alter table tenant_look_and_feel rename column authenticationlogouri to logouri;
+alter TABLE tenant_look_and_feel rename column authenticationheaderbackgroundcolor to headerbackgroundcolor;
+alter TABLE tenant_look_and_feel rename column authenticationheadertextcolor to headertextcolor;
+alter TABLE tenant_look_and_feel rename column authenticationheadertext to headertext;
+alter TABLE tenant_look_and_feel rename column authenticationlogouri to logouri;
 
 alter TABLE tenant_look_and_feel ADD buttonbackgroundcolor VARCHAR2(32);
 alter TABLE tenant_look_and_feel ADD buttontextcolor VARCHAR2(32);
@@ -84,17 +85,17 @@ alter TABLE system_settings ADD smsalertonemailchange NUMBER(1) DEFAULT 0 NOT NU
 
 alter TABLE users ADD phonenumberverified NUMBER(1) DEFAULT 0 NOT NULL;
 
-
+alter TABLE captcha_config ADD captchaenabled NUMBER(1) DEFAULT 0 NOT NULL;
 
 
 For MSSQL:
 ==========
-alter table tenant_look_and_feel drop column adminheaderbackgroundcolor;
-alter table tenant_look_and_feel drop column adminheadertextcolor;
-alter table tenant_look_and_feel drop column adminlogo;
-alter table tenant_look_and_feel drop column adminheadertext;
-alter table tenant_look_and_feel drop column authenticationlogo;
-alter table tenant_look_and_feel drop column authenticationlogomimetype;
+alter TABLE tenant_look_and_feel drop column adminheaderbackgroundcolor;
+alter TABLE tenant_look_and_feel drop column adminheadertextcolor;
+alter TABLE tenant_look_and_feel drop column adminlogo;
+alter TABLE tenant_look_and_feel drop column adminheadertext;
+alter TABLE tenant_look_and_feel drop column authenticationlogo;
+alter TABLE tenant_look_and_feel drop column authenticationlogomimetype;
 
 For Renaming the columns, use Microsoft SQL Server Management Studio. The columns
 renaming is:
@@ -134,6 +135,8 @@ alter TABLE system_settings ADD smsalertonaccountstatuschange BIT NOT NULL DEFAU
 alter TABLE system_settings ADD smsalertonemailchange BIT NOT NULL DEFAULT 0;
 
 alter TABLE users ADD phonenumberverified BIT NOT NULL DEFAULT 0;
+
+alter TABLE captcha_config ADD captchaenabled BIT NOT NULL DEFAULT 0;
 
 
 For Cassandra:
@@ -200,9 +203,11 @@ alter TABLE users_by_email ADD phonenumberverified BOOLEAN;
 alter TABLE users_by_phone_number ADD phonenumberverified BOOLEAN;
 alter TABLE users_by_federated_oidc_id ADD phonenumberverified BOOLEAN;
 
+alter TABLE captcha_config ADD captchaenabled BOOLEAN;
+
 Then run the following commands to set default values to false for 
-the system_settings table. The other tables have mappers for the
-boolean values with default false.
+the system_settings table and the captcha_config table. 
+The other tables have mappers for the boolean values with default false.
 
 UPDATE system_settings
 SET
@@ -213,3 +218,10 @@ SET
     smsalertonaccountstatuschange = false,
     smsalertonemailchange = false
 WHERE systemid = <your systemid value>
+
+
+update captcha_config
+SET
+    captchaenabled = false
+WHERE alias = <your recaptcha alias>
+

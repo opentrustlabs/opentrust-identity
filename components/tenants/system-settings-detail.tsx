@@ -53,6 +53,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
 
     const initCaptchaInput: CaptchaConfigInput = {
         alias: "",
+        captchaEnabled: false,
         apiKey: "",
         siteKey: "",
         useCaptchaV3: false,
@@ -109,6 +110,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                 const config: CaptchaConfig = data.getCaptchaConfig;                
                 const input: CaptchaConfigInput = {
                     alias: config.alias,
+                    captchaEnabled: config.captchaEnabled,
                     apiKey: config.apiKey,
                     siteKey: config.siteKey,
                     useCaptchaV3: config.useCaptchaV3,
@@ -484,7 +486,25 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     <Grid2 sx={{marginBottom: "16px", textDecoration: "underline", fontWeight: "bold"}}>
                                         ReCaptcha Configuration
                                     </Grid2>
-                                    <Grid2 alignItems={"center"} container size={12} spacing={1}>                                        
+                                    <Grid2 alignItems={"center"} container size={12} spacing={1}>
+
+                                        <Grid2 size={12} marginBottom={"8px"}>                                            
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={captchaConfigInput.captchaEnabled === true}
+                                                        onChange={(_, checked: boolean) => {
+                                                            captchaConfigInput.captchaEnabled = checked;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                            setCaptchaConfigMarkDirty(true);
+                                                        }}
+                                                    />
+                                                }
+                                                label="ReCaptcha Enabled"
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
+                                            />
+                                        </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <TextField
                                                 id="captchaAlias" name="captchaAlias"

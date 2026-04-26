@@ -1208,6 +1208,38 @@ export const PROFILE_ADD_RECOVERY_EMAIL_MUTATION = gql`
     ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
+export const PROFILE_HANDLE_PHONE_NUMBER_CHANGE_MUTATION = gql`
+    mutation profileHandlePhoneNumberChange($newPhoneNumber: String!) {
+        profileHandlePhoneNumberChange(newPhoneNumber: $newPhoneNumber) {
+            ...UserProfileChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+export const PROFILE_VALIDATE_PHONE_NUMBMER_MUTATION = gql`
+    mutation profileValidatePhoneNumberChange($token: String!, $changePhoneNumberSessionToken: String!) {
+        profileValidatePhoneNumberChange(token: $token, changePhoneNumberSessionToken: $changePhoneNumberSessionToken) {
+            ...UserProfileChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+export const PROFILE_CANCEL_PHONE_NUMBER_CHANGE_MUTATION = gql`
+    mutation profileCancelPhoneNumberChange($changePhoneNumberSessionToken: String!) {
+        profileCancelPhoneNumberChange(changePhoneNumberSessionToken: $changePhoneNumberSessionToken) {
+            ...UserProfileChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+
+
 export const SET_CAPTCHA_CONFIG_MUTATION = gql(`
     mutation setCaptchaConfig($captchaConfigInput: CaptchaConfigInput!){
         setCaptchaConfig(captchaConfigInput: $captchaConfigInput) {

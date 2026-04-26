@@ -984,6 +984,7 @@ class TenantService {
 
         const captchaConfig: CaptchaConfig = {
             alias: captchaConfigInput.alias,
+            captchaEnabled: captchaConfigInput.captchaEnabled,
             apiKey: "",
             siteKey: captchaConfigInput.siteKey,
             useCaptchaV3: captchaConfigInput.useCaptchaV3,

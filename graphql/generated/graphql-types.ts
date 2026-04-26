@@ -233,6 +233,7 @@ export type CaptchaConfig = {
   __typename?: 'CaptchaConfig';
   alias: Scalars['String']['output'];
   apiKey: Scalars['String']['output'];
+  captchaEnabled: Scalars['Boolean']['output'];
   minScoreThreshold?: Maybe<Scalars['Float']['output']>;
   projectId?: Maybe<Scalars['String']['output']>;
   siteKey: Scalars['String']['output'];
@@ -243,6 +244,7 @@ export type CaptchaConfig = {
 export type CaptchaConfigInput = {
   alias: Scalars['String']['input'];
   apiKey: Scalars['String']['input'];
+  captchaEnabled: Scalars['Boolean']['input'];
   minScoreThreshold?: InputMaybe<Scalars['Float']['input']>;
   projectId?: InputMaybe<Scalars['String']['input']>;
   siteKey: Scalars['String']['input'];
@@ -2076,6 +2078,7 @@ export type RateLimitServiceGroupUpdateInput = {
 
 export type RecaptchaMetaData = {
   __typename?: 'RecaptchaMetaData';
+  captchaEnabled: Scalars['Boolean']['output'];
   recaptchaSiteKey: Scalars['String']['output'];
   useCaptchaV3: Scalars['Boolean']['output'];
   useEnterpriseCaptcha: Scalars['Boolean']['output'];
@@ -2922,7 +2925,7 @@ export type ResolverTypeWrapper<T> = Promise<T> | T;
 export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
   resolve: ResolverFn<TResult, TParent, TContext, TArgs>;
 };
-export type Resolver<TResult, TParent = {}, TContext = {}, TArgs = {}> = ResolverFn<TResult, TParent, TContext, TArgs> | ResolverWithResolve<TResult, TParent, TContext, TArgs>;
+export type Resolver<TResult, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>, TArgs = Record<PropertyKey, never>> = ResolverFn<TResult, TParent, TContext, TArgs> | ResolverWithResolve<TResult, TParent, TContext, TArgs>;
 
 export type ResolverFn<TResult, TParent, TContext, TArgs> = (
   parent: TParent,
@@ -2959,27 +2962,29 @@ export type SubscriptionObject<TResult, TKey extends string, TParent, TContext, 
   | SubscriptionSubscriberObject<TResult, TKey, TParent, TContext, TArgs>
   | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>;
 
-export type SubscriptionResolver<TResult, TKey extends string, TParent = {}, TContext = {}, TArgs = {}> =
+export type SubscriptionResolver<TResult, TKey extends string, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>, TArgs = Record<PropertyKey, never>> =
   | ((...args: any[]) => SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>)
   | SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>;
 
-export type TypeResolveFn<TTypes, TParent = {}, TContext = {}> = (
+export type TypeResolveFn<TTypes, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>> = (
   parent: TParent,
   context: TContext,
   info: GraphQLResolveInfo
 ) => Maybe<TTypes> | Promise<Maybe<TTypes>>;
 
-export type IsTypeOfResolverFn<T = {}, TContext = {}> = (obj: T, context: TContext, info: GraphQLResolveInfo) => boolean | Promise<boolean>;
+export type IsTypeOfResolverFn<T = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>> = (obj: T, context: TContext, info: GraphQLResolveInfo) => boolean | Promise<boolean>;
 
 export type NextResolverFn<T> = () => Promise<T>;
 
-export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs = {}> = (
+export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>, TArgs = Record<PropertyKey, never>> = (
   next: NextResolverFn<TResult>,
   parent: TParent,
   args: TArgs,
   context: TContext,
   info: GraphQLResolveInfo
 ) => TResult | Promise<TResult>;
+
+
 
 
 
@@ -3050,7 +3055,7 @@ export type ResolversTypes = ResolversObject<{
   MarkForDelete: ResolverTypeWrapper<MarkForDelete>;
   MarkForDeleteInput: MarkForDeleteInput;
   MarkForDeleteObjectType: MarkForDeleteObjectType;
-  Mutation: ResolverTypeWrapper<{}>;
+  Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   ObjectSearchResultItem: ResolverTypeWrapper<ObjectSearchResultItem>;
   ObjectSearchResults: ResolverTypeWrapper<ObjectSearchResults>;
   PasswordConfigInput: PasswordConfigInput;
@@ -3059,7 +3064,7 @@ export type ResolversTypes = ResolversObject<{
   PreAuthenticationStateProtocolType: PreAuthenticationStateProtocolType;
   ProfileProperty: ProfileProperty;
   ProfileState: ProfileState;
-  Query: ResolverTypeWrapper<{}>;
+  Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   RateLimit: ResolverTypeWrapper<RateLimit>;
   RateLimitServiceGroup: ResolverTypeWrapper<RateLimitServiceGroup>;
   RateLimitServiceGroupCreateInput: RateLimitServiceGroupCreateInput;
@@ -3208,13 +3213,13 @@ export type ResolversParentTypes = ResolversObject<{
   LookaheadResult: LookaheadResult;
   MarkForDelete: MarkForDelete;
   MarkForDeleteInput: MarkForDeleteInput;
-  Mutation: {};
+  Mutation: Record<PropertyKey, never>;
   ObjectSearchResultItem: ObjectSearchResultItem;
   ObjectSearchResults: ObjectSearchResults;
   PasswordConfigInput: PasswordConfigInput;
   PortalUserProfile: PortalUserProfile;
   PreAuthenticationState: PreAuthenticationState;
-  Query: {};
+  Query: Record<PropertyKey, never>;
   RateLimit: RateLimit;
   RateLimitServiceGroup: RateLimitServiceGroup;
   RateLimitServiceGroupCreateInput: RateLimitServiceGroupCreateInput;
@@ -3297,7 +3302,6 @@ export type AccessRuleResolvers<ContextType = OIDCContext, ParentType extends Re
   accessRuleId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   accessRuleName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeAccessRuleSchemaId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthenticationGroupResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthenticationGroup'] = ResolversParentTypes['AuthenticationGroup']> = ResolversObject<{
@@ -3307,19 +3311,16 @@ export type AuthenticationGroupResolvers<ContextType = OIDCContext, ParentType e
   defaultGroup?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   markForDelete?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthenticationGroupClientRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthenticationGroupClientRel'] = ResolversParentTypes['AuthenticationGroupClientRel']> = ResolversObject<{
   authenticationGroupId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   clientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthenticationGroupUserRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthenticationGroupUserRel'] = ResolversParentTypes['AuthenticationGroupUserRel']> = ResolversObject<{
   authenticationGroupId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthenticationRequestedScopeResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthenticationRequestedScope'] = ResolversParentTypes['AuthenticationRequestedScope']> = ResolversObject<{
@@ -3327,7 +3328,6 @@ export type AuthenticationRequestedScopeResolvers<ContextType = OIDCContext, Par
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeTranslations?: Resolver<Array<ResolversTypes['ScopeTranslation']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthorizationCodeDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthorizationCodeData'] = ResolversParentTypes['AuthorizationCodeData']> = ResolversObject<{
@@ -3342,7 +3342,6 @@ export type AuthorizationCodeDataResolvers<ContextType = OIDCContext, ParentType
   scope?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthorizationDeviceCodeDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthorizationDeviceCodeData'] = ResolversParentTypes['AuthorizationDeviceCodeData']> = ResolversObject<{
@@ -3355,7 +3354,6 @@ export type AuthorizationDeviceCodeDataResolvers<ContextType = OIDCContext, Pare
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userCode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthorizationGroupResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthorizationGroup'] = ResolversParentTypes['AuthorizationGroup']> = ResolversObject<{
@@ -3366,27 +3364,23 @@ export type AuthorizationGroupResolvers<ContextType = OIDCContext, ParentType ex
   groupName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   markForDelete?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthorizationGroupScopeRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthorizationGroupScopeRel'] = ResolversParentTypes['AuthorizationGroupScopeRel']> = ResolversObject<{
   groupId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthorizationGroupUserRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthorizationGroupUserRel'] = ResolversParentTypes['AuthorizationGroupUserRel']> = ResolversObject<{
   groupId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthorizationReturnUriResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthorizationReturnUri'] = ResolversParentTypes['AuthorizationReturnUri']> = ResolversObject<{
   code?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   state?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   uri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AuthorizationScopeApprovalDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['AuthorizationScopeApprovalData'] = ResolversParentTypes['AuthorizationScopeApprovalData']> = ResolversObject<{
@@ -3394,24 +3388,22 @@ export type AuthorizationScopeApprovalDataResolvers<ContextType = OIDCContext, P
   clientName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   requestedScope?: Resolver<Array<ResolversTypes['AuthenticationRequestedScope']>, ParentType, ContextType>;
   requiresUserApproval?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type CaptchaConfigResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['CaptchaConfig'] = ResolversParentTypes['CaptchaConfig']> = ResolversObject<{
   alias?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   apiKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  captchaEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   minScoreThreshold?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   projectId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   siteKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   useCaptchaV3?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   useEnterpriseCaptcha?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type CategoryEntryResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['CategoryEntry'] = ResolversParentTypes['CategoryEntry']> = ResolversObject<{
   categoryKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   categoryValue?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ChangeEventResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ChangeEvent'] = ResolversParentTypes['ChangeEvent']> = ResolversObject<{
@@ -3422,7 +3414,6 @@ export type ChangeEventResolvers<ContextType = OIDCContext, ParentType extends R
   changedBy?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   data?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   objectId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ClientResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Client'] = ResolversParentTypes['Client']> = ResolversObject<{
@@ -3443,7 +3434,6 @@ export type ClientResolvers<ContextType = OIDCContext, ParentType extends Resolv
   pkceEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userTokenTTLSeconds?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ClientAuthHistoryResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ClientAuthHistory'] = ResolversParentTypes['ClientAuthHistory']> = ResolversObject<{
@@ -3451,21 +3441,18 @@ export type ClientAuthHistoryResolvers<ContextType = OIDCContext, ParentType ext
   expiresAtSeconds?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   jti?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ClientFapiConfigurationResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ClientFapiConfiguration'] = ResolversParentTypes['ClientFapiConfiguration']> = ResolversObject<{
   clientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   identifierType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   identifierValue?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ClientScopeRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ClientScopeRel'] = ResolversParentTypes['ClientScopeRel']> = ResolversObject<{
   clientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ContactResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Contact'] = ResolversParentTypes['Contact']> = ResolversObject<{
@@ -3475,7 +3462,6 @@ export type ContactResolvers<ContextType = OIDCContext, ParentType extends Resol
   objectid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   objecttype?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type DeletionStatusResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['DeletionStatus'] = ResolversParentTypes['DeletionStatus']> = ResolversObject<{
@@ -3483,14 +3469,12 @@ export type DeletionStatusResolvers<ContextType = OIDCContext, ParentType extend
   markForDeleteId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   startedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   step?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ErrorDetailResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ErrorDetail'] = ResolversParentTypes['ErrorDetail']> = ResolversObject<{
   errorCode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   errorKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   errorMessage?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type FederatedAuthTestResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedAuthTest'] = ResolversParentTypes['FederatedAuthTest']> = ResolversObject<{
@@ -3504,7 +3488,6 @@ export type FederatedAuthTestResolvers<ContextType = OIDCContext, ParentType ext
   scope?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   usePkce?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   wellKnownUri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type FederatedOidcAuthorizationRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCAuthorizationRel'] = ResolversParentTypes['FederatedOIDCAuthorizationRel']> = ResolversObject<{
@@ -3526,7 +3509,6 @@ export type FederatedOidcAuthorizationRelResolvers<ContextType = OIDCContext, Pa
   returnUri?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   state?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type FederatedOidcProviderResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCProvider'] = ResolversParentTypes['FederatedOIDCProvider']> = ResolversObject<{
@@ -3548,32 +3530,27 @@ export type FederatedOidcProviderResolvers<ContextType = OIDCContext, ParentType
   scopes?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   socialLoginProvider?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   usePkce?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type FederatedOidcProviderDomainRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCProviderDomainRel'] = ResolversParentTypes['FederatedOIDCProviderDomainRel']> = ResolversObject<{
   domain?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   federatedOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type FederatedOidcProviderTenantRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCProviderTenantRel'] = ResolversParentTypes['FederatedOIDCProviderTenantRel']> = ResolversObject<{
   federatedOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type Fido2AuthenticationChallengePasskeyResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Fido2AuthenticationChallengePasskey'] = ResolversParentTypes['Fido2AuthenticationChallengePasskey']> = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   transports?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type Fido2AuthenticationChallengeResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Fido2AuthenticationChallengeResponse'] = ResolversParentTypes['Fido2AuthenticationChallengeResponse']> = ResolversObject<{
   fido2AuthenticationChallengePasskeys?: Resolver<Array<ResolversTypes['Fido2AuthenticationChallengePasskey']>, ParentType, ContextType>;
   fido2Challenge?: Resolver<ResolversTypes['Fido2Challenge'], ParentType, ContextType>;
   rpId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type Fido2ChallengeResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Fido2Challenge'] = ResolversParentTypes['Fido2Challenge']> = ResolversObject<{
@@ -3581,7 +3558,6 @@ export type Fido2ChallengeResolvers<ContextType = OIDCContext, ParentType extend
   expiresAtMs?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   issuedAtMs?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type Fido2RegistrationChallengeResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Fido2RegistrationChallengeResponse'] = ResolversParentTypes['Fido2RegistrationChallengeResponse']> = ResolversObject<{
@@ -3590,7 +3566,6 @@ export type Fido2RegistrationChallengeResponseResolvers<ContextType = OIDCContex
   rpId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   rpName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type FooterLinkResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FooterLink'] = ResolversParentTypes['FooterLink']> = ResolversObject<{
@@ -3598,26 +3573,22 @@ export type FooterLinkResolvers<ContextType = OIDCContext, ParentType extends Re
   linktext?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   uri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type JobDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['JobData'] = ResolversParentTypes['JobData']> = ResolversObject<{
   markForDeleteItems?: Resolver<Array<ResolversTypes['MarkForDelete']>, ParentType, ContextType>;
   schedulerLocks?: Resolver<Array<ResolversTypes['SchedulerLock']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type LookaheadItemResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['LookaheadItem'] = ResolversParentTypes['LookaheadItem']> = ResolversObject<{
   displayValue?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   matchingString?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type LookaheadResultResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['LookaheadResult'] = ResolversParentTypes['LookaheadResult']> = ResolversObject<{
   category?: Resolver<ResolversTypes['SearchResultType'], ParentType, ContextType>;
   resultList?: Resolver<Array<ResolversTypes['LookaheadItem']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type MarkForDeleteResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['MarkForDelete'] = ResolversParentTypes['MarkForDelete']> = ResolversObject<{
@@ -3628,7 +3599,6 @@ export type MarkForDeleteResolvers<ContextType = OIDCContext, ParentType extends
   startedDate?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   submittedBy?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   submittedDate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type MutationResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
@@ -3781,7 +3751,6 @@ export type ObjectSearchResultItemResolvers<ContextType = OIDCContext, ParentTyp
   owningtenantid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   subtype?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   subtypekey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ObjectSearchResultsResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ObjectSearchResults'] = ResolversParentTypes['ObjectSearchResults']> = ResolversObject<{
@@ -3792,7 +3761,6 @@ export type ObjectSearchResultsResolvers<ContextType = OIDCContext, ParentType e
   starttime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   took?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type PortalUserProfileResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['PortalUserProfile'] = ResolversParentTypes['PortalUserProfile']> = ResolversObject<{
@@ -3823,7 +3791,6 @@ export type PortalUserProfileResolvers<ContextType = OIDCContext, ParentType ext
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type PreAuthenticationStateResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['PreAuthenticationState'] = ResolversParentTypes['PreAuthenticationState']> = ResolversObject<{
@@ -3843,7 +3810,6 @@ export type PreAuthenticationStateResolvers<ContextType = OIDCContext, ParentTyp
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userAuthenticated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type QueryResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
@@ -3915,7 +3881,6 @@ export type RateLimitResolvers<ContextType = OIDCContext, ParentType extends Res
   ratelimitid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ratelimitname?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   servicegroupid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type RateLimitServiceGroupResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['RateLimitServiceGroup'] = ResolversParentTypes['RateLimitServiceGroup']> = ResolversObject<{
@@ -3923,14 +3888,13 @@ export type RateLimitServiceGroupResolvers<ContextType = OIDCContext, ParentType
   servicegroupdescription?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   servicegroupid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   servicegroupname?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type RecaptchaMetaDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['RecaptchaMetaData'] = ResolversParentTypes['RecaptchaMetaData']> = ResolversObject<{
+  captchaEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   recaptchaSiteKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   useCaptchaV3?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   useEnterpriseCaptcha?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type RefreshDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['RefreshData'] = ResolversParentTypes['RefreshData']> = ResolversObject<{
@@ -3946,7 +3910,6 @@ export type RefreshDataResolvers<ContextType = OIDCContext, ParentType extends R
   scope?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type RelSearchResultItemResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['RelSearchResultItem'] = ResolversParentTypes['RelSearchResultItem']> = ResolversObject<{
@@ -3959,7 +3922,6 @@ export type RelSearchResultItemResolvers<ContextType = OIDCContext, ParentType e
   parentid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   parentname?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   parenttype?: Resolver<ResolversTypes['SearchResultType'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type RelSearchResultsResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['RelSearchResults'] = ResolversParentTypes['RelSearchResults']> = ResolversObject<{
@@ -3970,7 +3932,6 @@ export type RelSearchResultsResolvers<ContextType = OIDCContext, ParentType exte
   starttime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   took?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SchedulerLockResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SchedulerLock'] = ResolversParentTypes['SchedulerLock']> = ResolversObject<{
@@ -3978,7 +3939,6 @@ export type SchedulerLockResolvers<ContextType = OIDCContext, ParentType extends
   lockInstanceId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   lockName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   lockStartTimeMS?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ScopeResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Scope'] = ResolversParentTypes['Scope']> = ResolversObject<{
@@ -3987,7 +3947,6 @@ export type ScopeResolvers<ContextType = OIDCContext, ParentType extends Resolve
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeUse?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ScopeAccessRuleSchemaResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ScopeAccessRuleSchema'] = ResolversParentTypes['ScopeAccessRuleSchema']> = ResolversObject<{
@@ -3995,14 +3954,12 @@ export type ScopeAccessRuleSchemaResolvers<ContextType = OIDCContext, ParentType
   scopeAccessRuleSchema?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeAccessRuleSchemaId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ScopeTranslationResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ScopeTranslation'] = ResolversParentTypes['ScopeTranslation']> = ResolversObject<{
   languageCode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   translation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SecretShareResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SecretShare'] = ResolversParentTypes['SecretShare']> = ResolversObject<{
@@ -4011,7 +3968,6 @@ export type SecretShareResolvers<ContextType = OIDCContext, ParentType extends R
   otp?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   secretShareId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   secretShareObjectType?: Resolver<ResolversTypes['SecretShareObjectType'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SigningKeyResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SigningKey'] = ResolversParentTypes['SigningKey']> = ResolversObject<{
@@ -4030,7 +3986,6 @@ export type SigningKeyResolvers<ContextType = OIDCContext, ParentType extends Re
   publicKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   statusId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type StateProvinceRegionResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['StateProvinceRegion'] = ResolversParentTypes['StateProvinceRegion']> = ResolversObject<{
@@ -4038,7 +3993,6 @@ export type StateProvinceRegionResolvers<ContextType = OIDCContext, ParentType e
   isoEntryCode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   isoEntryName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   isoSubsetType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SuccessfulLoginResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SuccessfulLoginResponse'] = ResolversParentTypes['SuccessfulLoginResponse']> = ResolversObject<{
@@ -4046,26 +4000,22 @@ export type SuccessfulLoginResponseResolvers<ContextType = OIDCContext, ParentTy
   mfaEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   mfaType?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SystemCategoryResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SystemCategory'] = ResolversParentTypes['SystemCategory']> = ResolversObject<{
   categoryEntries?: Resolver<Array<ResolversTypes['CategoryEntry']>, ParentType, ContextType>;
   categoryName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SystemInitializationReadyResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SystemInitializationReadyResponse'] = ResolversParentTypes['SystemInitializationReadyResponse']> = ResolversObject<{
   systemInitializationReady?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   systemInitializationReadyErrors?: Resolver<Maybe<Array<ResolversTypes['ErrorDetail']>>, ParentType, ContextType>;
   systemInitializationWarnings?: Resolver<Maybe<Array<ResolversTypes['ErrorDetail']>>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SystemInitializationResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SystemInitializationResponse'] = ResolversParentTypes['SystemInitializationResponse']> = ResolversObject<{
   systemInitializationErrors?: Resolver<Maybe<Array<ResolversTypes['ErrorDetail']>>, ParentType, ContextType>;
   tenant?: Resolver<Maybe<ResolversTypes['Tenant']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SystemSettingsResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['SystemSettings'] = ResolversParentTypes['SystemSettings']> = ResolversObject<{
@@ -4087,13 +4037,11 @@ export type SystemSettingsResolvers<ContextType = OIDCContext, ParentType extend
   softwareVersion?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   systemCategories?: Resolver<Array<ResolversTypes['SystemCategory']>, ParentType, ContextType>;
   systemId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TotpResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TOTPResponse'] = ResolversParentTypes['TOTPResponse']> = ResolversObject<{
   uri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userMFARel?: Resolver<ResolversTypes['UserMFARel'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['Tenant'] = ResolversParentTypes['Tenant']> = ResolversObject<{
@@ -4120,7 +4068,6 @@ export type TenantResolvers<ContextType = OIDCContext, ParentType extends Resolv
   termsAndConditionsUri?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   verifyEmailOnSelfRegistration?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   verifyPhoneNumberOnSelfRegistration?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantAnonymousUserConfigurationResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantAnonymousUserConfiguration'] = ResolversParentTypes['TenantAnonymousUserConfiguration']> = ResolversObject<{
@@ -4128,14 +4075,12 @@ export type TenantAnonymousUserConfigurationResolvers<ContextType = OIDCContext,
   defaultlanguagecode?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenttlseconds?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantAvailableScopeResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantAvailableScope'] = ResolversParentTypes['TenantAvailableScope']> = ResolversObject<{
   accessRuleId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantLegacyUserMigrationConfigResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantLegacyUserMigrationConfig'] = ResolversParentTypes['TenantLegacyUserMigrationConfig']> = ResolversObject<{
@@ -4143,7 +4088,6 @@ export type TenantLegacyUserMigrationConfigResolvers<ContextType = OIDCContext, 
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userProfileUri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   usernameCheckUri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantLoginFailurePolicyResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantLoginFailurePolicy'] = ResolversParentTypes['TenantLoginFailurePolicy']> = ResolversObject<{
@@ -4152,7 +4096,6 @@ export type TenantLoginFailurePolicyResolvers<ContextType = OIDCContext, ParentT
   maximumLoginFailures?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   pauseDurationMinutes?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantLookAndFeelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantLookAndFeel'] = ResolversParentTypes['TenantLookAndFeel']> = ResolversObject<{
@@ -4175,13 +4118,11 @@ export type TenantLookAndFeelResolvers<ContextType = OIDCContext, ParentType ext
   marketingtext?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   pagebackgroundcolor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   tenantid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantManagementDomainRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantManagementDomainRel'] = ResolversParentTypes['TenantManagementDomainRel']> = ResolversObject<{
   domain?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantMetaDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantMetaData'] = ResolversParentTypes['TenantMetaData']> = ResolversObject<{
@@ -4190,7 +4131,6 @@ export type TenantMetaDataResolvers<ContextType = OIDCContext, ParentType extend
   systemSettings?: Resolver<ResolversTypes['SystemSettings'], ParentType, ContextType>;
   tenant?: Resolver<ResolversTypes['Tenant'], ParentType, ContextType>;
   tenantLookAndFeel?: Resolver<Maybe<ResolversTypes['TenantLookAndFeel']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantPasswordConfigResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantPasswordConfig'] = ResolversParentTypes['TenantPasswordConfig']> = ResolversObject<{
@@ -4208,7 +4148,6 @@ export type TenantPasswordConfigResolvers<ContextType = OIDCContext, ParentType 
   requireUpperCase?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   specialCharactersAllowed?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantRateLimitRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantRateLimitRel'] = ResolversParentTypes['TenantRateLimitRel']> = ResolversObject<{
@@ -4217,7 +4156,6 @@ export type TenantRateLimitRelResolvers<ContextType = OIDCContext, ParentType ex
   rateLimitPeriodMinutes?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   servicegroupid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantRateLimitRelViewResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantRateLimitRelView'] = ResolversParentTypes['TenantRateLimitRelView']> = ResolversObject<{
@@ -4228,25 +4166,21 @@ export type TenantRateLimitRelViewResolvers<ContextType = OIDCContext, ParentTyp
   servicegroupname?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantRestrictedAuthenticationDomainRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantRestrictedAuthenticationDomainRel'] = ResolversParentTypes['TenantRestrictedAuthenticationDomainRel']> = ResolversObject<{
   domain?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantSelectorDataResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantSelectorData'] = ResolversParentTypes['TenantSelectorData']> = ResolversObject<{
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TenantSupportedClaimRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TenantSupportedClaimRel'] = ResolversParentTypes['TenantSupportedClaimRel']> = ResolversObject<{
   claim?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TokenEnrichmentConfigurationResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['TokenEnrichmentConfiguration'] = ResolversParentTypes['TokenEnrichmentConfiguration']> = ResolversObject<{
@@ -4254,7 +4188,6 @@ export type TokenEnrichmentConfigurationResolvers<ContextType = OIDCContext, Par
   failureMode?: Resolver<ResolversTypes['TokenEnrichmentFailureMode'], ParentType, ContextType>;
   timeoutMs?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   uri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
@@ -4281,7 +4214,6 @@ export type UserResolvers<ContextType = OIDCContext, ParentType extends Resolver
   recoveryEmail?: Resolver<Maybe<ResolversTypes['UserRecoveryEmail']>, ParentType, ContextType>;
   stateRegionProvince?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserAuthenticationStateResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserAuthenticationState'] = ResolversParentTypes['UserAuthenticationState']> = ResolversObject<{
@@ -4295,7 +4227,6 @@ export type UserAuthenticationStateResolvers<ContextType = OIDCContext, ParentTy
   returnToUri?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserAuthenticationStateResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserAuthenticationStateResponse'] = ResolversParentTypes['UserAuthenticationStateResponse']> = ResolversObject<{
@@ -4307,7 +4238,6 @@ export type UserAuthenticationStateResponseResolvers<ContextType = OIDCContext, 
   totpSecret?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   uri?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   userAuthenticationState?: Resolver<ResolversTypes['UserAuthenticationState'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserCredentialResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserCredential'] = ResolversParentTypes['UserCredential']> = ResolversObject<{
@@ -4316,7 +4246,6 @@ export type UserCredentialResolvers<ContextType = OIDCContext, ParentType extend
   hashingAlgorithm?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   salt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserFailedLoginResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserFailedLogin'] = ResolversParentTypes['UserFailedLogin']> = ResolversObject<{
@@ -4324,13 +4253,11 @@ export type UserFailedLoginResolvers<ContextType = OIDCContext, ParentType exten
   failureCount?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   nextLoginNotBefore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserFailedPasswordResetAttemptsResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserFailedPasswordResetAttempts'] = ResolversParentTypes['UserFailedPasswordResetAttempts']> = ResolversObject<{
   failureCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserMfaRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserMFARel'] = ResolversParentTypes['UserMFARel']> = ResolversObject<{
@@ -4344,13 +4271,11 @@ export type UserMfaRelResolvers<ContextType = OIDCContext, ParentType extends Re
   totpHashAlgorithm?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   totpSecret?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserProfileChangeResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserProfileChangeResponse'] = ResolversParentTypes['UserProfileChangeResponse']> = ResolversObject<{
   profileChangeError?: Resolver<Maybe<ResolversTypes['ErrorDetail']>, ParentType, ContextType>;
   profileChangeState?: Resolver<ResolversTypes['UserProfileChangeState'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserProfileChangeStateResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserProfileChangeState'] = ResolversParentTypes['UserProfileChangeState']> = ResolversObject<{
@@ -4362,14 +4287,12 @@ export type UserProfileChangeStateResolvers<ContextType = OIDCContext, ParentTyp
   profilePropertyValue?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   profileState?: Resolver<ResolversTypes['ProfileState'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserRecoveryEmailResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserRecoveryEmail'] = ResolversParentTypes['UserRecoveryEmail']> = ResolversObject<{
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   emailVerified?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserRegistrationStateResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserRegistrationState'] = ResolversParentTypes['UserRegistrationState']> = ResolversObject<{
@@ -4383,7 +4306,6 @@ export type UserRegistrationStateResolvers<ContextType = OIDCContext, ParentType
   registrationStateStatus?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserRegistrationStateResponseResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserRegistrationStateResponse'] = ResolversParentTypes['UserRegistrationStateResponse']> = ResolversObject<{
@@ -4393,14 +4315,12 @@ export type UserRegistrationStateResponseResolvers<ContextType = OIDCContext, Pa
   totpSecret?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   uri?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   userRegistrationState?: Resolver<ResolversTypes['UserRegistrationState'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserScopeRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserScopeRel'] = ResolversParentTypes['UserScopeRel']> = ResolversObject<{
   scopeId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserSessionResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserSession'] = ResolversParentTypes['UserSession']> = ResolversObject<{
@@ -4409,7 +4329,6 @@ export type UserSessionResolvers<ContextType = OIDCContext, ParentType extends R
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserTenantRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserTenantRel'] = ResolversParentTypes['UserTenantRel']> = ResolversObject<{
@@ -4417,7 +4336,6 @@ export type UserTenantRelResolvers<ContextType = OIDCContext, ParentType extends
   relType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserTenantRelViewResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserTenantRelView'] = ResolversParentTypes['UserTenantRelView']> = ResolversObject<{
@@ -4425,14 +4343,12 @@ export type UserTenantRelViewResolvers<ContextType = OIDCContext, ParentType ext
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type UserTermsAndConditionsAcceptedResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['UserTermsAndConditionsAccepted'] = ResolversParentTypes['UserTermsAndConditionsAccepted']> = ResolversObject<{
   acceptedAtMs?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type Resolvers<ContextType = OIDCContext> = ResolversObject<{
@@ -4534,4 +4450,4 @@ export type Resolvers<ContextType = OIDCContext> = ResolversObject<{
 
 
 import gql from 'graphql-tag';
-export const typeDefs = gql(`schema{query:Query mutation:Mutation}type AccessRule{accessRuleDefinition:String!accessRuleId:String!accessRuleName:String!scopeAccessRuleSchemaId:String!}input AccessRuleCreateInput{accessRuleDefinition:String!accessRuleName:String!scopeAccessRuleSchemaId:String!}input AccessRuleUpdateInput{accessRuleDefinition:String!accessRuleId:String!accessRuleName:String!scopeAccessRuleSchemaId:String!}type AuthenticationGroup{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!defaultGroup:Boolean!markForDelete:Boolean!tenantId:String!}type AuthenticationGroupClientRel{authenticationGroupId:String!clientId:String!}input AuthenticationGroupCreateInput{authenticationGroupDescription:String authenticationGroupName:String!defaultGroup:Boolean!tenantId:String!}input AuthenticationGroupUpdateInput{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!defaultGroup:Boolean!tenantId:String!}type AuthenticationGroupUserRel{authenticationGroupId:String!userId:String!}type AuthenticationRequestedScope{scopeDescription:String!scopeId:String!scopeName:String!scopeTranslations:[ScopeTranslation!]!}enum AuthenticationState{ACCEPT_TERMS_AND_CONDITIONS AUTH_WITH_FEDERATED_OIDC CANCELLED COMPLETED CONFIGURE_SECURITY_KEY CONFIGURE_TOTP CONFIGURE_VALIDATE_PHONE_NUMBER ENTER_EMAIL ENTER_PASSWORD ENTER_PASSWORD_AND_MIGRATE_USER ENTER_USER_CODE ERROR EXPIRED POST_AUTHN_STATE_SEND_SECURITY_EVENT_DEVICE_REGISTERED POST_AUTHN_STATE_SEND_SECURITY_EVENT_DURESS_LOGON POST_AUTHN_STATE_SEND_SECURITY_EVENT_SUCCESS_LOGON REDIRECT_BACK_TO_APPLICATION REDIRECT_TO_IAM_PORTAL REGISTER ROTATE_PASSWORD SELECT_TENANT SELECT_TENANT_THEN_REGISTER VALIDATE_EMAIL VALIDATE_PASSWORD_RESET_TOKEN VALIDATE_PHONE_NUMBER VALIDATE_SECURITY_KEY VALIDATE_TOTP}input AuthenticatorAttestationResponseInput{attestationObject:String!authenticatorData:String!clientDataJSON:String!publicKey:String!publicKeyAlgorithm:Int!transports:[String!]!}input AuthenticatorAuthenticationResponseInput{authenticatorData:String!clientDataJSON:String!signature:String!}type AuthorizationCodeData{certificateThumbprint:String clientId:String!code:String!codeChallenge:String codeChallengeMethod:String expiresAtMs:Float!nonce:String redirectUri:String!scope:String!tenantId:String!userId:String!}type AuthorizationDeviceCodeData{authorizationStatus:DeviceCodeAuthorizationStatus!clientId:String!deviceCode:String!deviceCodeId:String!expiresAtMs:Float!scope:String!tenantId:String!userCode:String!userId:String}type AuthorizationGroup{allowForAnonymousUsers:Boolean!default:Boolean!groupDescription:String groupId:String!groupName:String!markForDelete:Boolean!tenantId:String!}input AuthorizationGroupCreateInput{allowForAnonymousUsers:Boolean!default:Boolean!groupDescription:String groupName:String!tenantId:String!}type AuthorizationGroupScopeRel{groupId:String!scopeId:String!tenantId:String!}input AuthorizationGroupUpdateInput{allowForAnonymousUsers:Boolean!default:Boolean!groupDescription:String groupId:String!groupName:String!tenantId:String!}type AuthorizationGroupUserRel{groupId:String!userId:String!}type AuthorizationReturnUri{code:String!state:String uri:String!}type AuthorizationScopeApprovalData{clientId:String!clientName:String!requestedScope:[AuthenticationRequestedScope!]!requiresUserApproval:Boolean!}input AutoCreateSigningKeyInput{commonName:String!expiresAtMs:Float!keyName:String!keyType:String!keyTypeId:String keyUse:String!organizationName:String!password:String tenantId:String!}input BulkScopeInput{accessRuleId:String scopeId:String!}type CaptchaConfig{alias:String!apiKey:String!minScoreThreshold:Float projectId:String siteKey:String!useCaptchaV3:Boolean!useEnterpriseCaptcha:Boolean!}input CaptchaConfigInput{alias:String!apiKey:String!minScoreThreshold:Float projectId:String siteKey:String!useCaptchaV3:Boolean!useEnterpriseCaptcha:Boolean!}type CategoryEntry{categoryKey:String!categoryValue:String!}type ChangeEvent{changeEventClass:String!changeEventId:String!changeEventType:String!changeTimestamp:Float!changedBy:String!data:String!objectId:String!}type Client{audience:String clientDescription:String clientId:String!clientName:String!clientSecret:String!clientTokenTTLSeconds:Int clientType:String!clienttypeid:String enabled:Boolean!fapiEnabled:Boolean!fapiEnabledAtMs:Float markForDelete:Boolean!maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!tenantId:String!userTokenTTLSeconds:Int}type ClientAuthHistory{clientId:String!expiresAtSeconds:Float!jti:String!tenantId:String!}input ClientCreateInput{audience:String clientDescription:String clientName:String!clientTokenTTLSeconds:Int clientType:String!clienttypeid:String enabled:Boolean!fapiEnabled:Boolean!maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!tenantId:String!userTokenTTLSeconds:Int}type ClientFapiConfiguration{clientId:String!identifierType:String!identifierValue:String!}input ClientFapiConfigurationInput{clientId:String!identifierType:String!identifierValue:String!}type ClientScopeRel{clientId:String!scopeId:String!tenantId:String!}input ClientUpdateInput{audience:String clientDescription:String clientId:String!clientName:String!clientTokenTTLSeconds:Int clientType:String!clienttypeid:String enabled:Boolean!maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!tenantId:String!userTokenTTLSeconds:Int}type Contact{contactid:String!email:String!name:String objectid:String!objecttype:String!userid:String}input ContactCreateInput{email:String!name:String objectid:String!objecttype:String!userid:String}type DeletionStatus{completedAt:Float markForDeleteId:String!startedAt:Float!step:String!}enum DeviceCodeAuthorizationStatus{APPROVED CANCELLED PENDING}type ErrorDetail{errorCode:String!errorKey:String!errorMessage:String!}type FederatedAuthTest{authState:String!clientAuthType:String!clientId:String!clientSecret:String codeVerifier:String expiresAtMs:Float!redirectUri:String!scope:String!usePkce:Boolean!wellKnownUri:String!}type FederatedOIDCAuthorizationRel{codeVerifier:String codechallengemethod:String email:String expiresAtMs:Float!federatedOIDCAuthorizationRelType:FederatedOIDCAuthorizationRelType!federatedOIDCProviderId:String!initClientId:String initCodeChallenge:String initCodeChallengeMethod:String initRedirectUri:String!initResponseMode:String!initResponseType:String!initScope:String!initState:String!initTenantId:String!returnUri:String state:String!userId:String}enum FederatedOIDCAuthorizationRelType{AUTHORIZATION_REL_TYPE_CLIENT_AUTH AUTHORIZATION_REL_TYPE_PORTAL_AUTH}type FederatedOIDCProvider{clientAuthType:String!clientauthtypeid:String federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderId:String!federatedOIDCProviderName:String!federatedOIDCProviderResponseType:String!federatedOIDCProviderSubjectType:String!federatedOIDCProviderTenantId:String federatedOIDCProviderType:String!federatedOIDCProviderWellKnownUri:String!federatedoidcprovidertypeid:String markForDelete:Boolean!refreshTokenAllowed:Boolean!scopes:[String!]!socialLoginProvider:String usePkce:Boolean!}input FederatedOIDCProviderCreateInput{clientAuthType:String!clientauthtypeid:String federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderName:String!federatedOIDCProviderResponseType:String!federatedOIDCProviderSubjectType:String!federatedOIDCProviderTenantId:String federatedOIDCProviderType:String!federatedOIDCProviderWellKnownUri:String!federatedoidcprovidertypeid:String refreshTokenAllowed:Boolean!scopes:[String!]!socialLoginProvider:String usePkce:Boolean!}type FederatedOIDCProviderDomainRel{domain:String!federatedOIDCProviderId:String!}type FederatedOIDCProviderTenantRel{federatedOIDCProviderId:String!tenantId:String!}input FederatedOIDCProviderUpdateInput{clientAuthType:String!clientauthtypeid:String federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderId:String!federatedOIDCProviderName:String!federatedOIDCProviderResponseType:String!federatedOIDCProviderSubjectType:String!federatedOIDCProviderTenantId:String federatedOIDCProviderType:String!federatedOIDCProviderWellKnownUri:String!federatedoidcprovidertypeid:String refreshTokenAllowed:Boolean!scopes:[String!]!socialLoginProvider:String usePkce:Boolean!}type Fido2AuthenticationChallengePasskey{id:String!transports:[String!]!}type Fido2AuthenticationChallengeResponse{fido2AuthenticationChallengePasskeys:[Fido2AuthenticationChallengePasskey!]!fido2Challenge:Fido2Challenge!rpId:String!}type Fido2Challenge{challenge:String!expiresAtMs:Float!issuedAtMs:Float!userId:String!}input Fido2KeyAuthenticationInput{authenticationAttachment:String!id:String!rawId:String!response:AuthenticatorAuthenticationResponseInput!type:String!}input Fido2KeyRegistrationInput{authenticationAttachment:String!id:String!rawId:String!response:AuthenticatorAttestationResponseInput!type:String!}type Fido2RegistrationChallengeResponse{email:String!fido2Challenge:Fido2Challenge!rpId:String!rpName:String!userName:String!}type FooterLink{footerlinkid:String!linktext:String!tenantid:String!uri:String!}input FooterLinkInput{linktext:String!tenantid:String!uri:String!}enum ForgotPasswordCommunicationMethod{EMAIL PHONE_NUMBER RECOVERY_EMAIL}type JobData{markForDeleteItems:[MarkForDelete!]!schedulerLocks:[SchedulerLock!]!}type LookaheadItem{displayValue:String!id:String!matchingString:String}type LookaheadResult{category:SearchResultType!resultList:[LookaheadItem!]!}type MarkForDelete{completedDate:Float markForDeleteId:String!objectId:String!objectType:MarkForDeleteObjectType!startedDate:Float submittedBy:String!submittedDate:Float!}input MarkForDeleteInput{markForDeleteObjectType:MarkForDeleteObjectType!objectId:String!}enum MarkForDeleteObjectType{AUTHENTICATION_GROUP AUTHORIZATION_GROUP CLIENT FEDERATED_OIDC_PROVIDER RATE_LIMIT_SERVICE_GROUP SCOPE SIGNING_KEY TENANT USER}type Mutation{addContact(contactCreateInput:ContactCreateInput!):Contact!addDomainToTenantManagement(domain:String!tenantId:String!):TenantManagementDomainRel addDomainToTenantRestrictedAuthentication(domain:String!tenantId:String!):TenantRestrictedAuthenticationDomainRel addRedirectURI(clientId:String!uri:String!):String addUserToAuthenticationGroup(authenticationGroupId:String!userId:String!):AuthenticationGroupUserRel addUserToAuthorizationGroup(groupId:String!userId:String!):AuthorizationGroupUserRel assignAuthenticationGroupToClient(authenticationGroupId:String!clientId:String!):AuthenticationGroupClientRel assignFederatedOIDCProviderToDomain(domain:String!federatedOIDCProviderId:String!):FederatedOIDCProviderDomainRel!assignFederatedOIDCProviderToTenant(federatedOIDCProviderId:String!tenantId:String!):FederatedOIDCProviderTenantRel!assignRateLimitToTenant(allowUnlimited:Boolean limit:Int rateLimitPeriodMinutes:Int serviceGroupId:String!tenantId:String!):TenantRateLimitRel assignScopeToAuthorizationGroup(groupId:String!scopeId:String!tenantId:String!):AuthorizationGroupScopeRel assignScopeToClient(clientId:String!scopeId:String!tenantId:String!):ClientScopeRel assignScopeToTenant(accessRuleId:String scopeId:String!tenantId:String!):TenantAvailableScope assignScopeToUser(scopeId:String!tenantId:String!userId:String!):UserScopeRel assignUserToTenant(relType:String!tenantId:String!userId:String!):UserTenantRel!authenticateAcceptTermsAndConditions(accepted:Boolean!authenticationSessionToken:String!preAuthToken:String):UserAuthenticationStateResponse!authenticateConfigureTOTP(authenticationSessionToken:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateConfigureVerifyPhoneNumber(authenticationSessionToken:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateHandleForgotPassword(authenticationSessionToken:String!forgotPasswordCommunicationMethod:ForgotPasswordCommunicationMethod!preAuthToken:String):UserAuthenticationStateResponse!authenticateHandleUserCodeInput(userCode:String!):UserAuthenticationStateResponse!authenticateHandleUserNameInput(deviceCodeId:String preAuthToken:String returnToUri:String tenantId:String username:String!):UserAuthenticationStateResponse!authenticateRegisterSecurityKey(authenticationSessionToken:String!fido2KeyRegistrationInput:Fido2KeyRegistrationInput!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateRotatePassword(authenticationSessionToken:String!newPassword:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateUser(authenticationSessionToken:String!password:String!preAuthToken:String tenantId:String!username:String!):UserAuthenticationStateResponse!authenticateUserAndMigrate(authenticationSessionToken:String!password:String!preAuthToken:String tenantId:String!username:String!):UserAuthenticationStateResponse!authenticateValidatePasswordResetToken(authenticationSessionToken:String!preAuthToken:String token:String!):UserAuthenticationStateResponse!authenticateValidateSecurityKey(authenticationSessionToken:String!fido2KeyAuthenticationInput:Fido2KeyAuthenticationInput!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateValidateTOTP(authenticationSessionToken:String!preAuthToken:String totpTokenValue:String!userId:String!):UserAuthenticationStateResponse!authenticateVerifyEmailAddress(authenticationSessionToken:String!preAuthToken:String token:String!userId:String!):UserAuthenticationStateResponse!authenticateVerifyPhoneNumber(authenticationSessionToken:String!preAuthToken:String token:String!userId:String!):UserAuthenticationStateResponse!authenticateWithSocialOIDCProvider(federatedOIDCProviderId:String!preAuthToken:String tenantId:String!):UserAuthenticationStateResponse!autoCreateSigningKey(keyInput:AutoCreateSigningKeyInput!):SigningKey!bulkAssignScopeToAuthorizationGroup(bulkScopeInput:[BulkScopeInput!]!groupId:String!tenantId:String!):[AuthorizationGroupScopeRel!]!bulkAssignScopeToClient(bulkScopeInput:[BulkScopeInput!]!clientId:String!tenantId:String!):[ClientScopeRel!]!bulkAssignScopeToTenant(bulkScopeInput:[BulkScopeInput!]!tenantId:String!):[TenantAvailableScope!]!bulkAssignScopeToUser(bulkScopeInput:[BulkScopeInput!]!tenantId:String!userId:String!):[UserScopeRel!]!cancelAuthentication(authenticationSessionToken:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!cancelRegistration(deviceCodeId:String preAuthToken:String registrationSessionToken:String!userId:String!):UserRegistrationStateResponse!createAccessRule(accessRuleInput:AccessRuleCreateInput!):AccessRule createAuthenticationGroup(authenticationGroupInput:AuthenticationGroupCreateInput!):AuthenticationGroup createAuthorizationGroup(groupInput:AuthorizationGroupCreateInput!):AuthorizationGroup createClient(clientInput:ClientCreateInput!):Client createFederatedAuthTest(clientAuthType:String!clientId:String!clientSecret:String responseType:String!scope:String!usePkce:Boolean!wellKnownUri:String!):String!createFederatedOIDCProvider(oidcProviderInput:FederatedOIDCProviderCreateInput!):FederatedOIDCProvider createFido2AuthenticationChallenge(sessionToken:String sessionTokenType:String userId:String!):Fido2AuthenticationChallengeResponse createFido2RegistrationChallenge(sessionToken:String sessionTokenType:String userId:String!):Fido2RegistrationChallengeResponse createRateLimitServiceGroup(rateLimitServiceGroupInput:RateLimitServiceGroupCreateInput!):RateLimitServiceGroup createScope(scopeInput:ScopeCreateInput!):Scope createScopeAccessRuleSchema(scopeAccessRuleSchemaInput:ScopeAccessRuleSchemaCreateInput!):ScopeAccessRuleSchema createScopeTranslation(scopeTranslationInput:ScopeTranslationInput!):ScopeTranslation!createSigningKey(keyInput:SigningKeyCreateInput!):SigningKey!createTenant(tenantInput:TenantCreateInput!):Tenant createUser(tenantId:String!userInput:UserCreateInput!):User!deleteAccessRule(accessRuleId:String!):String!deleteClientFapiConfiguration(clientId:String!):String deleteFIDOKey(userId:String!):String deleteRecoveryEmail(userId:String!):Boolean!deleteSchedulerLock(instanceId:String!):String!deleteScopeAccessRuleSchema(scopeAccessRuleSchemaId:String!):String!deleteScopeTranslation(languageCode:String!scopeId:String!):String!deleteTOTP(userId:String!):String deleteTokenEnrichmentConfiguration(clientId:String!):String deleteUserSession(clientId:String!tenantId:String!userId:String!):String enterSecretValue(otp:String!secretValue:String!):Boolean!generateSecretShareLink(email:String!objectId:String!secretShareObjectType:SecretShareObjectType!):Boolean!generateTOTP(userId:String!):TOTPResponse!initializeSystem(systemInitializationInput:SystemInitializationInput!):SystemInitializationResponse!markForDelete(markForDeleteInput:MarkForDeleteInput!):MarkForDelete profileAddRecoveryEmail(recoveryEmail:String!):UserProfileChangeResponse!profileCancelEmailChange(changeEmailSessionToken:String!):UserProfileChangeResponse!profileCancelPhoneNumberChange(changePhoneNumberSessionToken:String!):UserProfileChangeResponse!profileHandleEmailChange(newEmail:String!):UserProfileChangeResponse!profileHandlePhoneNumberChange(newPhoneNumber:String!):UserProfileChangeResponse!profileValidateEmail(changeEmailSessionToken:String!token:String!):UserProfileChangeResponse!profileValidatePhoneNumberChange(changePhoneNumberSessionToken:String!token:String!):UserProfileChangeResponse!registerAddDuressPassword(password:String preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerAddRecoveryEmail(preAuthToken:String recoveryEmail:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerConfigureSecurityKey(fido2KeyRegistrationInput:Fido2KeyRegistrationInput preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerConfigureTOTP(preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerConfigureVerifyPhoneNumber(preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerUser(deviceCodeId:String preAuthToken:String recaptchaToken:String tenantId:String!userInput:UserCreateInput!):UserRegistrationStateResponse!registerValidateSecurityKey(fido2KeyAuthenticationInput:Fido2KeyAuthenticationInput!preAuthToken:String registrationSessionToken:String!userId:String!):UserRegistrationStateResponse!registerValidateTOTP(preAuthToken:String registrationSessionToken:String!totpTokenValue:String!userId:String!):UserRegistrationStateResponse!registerVerifyEmailAddress(preAuthToken:String registrationSessionToken:String!token:String!userId:String!):UserRegistrationStateResponse!registerVerifyPhoneNumber(preAuthToken:String registrationSessionToken:String!token:String!userId:String!):UserRegistrationStateResponse!registerVerifyRecoveryEmail(preAuthToken:String registrationSessionToken:String!token:String!userId:String!):UserRegistrationStateResponse!removeAuthenticationGroupFromClient(authenticationGroupId:String!clientId:String!):String removeCaptchaConfig:String!removeContact(contactId:String!):String!removeDomainFromTenantManagement(domain:String!tenantId:String!):String removeDomainFromTenantRestrictedAuthentication(domain:String!tenantId:String!):String removeFederatedOIDCProviderFromDomain(domain:String!federatedOIDCProviderId:String!):FederatedOIDCProviderDomainRel!removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId:String!tenantId:String!):FederatedOIDCProviderTenantRel!removeRateLimitFromTenant(serviceGroupId:String!tenantId:String!):String removeRedirectURI(clientId:String!uri:String!):String removeScopeFromAuthorizationGroup(groupId:String!scopeId:String!tenantId:String!):String removeScopeFromClient(clientId:String!scopeId:String!tenantId:String!):String removeScopeFromTenant(scopeId:String!tenantId:String!):String removeScopeFromUser(scopeId:String!tenantId:String!userId:String!):String removeTenantAnonymousUserConfig(tenantId:String!):String removeTenantLegacyUserMigrationConfig(tenantId:String!):String removeTenantLoginFailurePolicy(tenantId:String!):String!removeTenantLookAndFeel(tenantId:String!):String removeTenantPasswordConfig(tenantId:String!):String removeUserFromAuthenticationGroup(authenticationGroupId:String!userId:String!):String removeUserFromAuthorizationGroup(groupId:String!userId:String!):String removeUserFromTenant(tenantId:String!userId:String!):String rotatePassword(newPassword:String!oldPassword:String!userId:String!):Boolean setCaptchaConfig(captchaConfigInput:CaptchaConfigInput!):CaptchaConfig!setClientFapiConfiguration(fapiConfigurationInput:ClientFapiConfigurationInput!):ClientFapiConfiguration setClientTokenEnrichmentConfiguration(enrichmentInput:TokenEnrichmentConfigurationInput!):TokenEnrichmentConfiguration!setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput:TenantAnonymousUserConfigInput!):TenantAnonymousUserConfiguration setTenantLegacyUserMigrationConfig(tenantLegacyUserMigrationConfigInput:TenantLegacyUserMigrationConfigInput!):TenantLegacyUserMigrationConfig setTenantLoginFailurePolicy(tenantLoginFailurePolicyInput:TenantLoginFailurePolicyInput!):TenantLoginFailurePolicy!setTenantLookAndFeel(tenantLookAndFeelInput:TenantLookAndFeelInput!):TenantLookAndFeel setTenantPasswordConfig(passwordConfigInput:PasswordConfigInput!):TenantPasswordConfig swapPrimaryAndRecoveryEmail:Boolean!systemInitializationAuthentication(password:String privateKey:String!):UserAuthenticationStateResponse!unlockUser(userId:String!):Boolean updateAccessRule(accessRuleInput:AccessRuleUpdateInput!):AccessRule updateAuthenticationGroup(authenticationGroupInput:AuthenticationGroupUpdateInput!):AuthenticationGroup updateAuthorizationGroup(groupInput:AuthorizationGroupUpdateInput!):AuthorizationGroup updateClient(clientInput:ClientUpdateInput!):Client updateFederatedOIDCProvider(oidcProviderInput:FederatedOIDCProviderUpdateInput!):FederatedOIDCProvider updateRateLimitForTenant(allowUnlimited:Boolean limit:Int rateLimitPeriodMinutes:Int serviceGroupId:String!tenantId:String!):TenantRateLimitRel updateRateLimitServiceGroup(rateLimitServiceGroupInput:RateLimitServiceGroupUpdateInput!):RateLimitServiceGroup updateRootTenant(tenantInput:TenantUpdateInput!):Tenant updateScope(scopeInput:ScopeUpdateInput!):Scope updateScopeAccessRuleSchema(scopeAccessRuleSchemaInput:ScopeAccessRuleSchemaUpdateInput!):ScopeAccessRuleSchema updateScopeTranslation(scopeTranslationInput:ScopeTranslationInput!):ScopeTranslation!updateSigningKey(keyInput:SigningKeyUpdateInput!):SigningKey!updateSystemSettings(systemSettingsUpdateInput:SystemSettingsUpdateInput!):SystemSettings!updateTenant(tenantInput:TenantUpdateInput!):Tenant updateUser(userInput:UserUpdateInput!):User!updateUserTenantRel(relType:String!tenantId:String!userId:String!):UserTenantRel!validateTOTP(totpToken:String!userId:String!):Boolean!}type ObjectSearchResultItem{description:String email:String enabled:Boolean name:String!objectid:String!objecttype:SearchResultType!owningclientid:String owningtenantid:String subtype:String subtypekey:String}type ObjectSearchResults{endtime:Float!page:Int!perpage:Int!resultlist:[ObjectSearchResultItem!]!starttime:Float!took:Int!total:Int!}input PasswordConfigInput{maxRepeatingCharacterLength:Int mfaTypesRequired:String passwordHashingAlgorithm:String!passwordHistoryPeriod:Int passwordMaxLength:Int!passwordMinLength:Int!passwordRotationPeriodDays:Int requireLowerCase:Boolean!requireMfa:Boolean!requireNumbers:Boolean!requireSpecialCharacters:Boolean!requireUpperCase:Boolean!specialCharactersAllowed:String tenantId:String!}type PortalUserProfile{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!expiresAtMs:Float!federatedOIDCProviderSubjectId:String firstName:String!lastName:String!locked:Boolean!managementAccessTenantId:String middleName:String nameOrder:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String principalType:String!recoveryEmail:UserRecoveryEmail scope:[Scope!]!stateRegionProvince:String tenantId:String!tenantName:String!userId:String!}type PreAuthenticationState{authenticatedUserId:String certificateThumbprint:String clientId:String!codeChallenge:String codeChallengeMethod:String expiresAtMs:Float!nonce:String preAuthenticationStateProtocol:PreAuthenticationStateProtocolType!redirectUri:String!responseMode:String!responseType:String!scope:String!state:String tenantId:String!token:String!userAuthenticated:Boolean!}enum PreAuthenticationStateProtocolType{FAPI OIDC}enum ProfileProperty{EMAIL PHONE_NUMBER RECOVERY_EMAIL}enum ProfileState{COMPLETED ENTER_EMAIL ENTER_PHONE ERROR VALIDATE_EMAIL VALIDATE_PHONE}type Query{getAccessRuleById(accessRuleId:String!):AccessRule getAccessRules(tenantId:String):[AccessRule!]!getAnonymousUserConfiguration(tenantId:String!):TenantAnonymousUserConfiguration getAuthenticationGroupById(authenticationGroupId:String!):AuthenticationGroup getAuthenticationGroups(clientId:String tenantId:String userId:String):[AuthenticationGroup!]!getAuthorizationGroupById(groupId:String!):AuthorizationGroup getAuthorizationGroupScopes(groupId:String!):[Scope!]!getAuthorizationGroups(tenantId:String):[AuthorizationGroup!]!getAuthorizationScopeApprovalData(preAuthToken:String!):AuthorizationScopeApprovalData!getCaptchaConfig:CaptchaConfig getChangeEvents(objectId:String!):[ChangeEvent!]!getClientById(clientId:String!):Client getClientFapiConfiguration(clientId:String!):ClientFapiConfiguration getClientScopes(clientId:String!):[Scope!]!getContacts(objectId:String!):[Contact!]!getDeletionStatus(markForDeleteId:String!):[DeletionStatus!]!getDomainsForTenantAuthentication(tenantId:String!):[TenantRestrictedAuthenticationDomainRel!]!getDomainsForTenantManagement(tenantId:String!):[TenantManagementDomainRel!]!getFederatedOIDCProviderById(federatedOIDCProviderId:String!):FederatedOIDCProvider getFederatedOIDCProviderDomainRels(domain:String federatedOIDCProviderId:String):[FederatedOIDCProviderDomainRel!]!getFederatedOIDCProviders(tenantId:String):[FederatedOIDCProvider!]!getLegacyUserMigrationConfiguration(tenantId:String!):TenantLegacyUserMigrationConfig getMarkForDeleteById(markForDeleteId:String!):MarkForDelete getRateLimitServiceGroupById(serviceGroupId:String!):RateLimitServiceGroup getRateLimitServiceGroups(tenantId:String):[RateLimitServiceGroup!]!getRateLimitTenantRelViews(rateLimitServiceGroupId:String tenantId:String):[TenantRateLimitRelView!]!getRateLimitTenantRels(rateLimitServiceGroupId:String tenantId:String):[TenantRateLimitRel!]!getRedirectURIs(clientId:String!):[String!]!getRootTenant:Tenant!getRunningJobs:JobData!getSchedulerLocks:[SchedulerLock]getScope(filterBy:ScopeFilterCriteria!tenantId:String!):[Scope!]!getScopeAccessRuleSchemaById(scopeAccessRuleSchemaId:String):ScopeAccessRuleSchema getScopeAccessRuleSchemas:[ScopeAccessRuleSchema!]!getScopeById(scopeId:String!):Scope getScopeTranslation(languageCode:String!scopeId:String!):ScopeTranslation getScopeTranslations(scopeId:String!):[ScopeTranslation!]!getSecretValue(objectId:String!objectType:SecretObjectType!):String getSigningKeyById(signingKeyId:String!):SigningKey getSigningKeys(tenantId:String):[SigningKey!]!getStateProvinceRegions(countryCode:String!):[StateProvinceRegion!]!getSystemSettings:SystemSettings!getTenantById(tenantId:String!):Tenant getTenantLoginFailurePolicy(tenantId:String!):TenantLoginFailurePolicy getTenantLookAndFeel(tenantId:String!):TenantLookAndFeel getTenantMetaData(tenantId:String!):TenantMetaData getTenantPasswordConfig(tenantId:String!):TenantPasswordConfig getTenants(federatedOIDCProviderId:String scopeId:String tenantIds:[String!]):[Tenant!]!getTokenEnrichmentConfiguration(clientId:String!):TokenEnrichmentConfiguration getUserAuthorizationGroups(userId:String!):[AuthorizationGroup!]!getUserById(userId:String!):User getUserMFARels(userId:String!):[UserMFARel!]!getUserRecoveryEmail(userId:String!):UserRecoveryEmail getUserScopes(tenantId:String!userId:String!):[Scope!]!getUserSessions(userId:String!):[UserSession!]!getUserTenantRels(userId:String!):[UserTenantRelView!]!getUsers(tenantId:String):[User!]!lookahead(term:String!):[LookaheadResult!]!me(isMyProfileView:Boolean):PortalUserProfile relSearch(relSearchInput:RelSearchInput!):RelSearchResults!search(searchInput:SearchInput!):ObjectSearchResults!systemInitializationReady:SystemInitializationReadyResponse!}type RateLimit{ratelimitid:String!ratelimitname:String!servicegroupid:String!}type RateLimitServiceGroup{markForDelete:Boolean!servicegroupdescription:String servicegroupid:String!servicegroupname:String!}input RateLimitServiceGroupCreateInput{servicegroupdescription:String servicegroupname:String!}input RateLimitServiceGroupUpdateInput{servicegroupdescription:String servicegroupid:String!servicegroupname:String!}type RecaptchaMetaData{recaptchaSiteKey:String!useCaptchaV3:Boolean!useEnterpriseCaptcha:Boolean!}type RefreshData{certificateThumbprint:String clientId:String!codeChallenge:String codeChallengeMethod:String expiresAtMs:Float!redirecturi:String!refreshCount:Int!refreshToken:String!refreshTokenClientType:String!scope:String!tenantId:String!userId:String!}enum RegistrationState{ADD_DURESS_PASSWORD_OPTIONAL ADD_RECOVERY_EMAIL_OPTIONAL CANCELLED COMPLETED CONFIGURE_PHONE_NUMBER_VALIDATION_OPTIONAL CONFIGURE_PHONE_NUMBER_VALIDATION_REQUIRED CONFIGURE_SECURITY_KEY_OPTIONAL CONFIGURE_SECURITY_KEY_REQUIRED CONFIGURE_TOTP_OPTIONAL CONFIGURE_TOTP_REQUIRED ERROR EXPIRED REDIRECT_BACK_TO_APPLICATION REDIRECT_TO_IAM_PORTAL UNREGISTERED VALIDATE_EMAIL VALIDATE_PHONE_NUMBER VALIDATE_RECOVERY_EMAIL VALIDATE_SECURITY_KEY VALIDATE_TOTP}input RelSearchInput{childid:String childids:[String]childtype:SearchResultType owningtenantid:String page:Int!parentid:String parenttype:SearchResultType perPage:Int!sortDirection:String sortField:String term:String}type RelSearchResultItem{childdescription:String childid:String!childname:String!childtype:SearchResultType!owningtenantid:String!owningtenantname:String parentid:String!parentname:String parenttype:SearchResultType!}type RelSearchResults{endtime:Float!page:Int!perpage:Int!resultlist:[RelSearchResultItem!]!starttime:Float!took:Int!total:Int!}type SchedulerLock{lockExpiresAtMS:Float!lockInstanceId:String!lockName:String!lockStartTimeMS:Float!}type Scope{markForDelete:Boolean!scopeDescription:String!scopeId:String!scopeName:String!scopeUse:String!}type ScopeAccessRuleSchema{schemaVersion:Int!scopeAccessRuleSchema:String!scopeAccessRuleSchemaId:String!scopeId:String!}input ScopeAccessRuleSchemaCreateInput{schema:String!scopeId:String!}input ScopeAccessRuleSchemaUpdateInput{schema:String!scopeAccessRuleSchemaId:String!scopeId:String!}input ScopeCreateInput{scopeAccessRuleSchemaId:String scopeDescription:String!scopeName:String!scopeUse:String!}enum ScopeFilterCriteria{AVAILABLE EXISTING}type ScopeTranslation{languageCode:String!scopeId:String!translation:String!}input ScopeTranslationInput{languageCode:String!scopeId:String!translation:String!}input ScopeUpdateInput{scopeAccessRuleSchemaId:String scopeDescription:String!scopeId:String!scopeName:String!}input SearchFilterInput{objectType:SearchFilterInputObjectType!objectValue:String!}enum SearchFilterInputObjectType{AUTHENTICATION_GROUP_ID AUTHORIZATION_GROUP_ID CLIENT_ID TENANT_ID USER_ID}input SearchInput{filters:[SearchFilterInput]page:Int!perPage:Int!resultType:SearchResultType sortDirection:String sortField:String term:String}enum SearchRelType{AUTHENTICATION_GROUP_USER_REL AUTHORIZATION_GROUP_USER_REL CLIENT_AUTHENTICATION_GROUP_REL}enum SearchResultType{ACCESS_CONTROL AUTHENTICATION_GROUP AUTHORIZATION_GROUP CLIENT KEY OIDC_PROVIDER RATE_LIMIT TENANT USER}enum SecondFactorType{SECURITY_KEY TOTP}enum SecretObjectType{CAPTCHA_API_KEY CLIENT_SECRET OIDC_PROVIDER_CLIENT_SECRET PRIVATE_KEY PRIVATE_KEY_PASSWORD}type SecretShare{expiresAtMs:Float!objectId:String!otp:String!secretShareId:String!secretShareObjectType:SecretShareObjectType!}enum SecretShareObjectType{OIDC_PROVIDER}type SigningKey{createdAtMs:Float!expiresAtMs:Float!keyCertificate:String keyId:String!keyName:String!keyPassword:String keyStatus:String!keyType:String!keyTypeId:String keyUse:String!markForDelete:Boolean!privateKeyPkcs8:String!publicKey:String statusId:String tenantId:String!}input SigningKeyCreateInput{expiresAtMs:Float keyCertificate:String keyName:String!keyPassword:String keyType:String!keyTypeId:String keyUse:String!privateKeyPkcs8:String!publicKey:String tenantId:String!}input SigningKeyUpdateInput{keyId:String!keyName:String keyUse:String status:String!}type StateProvinceRegion{isoCountryCode:String!isoEntryCode:String!isoEntryName:String!isoSubsetType:String!}type SuccessfulLoginResponse{challenge:String mfaEnabled:Boolean!mfaType:String userId:String!}type SystemCategory{categoryEntries:[CategoryEntry!]!categoryName:String!}input SystemInitializationInput{captchaConfigInput:CaptchaConfigInput rootAuthenticationDomain:String!rootAuthorizationGroupInput:AuthorizationGroupCreateInput!rootClientInput:ClientCreateInput!rootFederatedOIDCProviderInput:FederatedOIDCProviderCreateInput rootReadOnlyAuthorizationGroupInput:AuthorizationGroupCreateInput rootTenantInput:TenantCreateInput!rootUserCreateInput:UserCreateInput!systemSettingsInput:SystemSettingsUpdateInput!}type SystemInitializationReadyResponse{systemInitializationReady:Boolean!systemInitializationReadyErrors:[ErrorDetail!]systemInitializationWarnings:[ErrorDetail!]}type SystemInitializationResponse{systemInitializationErrors:[ErrorDetail!]tenant:Tenant}type SystemSettings{allowDuressPassword:Boolean!allowRecoveryEmail:Boolean!auditRecordRetentionPeriodDays:Int contactEmail:String enablePortalAsLegacyIdp:Boolean!noReplyEmail:String rootClientId:String!smsAlertOnAccountStatusChange:Boolean!smsAlertOnEmailChange:Boolean!smsAlertOnMFADeviceChange:Boolean!smsAlertOnPasswordChange:Boolean!smsAllowPasswordResetOtp:Boolean!smsCallbackServiceEnabled:Boolean!smsCallbackUri:String smsSenderName:String softwareVersion:String!systemCategories:[SystemCategory!]!systemId:String!}input SystemSettingsUpdateInput{allowDuressPassword:Boolean!allowRecoveryEmail:Boolean!auditRecordRetentionPeriodDays:Int contactEmail:String enablePortalAsLegacyIdp:Boolean!noReplyEmail:String rootClientId:String!smsAlertOnAccountStatusChange:Boolean!smsAlertOnEmailChange:Boolean!smsAlertOnMFADeviceChange:Boolean!smsAlertOnPasswordChange:Boolean!smsAllowPasswordResetOtp:Boolean!smsCallbackServiceEnabled:Boolean!smsCallbackUri:String smsSenderName:String}type TOTPResponse{uri:String!userMFARel:UserMFARel!}type Tenant{allowAnonymousUsers:Boolean!allowForgotPassword:Boolean!allowLoginByPhoneNumber:Boolean!allowSocialLogin:Boolean!allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!defaultRateLimit:Int defaultRateLimitPeriodMinutes:Int enabled:Boolean!federatedAuthenticationConstraint:String!federatedauthenticationconstraintid:String markForDelete:Boolean!migrateLegacyUsers:Boolean!registrationRequireCaptcha:Boolean!registrationRequireTermsAndConditions:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:String!tenanttypeid:String termsAndConditionsUri:String verifyEmailOnSelfRegistration:Boolean!verifyPhoneNumberOnSelfRegistration:Boolean!}input TenantAnonymousUserConfigInput{defaultcountrycode:String defaultlanguagecode:String tenantId:String!tokenttlseconds:Int!}type TenantAnonymousUserConfiguration{defaultcountrycode:String defaultlanguagecode:String tenantId:String!tokenttlseconds:Int!}type TenantAvailableScope{accessRuleId:String scopeId:String!tenantId:String!}input TenantCreateInput{allowAnonymousUsers:Boolean!allowForgotPassword:Boolean!allowLoginByPhoneNumber:Boolean!allowSocialLogin:Boolean!allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!defaultRateLimit:Int defaultRateLimitPeriodMinutes:Int enabled:Boolean!federatedAuthenticationConstraint:String!migrateLegacyUsers:Boolean!registrationRequireCaptcha:Boolean!registrationRequireTermsAndConditions:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:String!termsAndConditionsUri:String verifyEmailOnSelfRegistration:Boolean!verifyPhoneNumberOnSelfRegistration:Boolean!}type TenantLegacyUserMigrationConfig{authenticationUri:String!tenantId:String!userProfileUri:String!usernameCheckUri:String!}input TenantLegacyUserMigrationConfigInput{authenticationUri:String!tenantId:String!userProfileUri:String!usernameCheckUri:String!}type TenantLoginFailurePolicy{failureThreshold:Int!loginFailurePolicyType:String!maximumLoginFailures:Int pauseDurationMinutes:Int tenantId:String!}input TenantLoginFailurePolicyInput{failureThreshold:Int!loginFailurePolicyType:String!maximumLoginFailures:Int pauseDurationMinutes:Int tenantId:String!}type TenantLookAndFeel{buttonbackgroundcolor:String buttonborderradius:String buttontextcolor:String footerbackgroundcolor:String footerlinks:[FooterLink!]!footertextcolor:String headerbackgroundcolor:String headerlogoposition:String headertext:String headertextcolor:String imagepanelposition:String inputbordercolor:String layouttype:String linkcolor:String logouri:String marketingimageuri:String marketingtext:String pagebackgroundcolor:String tenantid:String!}input TenantLookAndFeelInput{buttonbackgroundcolor:String buttonborderradius:String buttontextcolor:String footerbackgroundcolor:String footerlinks:[FooterLinkInput]footertextcolor:String headerbackgroundcolor:String headerlogoposition:String headertext:String headertextcolor:String imagepanelposition:String inputbordercolor:String layouttype:String linkcolor:String logouri:String marketingimageuri:String marketingtext:String pagebackgroundcolor:String tenantid:String!}type TenantManagementDomainRel{domain:String!tenantId:String!}type TenantMetaData{recaptchaMetaData:RecaptchaMetaData socialOIDCProviders:[FederatedOIDCProvider!]!systemSettings:SystemSettings!tenant:Tenant!tenantLookAndFeel:TenantLookAndFeel}type TenantPasswordConfig{maxRepeatingCharacterLength:Int mfaTypesRequired:String passwordHashingAlgorithm:String!passwordHistoryPeriod:Int passwordMaxLength:Int!passwordMinLength:Int!passwordRotationPeriodDays:Int requireLowerCase:Boolean!requireMfa:Boolean!requireNumbers:Boolean!requireSpecialCharacters:Boolean!requireUpperCase:Boolean!specialCharactersAllowed:String tenantId:String!}type TenantRateLimitRel{allowUnlimitedRate:Boolean rateLimit:Int rateLimitPeriodMinutes:Int servicegroupid:String!tenantId:String!}type TenantRateLimitRelView{allowUnlimitedRate:Boolean rateLimit:Int rateLimitPeriodMinutes:Int servicegroupid:String!servicegroupname:String!tenantId:String!tenantName:String!}type TenantRestrictedAuthenticationDomainRel{domain:String!tenantId:String!}type TenantSelectorData{tenantId:String!tenantName:String!}type TenantSupportedClaimRel{claim:String!tenantId:String!}input TenantUpdateInput{allowAnonymousUsers:Boolean!allowForgotPassword:Boolean!allowLoginByPhoneNumber:Boolean!allowSocialLogin:Boolean!allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!defaultRateLimit:Int defaultRateLimitPeriodMinutes:Int enabled:Boolean!federatedAuthenticationConstraint:String!migrateLegacyUsers:Boolean!registrationRequireCaptcha:Boolean!registrationRequireTermsAndConditions:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:String!termsAndConditionsUri:String verifyEmailOnSelfRegistration:Boolean!verifyPhoneNumberOnSelfRegistration:Boolean!}type TokenEnrichmentConfiguration{clientId:String!failureMode:TokenEnrichmentFailureMode!timeoutMs:Int!uri:String!}input TokenEnrichmentConfigurationInput{clientId:String!failureMode:TokenEnrichmentFailureMode!timeoutMs:Int!uri:String!}enum TokenEnrichmentFailureMode{FAIL_CLOSED FAIL_OPEN}type User{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!federatedOIDCProviderSubjectId:String firstName:String!forcePasswordResetAfterAuthentication:Boolean!lastName:String!locked:Boolean!markForDelete:Boolean!middleName:String nameOrder:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String recoveryEmail:UserRecoveryEmail stateRegionProvince:String userId:String!}type UserAuthenticationState{authenticationSessionToken:String!authenticationState:AuthenticationState!authenticationStateOrder:Int!authenticationStateStatus:String!deviceCodeId:String expiresAtMs:Float!preAuthToken:String returnToUri:String tenantId:String!userId:String!}type UserAuthenticationStateResponse{accessToken:String authenticationError:ErrorDetail availableTenants:[TenantSelectorData!]passwordConfig:TenantPasswordConfig tokenExpiresAtMs:Float totpSecret:String uri:String userAuthenticationState:UserAuthenticationState!}input UserCreateInput{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!federatedOIDCProviderSubjectId:String firstName:String!lastName:String!locked:Boolean!middleName:String nameOrder:String!password:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String stateRegionProvince:String termsAndConditionsAccepted:Boolean!}type UserCredential{dateCreatedMs:Float!hashedPassword:String!hashingAlgorithm:String!salt:String!userId:String!}type UserFailedLogin{failureAtMs:Float!failureCount:Float!nextLoginNotBefore:Float!userId:String!}type UserFailedPasswordResetAttempts{failureCount:Int!userId:String!}type UserMFARel{fido2CredentialId:String fido2KeySupportsCounters:Boolean fido2PublicKey:String fido2PublicKeyAlgorithm:Int fido2Transports:String mfaType:String!primaryMfa:Boolean!totpHashAlgorithm:String totpSecret:String userId:String!}type UserProfileChangeResponse{profileChangeError:ErrorDetail profileChangeState:UserProfileChangeState!}type UserProfileChangeState{changeOrder:Int!changeProfileSessionToken:String!changeStateStatus:String!expiresAtMs:Float!profileProperty:ProfileProperty!profilePropertyValue:String!profileState:ProfileState!userId:String!}type UserRecoveryEmail{email:String!emailVerified:Boolean!userId:String!}type UserRegistrationState{deviceCodeId:String email:String!expiresAtMs:Float!preAuthToken:String registrationSessionToken:String!registrationState:RegistrationState!registrationStateOrder:Int!registrationStateStatus:String!tenantId:String!userId:String!}type UserRegistrationStateResponse{accessToken:String registrationError:ErrorDetail tokenExpiresAtMs:Float totpSecret:String uri:String userRegistrationState:UserRegistrationState!}type UserScopeRel{scopeId:String!tenantId:String!userId:String!}type UserSession{clientId:String!clientName:String!tenantId:String!tenantName:String!userId:String!}type UserTenantRel{enabled:Boolean!relType:String!tenantId:String!userId:String!}type UserTenantRelView{relType:String!tenantId:String!tenantName:String!userId:String!}type UserTermsAndConditionsAccepted{acceptedAtMs:Float!tenantId:String!userId:String!}input UserUpdateInput{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!federatedOIDCProviderSubjectId:String firstName:String!lastName:String!locked:Boolean!middleName:String nameOrder:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String stateRegionProvince:String userId:String!}`);
+export const typeDefs = gql(`schema{query:Query mutation:Mutation}type AccessRule{accessRuleDefinition:String!accessRuleId:String!accessRuleName:String!scopeAccessRuleSchemaId:String!}input AccessRuleCreateInput{accessRuleDefinition:String!accessRuleName:String!scopeAccessRuleSchemaId:String!}input AccessRuleUpdateInput{accessRuleDefinition:String!accessRuleId:String!accessRuleName:String!scopeAccessRuleSchemaId:String!}type AuthenticationGroup{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!defaultGroup:Boolean!markForDelete:Boolean!tenantId:String!}type AuthenticationGroupClientRel{authenticationGroupId:String!clientId:String!}input AuthenticationGroupCreateInput{authenticationGroupDescription:String authenticationGroupName:String!defaultGroup:Boolean!tenantId:String!}input AuthenticationGroupUpdateInput{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!defaultGroup:Boolean!tenantId:String!}type AuthenticationGroupUserRel{authenticationGroupId:String!userId:String!}type AuthenticationRequestedScope{scopeDescription:String!scopeId:String!scopeName:String!scopeTranslations:[ScopeTranslation!]!}enum AuthenticationState{ACCEPT_TERMS_AND_CONDITIONS AUTH_WITH_FEDERATED_OIDC CANCELLED COMPLETED CONFIGURE_SECURITY_KEY CONFIGURE_TOTP CONFIGURE_VALIDATE_PHONE_NUMBER ENTER_EMAIL ENTER_PASSWORD ENTER_PASSWORD_AND_MIGRATE_USER ENTER_USER_CODE ERROR EXPIRED POST_AUTHN_STATE_SEND_SECURITY_EVENT_DEVICE_REGISTERED POST_AUTHN_STATE_SEND_SECURITY_EVENT_DURESS_LOGON POST_AUTHN_STATE_SEND_SECURITY_EVENT_SUCCESS_LOGON REDIRECT_BACK_TO_APPLICATION REDIRECT_TO_IAM_PORTAL REGISTER ROTATE_PASSWORD SELECT_TENANT SELECT_TENANT_THEN_REGISTER VALIDATE_EMAIL VALIDATE_PASSWORD_RESET_TOKEN VALIDATE_PHONE_NUMBER VALIDATE_SECURITY_KEY VALIDATE_TOTP}input AuthenticatorAttestationResponseInput{attestationObject:String!authenticatorData:String!clientDataJSON:String!publicKey:String!publicKeyAlgorithm:Int!transports:[String!]!}input AuthenticatorAuthenticationResponseInput{authenticatorData:String!clientDataJSON:String!signature:String!}type AuthorizationCodeData{certificateThumbprint:String clientId:String!code:String!codeChallenge:String codeChallengeMethod:String expiresAtMs:Float!nonce:String redirectUri:String!scope:String!tenantId:String!userId:String!}type AuthorizationDeviceCodeData{authorizationStatus:DeviceCodeAuthorizationStatus!clientId:String!deviceCode:String!deviceCodeId:String!expiresAtMs:Float!scope:String!tenantId:String!userCode:String!userId:String}type AuthorizationGroup{allowForAnonymousUsers:Boolean!default:Boolean!groupDescription:String groupId:String!groupName:String!markForDelete:Boolean!tenantId:String!}input AuthorizationGroupCreateInput{allowForAnonymousUsers:Boolean!default:Boolean!groupDescription:String groupName:String!tenantId:String!}type AuthorizationGroupScopeRel{groupId:String!scopeId:String!tenantId:String!}input AuthorizationGroupUpdateInput{allowForAnonymousUsers:Boolean!default:Boolean!groupDescription:String groupId:String!groupName:String!tenantId:String!}type AuthorizationGroupUserRel{groupId:String!userId:String!}type AuthorizationReturnUri{code:String!state:String uri:String!}type AuthorizationScopeApprovalData{clientId:String!clientName:String!requestedScope:[AuthenticationRequestedScope!]!requiresUserApproval:Boolean!}input AutoCreateSigningKeyInput{commonName:String!expiresAtMs:Float!keyName:String!keyType:String!keyTypeId:String keyUse:String!organizationName:String!password:String tenantId:String!}input BulkScopeInput{accessRuleId:String scopeId:String!}type CaptchaConfig{alias:String!apiKey:String!captchaEnabled:Boolean!minScoreThreshold:Float projectId:String siteKey:String!useCaptchaV3:Boolean!useEnterpriseCaptcha:Boolean!}input CaptchaConfigInput{alias:String!apiKey:String!captchaEnabled:Boolean!minScoreThreshold:Float projectId:String siteKey:String!useCaptchaV3:Boolean!useEnterpriseCaptcha:Boolean!}type CategoryEntry{categoryKey:String!categoryValue:String!}type ChangeEvent{changeEventClass:String!changeEventId:String!changeEventType:String!changeTimestamp:Float!changedBy:String!data:String!objectId:String!}type Client{audience:String clientDescription:String clientId:String!clientName:String!clientSecret:String!clientTokenTTLSeconds:Int clientType:String!clienttypeid:String enabled:Boolean!fapiEnabled:Boolean!fapiEnabledAtMs:Float markForDelete:Boolean!maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!tenantId:String!userTokenTTLSeconds:Int}type ClientAuthHistory{clientId:String!expiresAtSeconds:Float!jti:String!tenantId:String!}input ClientCreateInput{audience:String clientDescription:String clientName:String!clientTokenTTLSeconds:Int clientType:String!clienttypeid:String enabled:Boolean!fapiEnabled:Boolean!maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!tenantId:String!userTokenTTLSeconds:Int}type ClientFapiConfiguration{clientId:String!identifierType:String!identifierValue:String!}input ClientFapiConfigurationInput{clientId:String!identifierType:String!identifierValue:String!}type ClientScopeRel{clientId:String!scopeId:String!tenantId:String!}input ClientUpdateInput{audience:String clientDescription:String clientId:String!clientName:String!clientTokenTTLSeconds:Int clientType:String!clienttypeid:String enabled:Boolean!maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!tenantId:String!userTokenTTLSeconds:Int}type Contact{contactid:String!email:String!name:String objectid:String!objecttype:String!userid:String}input ContactCreateInput{email:String!name:String objectid:String!objecttype:String!userid:String}type DeletionStatus{completedAt:Float markForDeleteId:String!startedAt:Float!step:String!}enum DeviceCodeAuthorizationStatus{APPROVED CANCELLED PENDING}type ErrorDetail{errorCode:String!errorKey:String!errorMessage:String!}type FederatedAuthTest{authState:String!clientAuthType:String!clientId:String!clientSecret:String codeVerifier:String expiresAtMs:Float!redirectUri:String!scope:String!usePkce:Boolean!wellKnownUri:String!}type FederatedOIDCAuthorizationRel{codeVerifier:String codechallengemethod:String email:String expiresAtMs:Float!federatedOIDCAuthorizationRelType:FederatedOIDCAuthorizationRelType!federatedOIDCProviderId:String!initClientId:String initCodeChallenge:String initCodeChallengeMethod:String initRedirectUri:String!initResponseMode:String!initResponseType:String!initScope:String!initState:String!initTenantId:String!returnUri:String state:String!userId:String}enum FederatedOIDCAuthorizationRelType{AUTHORIZATION_REL_TYPE_CLIENT_AUTH AUTHORIZATION_REL_TYPE_PORTAL_AUTH}type FederatedOIDCProvider{clientAuthType:String!clientauthtypeid:String federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderId:String!federatedOIDCProviderName:String!federatedOIDCProviderResponseType:String!federatedOIDCProviderSubjectType:String!federatedOIDCProviderTenantId:String federatedOIDCProviderType:String!federatedOIDCProviderWellKnownUri:String!federatedoidcprovidertypeid:String markForDelete:Boolean!refreshTokenAllowed:Boolean!scopes:[String!]!socialLoginProvider:String usePkce:Boolean!}input FederatedOIDCProviderCreateInput{clientAuthType:String!clientauthtypeid:String federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderName:String!federatedOIDCProviderResponseType:String!federatedOIDCProviderSubjectType:String!federatedOIDCProviderTenantId:String federatedOIDCProviderType:String!federatedOIDCProviderWellKnownUri:String!federatedoidcprovidertypeid:String refreshTokenAllowed:Boolean!scopes:[String!]!socialLoginProvider:String usePkce:Boolean!}type FederatedOIDCProviderDomainRel{domain:String!federatedOIDCProviderId:String!}type FederatedOIDCProviderTenantRel{federatedOIDCProviderId:String!tenantId:String!}input FederatedOIDCProviderUpdateInput{clientAuthType:String!clientauthtypeid:String federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderId:String!federatedOIDCProviderName:String!federatedOIDCProviderResponseType:String!federatedOIDCProviderSubjectType:String!federatedOIDCProviderTenantId:String federatedOIDCProviderType:String!federatedOIDCProviderWellKnownUri:String!federatedoidcprovidertypeid:String refreshTokenAllowed:Boolean!scopes:[String!]!socialLoginProvider:String usePkce:Boolean!}type Fido2AuthenticationChallengePasskey{id:String!transports:[String!]!}type Fido2AuthenticationChallengeResponse{fido2AuthenticationChallengePasskeys:[Fido2AuthenticationChallengePasskey!]!fido2Challenge:Fido2Challenge!rpId:String!}type Fido2Challenge{challenge:String!expiresAtMs:Float!issuedAtMs:Float!userId:String!}input Fido2KeyAuthenticationInput{authenticationAttachment:String!id:String!rawId:String!response:AuthenticatorAuthenticationResponseInput!type:String!}input Fido2KeyRegistrationInput{authenticationAttachment:String!id:String!rawId:String!response:AuthenticatorAttestationResponseInput!type:String!}type Fido2RegistrationChallengeResponse{email:String!fido2Challenge:Fido2Challenge!rpId:String!rpName:String!userName:String!}type FooterLink{footerlinkid:String!linktext:String!tenantid:String!uri:String!}input FooterLinkInput{linktext:String!tenantid:String!uri:String!}enum ForgotPasswordCommunicationMethod{EMAIL PHONE_NUMBER RECOVERY_EMAIL}type JobData{markForDeleteItems:[MarkForDelete!]!schedulerLocks:[SchedulerLock!]!}type LookaheadItem{displayValue:String!id:String!matchingString:String}type LookaheadResult{category:SearchResultType!resultList:[LookaheadItem!]!}type MarkForDelete{completedDate:Float markForDeleteId:String!objectId:String!objectType:MarkForDeleteObjectType!startedDate:Float submittedBy:String!submittedDate:Float!}input MarkForDeleteInput{markForDeleteObjectType:MarkForDeleteObjectType!objectId:String!}enum MarkForDeleteObjectType{AUTHENTICATION_GROUP AUTHORIZATION_GROUP CLIENT FEDERATED_OIDC_PROVIDER RATE_LIMIT_SERVICE_GROUP SCOPE SIGNING_KEY TENANT USER}type Mutation{addContact(contactCreateInput:ContactCreateInput!):Contact!addDomainToTenantManagement(domain:String!tenantId:String!):TenantManagementDomainRel addDomainToTenantRestrictedAuthentication(domain:String!tenantId:String!):TenantRestrictedAuthenticationDomainRel addRedirectURI(clientId:String!uri:String!):String addUserToAuthenticationGroup(authenticationGroupId:String!userId:String!):AuthenticationGroupUserRel addUserToAuthorizationGroup(groupId:String!userId:String!):AuthorizationGroupUserRel assignAuthenticationGroupToClient(authenticationGroupId:String!clientId:String!):AuthenticationGroupClientRel assignFederatedOIDCProviderToDomain(domain:String!federatedOIDCProviderId:String!):FederatedOIDCProviderDomainRel!assignFederatedOIDCProviderToTenant(federatedOIDCProviderId:String!tenantId:String!):FederatedOIDCProviderTenantRel!assignRateLimitToTenant(allowUnlimited:Boolean limit:Int rateLimitPeriodMinutes:Int serviceGroupId:String!tenantId:String!):TenantRateLimitRel assignScopeToAuthorizationGroup(groupId:String!scopeId:String!tenantId:String!):AuthorizationGroupScopeRel assignScopeToClient(clientId:String!scopeId:String!tenantId:String!):ClientScopeRel assignScopeToTenant(accessRuleId:String scopeId:String!tenantId:String!):TenantAvailableScope assignScopeToUser(scopeId:String!tenantId:String!userId:String!):UserScopeRel assignUserToTenant(relType:String!tenantId:String!userId:String!):UserTenantRel!authenticateAcceptTermsAndConditions(accepted:Boolean!authenticationSessionToken:String!preAuthToken:String):UserAuthenticationStateResponse!authenticateConfigureTOTP(authenticationSessionToken:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateConfigureVerifyPhoneNumber(authenticationSessionToken:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateHandleForgotPassword(authenticationSessionToken:String!forgotPasswordCommunicationMethod:ForgotPasswordCommunicationMethod!preAuthToken:String):UserAuthenticationStateResponse!authenticateHandleUserCodeInput(userCode:String!):UserAuthenticationStateResponse!authenticateHandleUserNameInput(deviceCodeId:String preAuthToken:String returnToUri:String tenantId:String username:String!):UserAuthenticationStateResponse!authenticateRegisterSecurityKey(authenticationSessionToken:String!fido2KeyRegistrationInput:Fido2KeyRegistrationInput!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateRotatePassword(authenticationSessionToken:String!newPassword:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateUser(authenticationSessionToken:String!password:String!preAuthToken:String tenantId:String!username:String!):UserAuthenticationStateResponse!authenticateUserAndMigrate(authenticationSessionToken:String!password:String!preAuthToken:String tenantId:String!username:String!):UserAuthenticationStateResponse!authenticateValidatePasswordResetToken(authenticationSessionToken:String!preAuthToken:String token:String!):UserAuthenticationStateResponse!authenticateValidateSecurityKey(authenticationSessionToken:String!fido2KeyAuthenticationInput:Fido2KeyAuthenticationInput!preAuthToken:String userId:String!):UserAuthenticationStateResponse!authenticateValidateTOTP(authenticationSessionToken:String!preAuthToken:String totpTokenValue:String!userId:String!):UserAuthenticationStateResponse!authenticateVerifyEmailAddress(authenticationSessionToken:String!preAuthToken:String token:String!userId:String!):UserAuthenticationStateResponse!authenticateVerifyPhoneNumber(authenticationSessionToken:String!preAuthToken:String token:String!userId:String!):UserAuthenticationStateResponse!authenticateWithSocialOIDCProvider(federatedOIDCProviderId:String!preAuthToken:String tenantId:String!):UserAuthenticationStateResponse!autoCreateSigningKey(keyInput:AutoCreateSigningKeyInput!):SigningKey!bulkAssignScopeToAuthorizationGroup(bulkScopeInput:[BulkScopeInput!]!groupId:String!tenantId:String!):[AuthorizationGroupScopeRel!]!bulkAssignScopeToClient(bulkScopeInput:[BulkScopeInput!]!clientId:String!tenantId:String!):[ClientScopeRel!]!bulkAssignScopeToTenant(bulkScopeInput:[BulkScopeInput!]!tenantId:String!):[TenantAvailableScope!]!bulkAssignScopeToUser(bulkScopeInput:[BulkScopeInput!]!tenantId:String!userId:String!):[UserScopeRel!]!cancelAuthentication(authenticationSessionToken:String!preAuthToken:String userId:String!):UserAuthenticationStateResponse!cancelRegistration(deviceCodeId:String preAuthToken:String registrationSessionToken:String!userId:String!):UserRegistrationStateResponse!createAccessRule(accessRuleInput:AccessRuleCreateInput!):AccessRule createAuthenticationGroup(authenticationGroupInput:AuthenticationGroupCreateInput!):AuthenticationGroup createAuthorizationGroup(groupInput:AuthorizationGroupCreateInput!):AuthorizationGroup createClient(clientInput:ClientCreateInput!):Client createFederatedAuthTest(clientAuthType:String!clientId:String!clientSecret:String responseType:String!scope:String!usePkce:Boolean!wellKnownUri:String!):String!createFederatedOIDCProvider(oidcProviderInput:FederatedOIDCProviderCreateInput!):FederatedOIDCProvider createFido2AuthenticationChallenge(sessionToken:String sessionTokenType:String userId:String!):Fido2AuthenticationChallengeResponse createFido2RegistrationChallenge(sessionToken:String sessionTokenType:String userId:String!):Fido2RegistrationChallengeResponse createRateLimitServiceGroup(rateLimitServiceGroupInput:RateLimitServiceGroupCreateInput!):RateLimitServiceGroup createScope(scopeInput:ScopeCreateInput!):Scope createScopeAccessRuleSchema(scopeAccessRuleSchemaInput:ScopeAccessRuleSchemaCreateInput!):ScopeAccessRuleSchema createScopeTranslation(scopeTranslationInput:ScopeTranslationInput!):ScopeTranslation!createSigningKey(keyInput:SigningKeyCreateInput!):SigningKey!createTenant(tenantInput:TenantCreateInput!):Tenant createUser(tenantId:String!userInput:UserCreateInput!):User!deleteAccessRule(accessRuleId:String!):String!deleteClientFapiConfiguration(clientId:String!):String deleteFIDOKey(userId:String!):String deleteRecoveryEmail(userId:String!):Boolean!deleteSchedulerLock(instanceId:String!):String!deleteScopeAccessRuleSchema(scopeAccessRuleSchemaId:String!):String!deleteScopeTranslation(languageCode:String!scopeId:String!):String!deleteTOTP(userId:String!):String deleteTokenEnrichmentConfiguration(clientId:String!):String deleteUserSession(clientId:String!tenantId:String!userId:String!):String enterSecretValue(otp:String!secretValue:String!):Boolean!generateSecretShareLink(email:String!objectId:String!secretShareObjectType:SecretShareObjectType!):Boolean!generateTOTP(userId:String!):TOTPResponse!initializeSystem(systemInitializationInput:SystemInitializationInput!):SystemInitializationResponse!markForDelete(markForDeleteInput:MarkForDeleteInput!):MarkForDelete profileAddRecoveryEmail(recoveryEmail:String!):UserProfileChangeResponse!profileCancelEmailChange(changeEmailSessionToken:String!):UserProfileChangeResponse!profileCancelPhoneNumberChange(changePhoneNumberSessionToken:String!):UserProfileChangeResponse!profileHandleEmailChange(newEmail:String!):UserProfileChangeResponse!profileHandlePhoneNumberChange(newPhoneNumber:String!):UserProfileChangeResponse!profileValidateEmail(changeEmailSessionToken:String!token:String!):UserProfileChangeResponse!profileValidatePhoneNumberChange(changePhoneNumberSessionToken:String!token:String!):UserProfileChangeResponse!registerAddDuressPassword(password:String preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerAddRecoveryEmail(preAuthToken:String recoveryEmail:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerConfigureSecurityKey(fido2KeyRegistrationInput:Fido2KeyRegistrationInput preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerConfigureTOTP(preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerConfigureVerifyPhoneNumber(preAuthToken:String registrationSessionToken:String!skip:Boolean!userId:String!):UserRegistrationStateResponse!registerUser(deviceCodeId:String preAuthToken:String recaptchaToken:String tenantId:String!userInput:UserCreateInput!):UserRegistrationStateResponse!registerValidateSecurityKey(fido2KeyAuthenticationInput:Fido2KeyAuthenticationInput!preAuthToken:String registrationSessionToken:String!userId:String!):UserRegistrationStateResponse!registerValidateTOTP(preAuthToken:String registrationSessionToken:String!totpTokenValue:String!userId:String!):UserRegistrationStateResponse!registerVerifyEmailAddress(preAuthToken:String registrationSessionToken:String!token:String!userId:String!):UserRegistrationStateResponse!registerVerifyPhoneNumber(preAuthToken:String registrationSessionToken:String!token:String!userId:String!):UserRegistrationStateResponse!registerVerifyRecoveryEmail(preAuthToken:String registrationSessionToken:String!token:String!userId:String!):UserRegistrationStateResponse!removeAuthenticationGroupFromClient(authenticationGroupId:String!clientId:String!):String removeCaptchaConfig:String!removeContact(contactId:String!):String!removeDomainFromTenantManagement(domain:String!tenantId:String!):String removeDomainFromTenantRestrictedAuthentication(domain:String!tenantId:String!):String removeFederatedOIDCProviderFromDomain(domain:String!federatedOIDCProviderId:String!):FederatedOIDCProviderDomainRel!removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId:String!tenantId:String!):FederatedOIDCProviderTenantRel!removeRateLimitFromTenant(serviceGroupId:String!tenantId:String!):String removeRedirectURI(clientId:String!uri:String!):String removeScopeFromAuthorizationGroup(groupId:String!scopeId:String!tenantId:String!):String removeScopeFromClient(clientId:String!scopeId:String!tenantId:String!):String removeScopeFromTenant(scopeId:String!tenantId:String!):String removeScopeFromUser(scopeId:String!tenantId:String!userId:String!):String removeTenantAnonymousUserConfig(tenantId:String!):String removeTenantLegacyUserMigrationConfig(tenantId:String!):String removeTenantLoginFailurePolicy(tenantId:String!):String!removeTenantLookAndFeel(tenantId:String!):String removeTenantPasswordConfig(tenantId:String!):String removeUserFromAuthenticationGroup(authenticationGroupId:String!userId:String!):String removeUserFromAuthorizationGroup(groupId:String!userId:String!):String removeUserFromTenant(tenantId:String!userId:String!):String rotatePassword(newPassword:String!oldPassword:String!userId:String!):Boolean setCaptchaConfig(captchaConfigInput:CaptchaConfigInput!):CaptchaConfig!setClientFapiConfiguration(fapiConfigurationInput:ClientFapiConfigurationInput!):ClientFapiConfiguration setClientTokenEnrichmentConfiguration(enrichmentInput:TokenEnrichmentConfigurationInput!):TokenEnrichmentConfiguration!setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput:TenantAnonymousUserConfigInput!):TenantAnonymousUserConfiguration setTenantLegacyUserMigrationConfig(tenantLegacyUserMigrationConfigInput:TenantLegacyUserMigrationConfigInput!):TenantLegacyUserMigrationConfig setTenantLoginFailurePolicy(tenantLoginFailurePolicyInput:TenantLoginFailurePolicyInput!):TenantLoginFailurePolicy!setTenantLookAndFeel(tenantLookAndFeelInput:TenantLookAndFeelInput!):TenantLookAndFeel setTenantPasswordConfig(passwordConfigInput:PasswordConfigInput!):TenantPasswordConfig swapPrimaryAndRecoveryEmail:Boolean!systemInitializationAuthentication(password:String privateKey:String!):UserAuthenticationStateResponse!unlockUser(userId:String!):Boolean updateAccessRule(accessRuleInput:AccessRuleUpdateInput!):AccessRule updateAuthenticationGroup(authenticationGroupInput:AuthenticationGroupUpdateInput!):AuthenticationGroup updateAuthorizationGroup(groupInput:AuthorizationGroupUpdateInput!):AuthorizationGroup updateClient(clientInput:ClientUpdateInput!):Client updateFederatedOIDCProvider(oidcProviderInput:FederatedOIDCProviderUpdateInput!):FederatedOIDCProvider updateRateLimitForTenant(allowUnlimited:Boolean limit:Int rateLimitPeriodMinutes:Int serviceGroupId:String!tenantId:String!):TenantRateLimitRel updateRateLimitServiceGroup(rateLimitServiceGroupInput:RateLimitServiceGroupUpdateInput!):RateLimitServiceGroup updateRootTenant(tenantInput:TenantUpdateInput!):Tenant updateScope(scopeInput:ScopeUpdateInput!):Scope updateScopeAccessRuleSchema(scopeAccessRuleSchemaInput:ScopeAccessRuleSchemaUpdateInput!):ScopeAccessRuleSchema updateScopeTranslation(scopeTranslationInput:ScopeTranslationInput!):ScopeTranslation!updateSigningKey(keyInput:SigningKeyUpdateInput!):SigningKey!updateSystemSettings(systemSettingsUpdateInput:SystemSettingsUpdateInput!):SystemSettings!updateTenant(tenantInput:TenantUpdateInput!):Tenant updateUser(userInput:UserUpdateInput!):User!updateUserTenantRel(relType:String!tenantId:String!userId:String!):UserTenantRel!validateTOTP(totpToken:String!userId:String!):Boolean!}type ObjectSearchResultItem{description:String email:String enabled:Boolean name:String!objectid:String!objecttype:SearchResultType!owningclientid:String owningtenantid:String subtype:String subtypekey:String}type ObjectSearchResults{endtime:Float!page:Int!perpage:Int!resultlist:[ObjectSearchResultItem!]!starttime:Float!took:Int!total:Int!}input PasswordConfigInput{maxRepeatingCharacterLength:Int mfaTypesRequired:String passwordHashingAlgorithm:String!passwordHistoryPeriod:Int passwordMaxLength:Int!passwordMinLength:Int!passwordRotationPeriodDays:Int requireLowerCase:Boolean!requireMfa:Boolean!requireNumbers:Boolean!requireSpecialCharacters:Boolean!requireUpperCase:Boolean!specialCharactersAllowed:String tenantId:String!}type PortalUserProfile{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!expiresAtMs:Float!federatedOIDCProviderSubjectId:String firstName:String!lastName:String!locked:Boolean!managementAccessTenantId:String middleName:String nameOrder:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String principalType:String!recoveryEmail:UserRecoveryEmail scope:[Scope!]!stateRegionProvince:String tenantId:String!tenantName:String!userId:String!}type PreAuthenticationState{authenticatedUserId:String certificateThumbprint:String clientId:String!codeChallenge:String codeChallengeMethod:String expiresAtMs:Float!nonce:String preAuthenticationStateProtocol:PreAuthenticationStateProtocolType!redirectUri:String!responseMode:String!responseType:String!scope:String!state:String tenantId:String!token:String!userAuthenticated:Boolean!}enum PreAuthenticationStateProtocolType{FAPI OIDC}enum ProfileProperty{EMAIL PHONE_NUMBER RECOVERY_EMAIL}enum ProfileState{COMPLETED ENTER_EMAIL ENTER_PHONE ERROR VALIDATE_EMAIL VALIDATE_PHONE}type Query{getAccessRuleById(accessRuleId:String!):AccessRule getAccessRules(tenantId:String):[AccessRule!]!getAnonymousUserConfiguration(tenantId:String!):TenantAnonymousUserConfiguration getAuthenticationGroupById(authenticationGroupId:String!):AuthenticationGroup getAuthenticationGroups(clientId:String tenantId:String userId:String):[AuthenticationGroup!]!getAuthorizationGroupById(groupId:String!):AuthorizationGroup getAuthorizationGroupScopes(groupId:String!):[Scope!]!getAuthorizationGroups(tenantId:String):[AuthorizationGroup!]!getAuthorizationScopeApprovalData(preAuthToken:String!):AuthorizationScopeApprovalData!getCaptchaConfig:CaptchaConfig getChangeEvents(objectId:String!):[ChangeEvent!]!getClientById(clientId:String!):Client getClientFapiConfiguration(clientId:String!):ClientFapiConfiguration getClientScopes(clientId:String!):[Scope!]!getContacts(objectId:String!):[Contact!]!getDeletionStatus(markForDeleteId:String!):[DeletionStatus!]!getDomainsForTenantAuthentication(tenantId:String!):[TenantRestrictedAuthenticationDomainRel!]!getDomainsForTenantManagement(tenantId:String!):[TenantManagementDomainRel!]!getFederatedOIDCProviderById(federatedOIDCProviderId:String!):FederatedOIDCProvider getFederatedOIDCProviderDomainRels(domain:String federatedOIDCProviderId:String):[FederatedOIDCProviderDomainRel!]!getFederatedOIDCProviders(tenantId:String):[FederatedOIDCProvider!]!getLegacyUserMigrationConfiguration(tenantId:String!):TenantLegacyUserMigrationConfig getMarkForDeleteById(markForDeleteId:String!):MarkForDelete getRateLimitServiceGroupById(serviceGroupId:String!):RateLimitServiceGroup getRateLimitServiceGroups(tenantId:String):[RateLimitServiceGroup!]!getRateLimitTenantRelViews(rateLimitServiceGroupId:String tenantId:String):[TenantRateLimitRelView!]!getRateLimitTenantRels(rateLimitServiceGroupId:String tenantId:String):[TenantRateLimitRel!]!getRedirectURIs(clientId:String!):[String!]!getRootTenant:Tenant!getRunningJobs:JobData!getSchedulerLocks:[SchedulerLock]getScope(filterBy:ScopeFilterCriteria!tenantId:String!):[Scope!]!getScopeAccessRuleSchemaById(scopeAccessRuleSchemaId:String):ScopeAccessRuleSchema getScopeAccessRuleSchemas:[ScopeAccessRuleSchema!]!getScopeById(scopeId:String!):Scope getScopeTranslation(languageCode:String!scopeId:String!):ScopeTranslation getScopeTranslations(scopeId:String!):[ScopeTranslation!]!getSecretValue(objectId:String!objectType:SecretObjectType!):String getSigningKeyById(signingKeyId:String!):SigningKey getSigningKeys(tenantId:String):[SigningKey!]!getStateProvinceRegions(countryCode:String!):[StateProvinceRegion!]!getSystemSettings:SystemSettings!getTenantById(tenantId:String!):Tenant getTenantLoginFailurePolicy(tenantId:String!):TenantLoginFailurePolicy getTenantLookAndFeel(tenantId:String!):TenantLookAndFeel getTenantMetaData(tenantId:String!):TenantMetaData getTenantPasswordConfig(tenantId:String!):TenantPasswordConfig getTenants(federatedOIDCProviderId:String scopeId:String tenantIds:[String!]):[Tenant!]!getTokenEnrichmentConfiguration(clientId:String!):TokenEnrichmentConfiguration getUserAuthorizationGroups(userId:String!):[AuthorizationGroup!]!getUserById(userId:String!):User getUserMFARels(userId:String!):[UserMFARel!]!getUserRecoveryEmail(userId:String!):UserRecoveryEmail getUserScopes(tenantId:String!userId:String!):[Scope!]!getUserSessions(userId:String!):[UserSession!]!getUserTenantRels(userId:String!):[UserTenantRelView!]!getUsers(tenantId:String):[User!]!lookahead(term:String!):[LookaheadResult!]!me(isMyProfileView:Boolean):PortalUserProfile relSearch(relSearchInput:RelSearchInput!):RelSearchResults!search(searchInput:SearchInput!):ObjectSearchResults!systemInitializationReady:SystemInitializationReadyResponse!}type RateLimit{ratelimitid:String!ratelimitname:String!servicegroupid:String!}type RateLimitServiceGroup{markForDelete:Boolean!servicegroupdescription:String servicegroupid:String!servicegroupname:String!}input RateLimitServiceGroupCreateInput{servicegroupdescription:String servicegroupname:String!}input RateLimitServiceGroupUpdateInput{servicegroupdescription:String servicegroupid:String!servicegroupname:String!}type RecaptchaMetaData{captchaEnabled:Boolean!recaptchaSiteKey:String!useCaptchaV3:Boolean!useEnterpriseCaptcha:Boolean!}type RefreshData{certificateThumbprint:String clientId:String!codeChallenge:String codeChallengeMethod:String expiresAtMs:Float!redirecturi:String!refreshCount:Int!refreshToken:String!refreshTokenClientType:String!scope:String!tenantId:String!userId:String!}enum RegistrationState{ADD_DURESS_PASSWORD_OPTIONAL ADD_RECOVERY_EMAIL_OPTIONAL CANCELLED COMPLETED CONFIGURE_PHONE_NUMBER_VALIDATION_OPTIONAL CONFIGURE_PHONE_NUMBER_VALIDATION_REQUIRED CONFIGURE_SECURITY_KEY_OPTIONAL CONFIGURE_SECURITY_KEY_REQUIRED CONFIGURE_TOTP_OPTIONAL CONFIGURE_TOTP_REQUIRED ERROR EXPIRED REDIRECT_BACK_TO_APPLICATION REDIRECT_TO_IAM_PORTAL UNREGISTERED VALIDATE_EMAIL VALIDATE_PHONE_NUMBER VALIDATE_RECOVERY_EMAIL VALIDATE_SECURITY_KEY VALIDATE_TOTP}input RelSearchInput{childid:String childids:[String]childtype:SearchResultType owningtenantid:String page:Int!parentid:String parenttype:SearchResultType perPage:Int!sortDirection:String sortField:String term:String}type RelSearchResultItem{childdescription:String childid:String!childname:String!childtype:SearchResultType!owningtenantid:String!owningtenantname:String parentid:String!parentname:String parenttype:SearchResultType!}type RelSearchResults{endtime:Float!page:Int!perpage:Int!resultlist:[RelSearchResultItem!]!starttime:Float!took:Int!total:Int!}type SchedulerLock{lockExpiresAtMS:Float!lockInstanceId:String!lockName:String!lockStartTimeMS:Float!}type Scope{markForDelete:Boolean!scopeDescription:String!scopeId:String!scopeName:String!scopeUse:String!}type ScopeAccessRuleSchema{schemaVersion:Int!scopeAccessRuleSchema:String!scopeAccessRuleSchemaId:String!scopeId:String!}input ScopeAccessRuleSchemaCreateInput{schema:String!scopeId:String!}input ScopeAccessRuleSchemaUpdateInput{schema:String!scopeAccessRuleSchemaId:String!scopeId:String!}input ScopeCreateInput{scopeAccessRuleSchemaId:String scopeDescription:String!scopeName:String!scopeUse:String!}enum ScopeFilterCriteria{AVAILABLE EXISTING}type ScopeTranslation{languageCode:String!scopeId:String!translation:String!}input ScopeTranslationInput{languageCode:String!scopeId:String!translation:String!}input ScopeUpdateInput{scopeAccessRuleSchemaId:String scopeDescription:String!scopeId:String!scopeName:String!}input SearchFilterInput{objectType:SearchFilterInputObjectType!objectValue:String!}enum SearchFilterInputObjectType{AUTHENTICATION_GROUP_ID AUTHORIZATION_GROUP_ID CLIENT_ID TENANT_ID USER_ID}input SearchInput{filters:[SearchFilterInput]page:Int!perPage:Int!resultType:SearchResultType sortDirection:String sortField:String term:String}enum SearchRelType{AUTHENTICATION_GROUP_USER_REL AUTHORIZATION_GROUP_USER_REL CLIENT_AUTHENTICATION_GROUP_REL}enum SearchResultType{ACCESS_CONTROL AUTHENTICATION_GROUP AUTHORIZATION_GROUP CLIENT KEY OIDC_PROVIDER RATE_LIMIT TENANT USER}enum SecondFactorType{SECURITY_KEY TOTP}enum SecretObjectType{CAPTCHA_API_KEY CLIENT_SECRET OIDC_PROVIDER_CLIENT_SECRET PRIVATE_KEY PRIVATE_KEY_PASSWORD}type SecretShare{expiresAtMs:Float!objectId:String!otp:String!secretShareId:String!secretShareObjectType:SecretShareObjectType!}enum SecretShareObjectType{OIDC_PROVIDER}type SigningKey{createdAtMs:Float!expiresAtMs:Float!keyCertificate:String keyId:String!keyName:String!keyPassword:String keyStatus:String!keyType:String!keyTypeId:String keyUse:String!markForDelete:Boolean!privateKeyPkcs8:String!publicKey:String statusId:String tenantId:String!}input SigningKeyCreateInput{expiresAtMs:Float keyCertificate:String keyName:String!keyPassword:String keyType:String!keyTypeId:String keyUse:String!privateKeyPkcs8:String!publicKey:String tenantId:String!}input SigningKeyUpdateInput{keyId:String!keyName:String keyUse:String status:String!}type StateProvinceRegion{isoCountryCode:String!isoEntryCode:String!isoEntryName:String!isoSubsetType:String!}type SuccessfulLoginResponse{challenge:String mfaEnabled:Boolean!mfaType:String userId:String!}type SystemCategory{categoryEntries:[CategoryEntry!]!categoryName:String!}input SystemInitializationInput{captchaConfigInput:CaptchaConfigInput rootAuthenticationDomain:String!rootAuthorizationGroupInput:AuthorizationGroupCreateInput!rootClientInput:ClientCreateInput!rootFederatedOIDCProviderInput:FederatedOIDCProviderCreateInput rootReadOnlyAuthorizationGroupInput:AuthorizationGroupCreateInput rootTenantInput:TenantCreateInput!rootUserCreateInput:UserCreateInput!systemSettingsInput:SystemSettingsUpdateInput!}type SystemInitializationReadyResponse{systemInitializationReady:Boolean!systemInitializationReadyErrors:[ErrorDetail!]systemInitializationWarnings:[ErrorDetail!]}type SystemInitializationResponse{systemInitializationErrors:[ErrorDetail!]tenant:Tenant}type SystemSettings{allowDuressPassword:Boolean!allowRecoveryEmail:Boolean!auditRecordRetentionPeriodDays:Int contactEmail:String enablePortalAsLegacyIdp:Boolean!noReplyEmail:String rootClientId:String!smsAlertOnAccountStatusChange:Boolean!smsAlertOnEmailChange:Boolean!smsAlertOnMFADeviceChange:Boolean!smsAlertOnPasswordChange:Boolean!smsAllowPasswordResetOtp:Boolean!smsCallbackServiceEnabled:Boolean!smsCallbackUri:String smsSenderName:String softwareVersion:String!systemCategories:[SystemCategory!]!systemId:String!}input SystemSettingsUpdateInput{allowDuressPassword:Boolean!allowRecoveryEmail:Boolean!auditRecordRetentionPeriodDays:Int contactEmail:String enablePortalAsLegacyIdp:Boolean!noReplyEmail:String rootClientId:String!smsAlertOnAccountStatusChange:Boolean!smsAlertOnEmailChange:Boolean!smsAlertOnMFADeviceChange:Boolean!smsAlertOnPasswordChange:Boolean!smsAllowPasswordResetOtp:Boolean!smsCallbackServiceEnabled:Boolean!smsCallbackUri:String smsSenderName:String}type TOTPResponse{uri:String!userMFARel:UserMFARel!}type Tenant{allowAnonymousUsers:Boolean!allowForgotPassword:Boolean!allowLoginByPhoneNumber:Boolean!allowSocialLogin:Boolean!allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!defaultRateLimit:Int defaultRateLimitPeriodMinutes:Int enabled:Boolean!federatedAuthenticationConstraint:String!federatedauthenticationconstraintid:String markForDelete:Boolean!migrateLegacyUsers:Boolean!registrationRequireCaptcha:Boolean!registrationRequireTermsAndConditions:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:String!tenanttypeid:String termsAndConditionsUri:String verifyEmailOnSelfRegistration:Boolean!verifyPhoneNumberOnSelfRegistration:Boolean!}input TenantAnonymousUserConfigInput{defaultcountrycode:String defaultlanguagecode:String tenantId:String!tokenttlseconds:Int!}type TenantAnonymousUserConfiguration{defaultcountrycode:String defaultlanguagecode:String tenantId:String!tokenttlseconds:Int!}type TenantAvailableScope{accessRuleId:String scopeId:String!tenantId:String!}input TenantCreateInput{allowAnonymousUsers:Boolean!allowForgotPassword:Boolean!allowLoginByPhoneNumber:Boolean!allowSocialLogin:Boolean!allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!defaultRateLimit:Int defaultRateLimitPeriodMinutes:Int enabled:Boolean!federatedAuthenticationConstraint:String!migrateLegacyUsers:Boolean!registrationRequireCaptcha:Boolean!registrationRequireTermsAndConditions:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:String!termsAndConditionsUri:String verifyEmailOnSelfRegistration:Boolean!verifyPhoneNumberOnSelfRegistration:Boolean!}type TenantLegacyUserMigrationConfig{authenticationUri:String!tenantId:String!userProfileUri:String!usernameCheckUri:String!}input TenantLegacyUserMigrationConfigInput{authenticationUri:String!tenantId:String!userProfileUri:String!usernameCheckUri:String!}type TenantLoginFailurePolicy{failureThreshold:Int!loginFailurePolicyType:String!maximumLoginFailures:Int pauseDurationMinutes:Int tenantId:String!}input TenantLoginFailurePolicyInput{failureThreshold:Int!loginFailurePolicyType:String!maximumLoginFailures:Int pauseDurationMinutes:Int tenantId:String!}type TenantLookAndFeel{buttonbackgroundcolor:String buttonborderradius:String buttontextcolor:String footerbackgroundcolor:String footerlinks:[FooterLink!]!footertextcolor:String headerbackgroundcolor:String headerlogoposition:String headertext:String headertextcolor:String imagepanelposition:String inputbordercolor:String layouttype:String linkcolor:String logouri:String marketingimageuri:String marketingtext:String pagebackgroundcolor:String tenantid:String!}input TenantLookAndFeelInput{buttonbackgroundcolor:String buttonborderradius:String buttontextcolor:String footerbackgroundcolor:String footerlinks:[FooterLinkInput]footertextcolor:String headerbackgroundcolor:String headerlogoposition:String headertext:String headertextcolor:String imagepanelposition:String inputbordercolor:String layouttype:String linkcolor:String logouri:String marketingimageuri:String marketingtext:String pagebackgroundcolor:String tenantid:String!}type TenantManagementDomainRel{domain:String!tenantId:String!}type TenantMetaData{recaptchaMetaData:RecaptchaMetaData socialOIDCProviders:[FederatedOIDCProvider!]!systemSettings:SystemSettings!tenant:Tenant!tenantLookAndFeel:TenantLookAndFeel}type TenantPasswordConfig{maxRepeatingCharacterLength:Int mfaTypesRequired:String passwordHashingAlgorithm:String!passwordHistoryPeriod:Int passwordMaxLength:Int!passwordMinLength:Int!passwordRotationPeriodDays:Int requireLowerCase:Boolean!requireMfa:Boolean!requireNumbers:Boolean!requireSpecialCharacters:Boolean!requireUpperCase:Boolean!specialCharactersAllowed:String tenantId:String!}type TenantRateLimitRel{allowUnlimitedRate:Boolean rateLimit:Int rateLimitPeriodMinutes:Int servicegroupid:String!tenantId:String!}type TenantRateLimitRelView{allowUnlimitedRate:Boolean rateLimit:Int rateLimitPeriodMinutes:Int servicegroupid:String!servicegroupname:String!tenantId:String!tenantName:String!}type TenantRestrictedAuthenticationDomainRel{domain:String!tenantId:String!}type TenantSelectorData{tenantId:String!tenantName:String!}type TenantSupportedClaimRel{claim:String!tenantId:String!}input TenantUpdateInput{allowAnonymousUsers:Boolean!allowForgotPassword:Boolean!allowLoginByPhoneNumber:Boolean!allowSocialLogin:Boolean!allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!defaultRateLimit:Int defaultRateLimitPeriodMinutes:Int enabled:Boolean!federatedAuthenticationConstraint:String!migrateLegacyUsers:Boolean!registrationRequireCaptcha:Boolean!registrationRequireTermsAndConditions:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:String!termsAndConditionsUri:String verifyEmailOnSelfRegistration:Boolean!verifyPhoneNumberOnSelfRegistration:Boolean!}type TokenEnrichmentConfiguration{clientId:String!failureMode:TokenEnrichmentFailureMode!timeoutMs:Int!uri:String!}input TokenEnrichmentConfigurationInput{clientId:String!failureMode:TokenEnrichmentFailureMode!timeoutMs:Int!uri:String!}enum TokenEnrichmentFailureMode{FAIL_CLOSED FAIL_OPEN}type User{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!federatedOIDCProviderSubjectId:String firstName:String!forcePasswordResetAfterAuthentication:Boolean!lastName:String!locked:Boolean!markForDelete:Boolean!middleName:String nameOrder:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String recoveryEmail:UserRecoveryEmail stateRegionProvince:String userId:String!}type UserAuthenticationState{authenticationSessionToken:String!authenticationState:AuthenticationState!authenticationStateOrder:Int!authenticationStateStatus:String!deviceCodeId:String expiresAtMs:Float!preAuthToken:String returnToUri:String tenantId:String!userId:String!}type UserAuthenticationStateResponse{accessToken:String authenticationError:ErrorDetail availableTenants:[TenantSelectorData!]passwordConfig:TenantPasswordConfig tokenExpiresAtMs:Float totpSecret:String uri:String userAuthenticationState:UserAuthenticationState!}input UserCreateInput{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!federatedOIDCProviderSubjectId:String firstName:String!lastName:String!locked:Boolean!middleName:String nameOrder:String!password:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String stateRegionProvince:String termsAndConditionsAccepted:Boolean!}type UserCredential{dateCreatedMs:Float!hashedPassword:String!hashingAlgorithm:String!salt:String!userId:String!}type UserFailedLogin{failureAtMs:Float!failureCount:Float!nextLoginNotBefore:Float!userId:String!}type UserFailedPasswordResetAttempts{failureCount:Int!userId:String!}type UserMFARel{fido2CredentialId:String fido2KeySupportsCounters:Boolean fido2PublicKey:String fido2PublicKeyAlgorithm:Int fido2Transports:String mfaType:String!primaryMfa:Boolean!totpHashAlgorithm:String totpSecret:String userId:String!}type UserProfileChangeResponse{profileChangeError:ErrorDetail profileChangeState:UserProfileChangeState!}type UserProfileChangeState{changeOrder:Int!changeProfileSessionToken:String!changeStateStatus:String!expiresAtMs:Float!profileProperty:ProfileProperty!profilePropertyValue:String!profileState:ProfileState!userId:String!}type UserRecoveryEmail{email:String!emailVerified:Boolean!userId:String!}type UserRegistrationState{deviceCodeId:String email:String!expiresAtMs:Float!preAuthToken:String registrationSessionToken:String!registrationState:RegistrationState!registrationStateOrder:Int!registrationStateStatus:String!tenantId:String!userId:String!}type UserRegistrationStateResponse{accessToken:String registrationError:ErrorDetail tokenExpiresAtMs:Float totpSecret:String uri:String userRegistrationState:UserRegistrationState!}type UserScopeRel{scopeId:String!tenantId:String!userId:String!}type UserSession{clientId:String!clientName:String!tenantId:String!tenantName:String!userId:String!}type UserTenantRel{enabled:Boolean!relType:String!tenantId:String!userId:String!}type UserTenantRelView{relType:String!tenantId:String!tenantName:String!userId:String!}type UserTermsAndConditionsAccepted{acceptedAtMs:Float!tenantId:String!userId:String!}input UserUpdateInput{address:String addressLine1:String city:String countryCode:String domain:String!email:String!emailVerified:Boolean!enabled:Boolean!federatedOIDCProviderSubjectId:String firstName:String!lastName:String!locked:Boolean!middleName:String nameOrder:String!phoneNumber:String phoneNumberVerified:Boolean!postalCode:String preferredLanguageCode:String stateRegionProvince:String userId:String!}`);

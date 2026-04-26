@@ -5,7 +5,7 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { ME_QUERY, TENANT_META_DATA_QUERY, USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { Alert, Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Backdrop, Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { getDefaultLanguageCodeDef, getDefaultCountryCodeDef } from "@/utils/client-utils";
 import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI, USER_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
@@ -22,8 +22,15 @@ import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined
 import { DELETE_RECOVERY_EMAIL_MUTATION, FIDO_KEY_DELETION_MUTATION, SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Link from "next/link";
 import { containsScope } from "@/utils/authz-utils";
-import EmailEdit, { StateTransition } from "./email-edit";
+import EmailEdit from "./email-edit";
 import { useIntl } from 'react-intl';
+import PhoneNumberEdit from "./phone-number-edit";
+
+
+export enum ProfileStateChangeTransition {
+    STATE_CHANGE_SUBMITTED,
+    STATE_CHANGE_RECEIVED
+}
 
 
 const MyProfile: React.FC = () => {
@@ -42,7 +49,7 @@ const MyProfile: React.FC = () => {
     }
     const intl = useIntl();
 
-    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "850px";
+    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "1100px";
 
     const initInput: UserUpdateInput = {
         domain: "",
@@ -83,6 +90,7 @@ const MyProfile: React.FC = () => {
     const [showConfirmDeleteRecoveryEmailDialog, setShowConfirmDeleteRecoveryEmailDialog] = React.useState<boolean>(false);
     const [showEmailEditDialog, setShowEmailEditDialog] = React.useState<boolean>(false);
     const [showAddRecoveryEmailDialog, setShowAddRecoveryEmailDialog] = React.useState<boolean>(false);
+    const [showPhoneNumberEditDialog, setShowPhoneNumberEditDialog] = React.useState<boolean>(false);
 
     const {  } = useQuery(ME_QUERY, {
         variables: {
@@ -289,7 +297,7 @@ const MyProfile: React.FC = () => {
 
             <Paper
                 elevation={4}
-                sx={{ margin: "16px 0px", padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
+                sx={{ margin: "16px 0px", padding: 2, height: "100%", maxWidth: maxWidth, width: "100%" }}
             >
                 {showMFADeletionConfirmationDialog &&
                     <Dialog
@@ -360,8 +368,8 @@ const MyProfile: React.FC = () => {
                                     refetch();
                                 }}
                                 userId={userInput.userId}
-                                stateTransitionListener={(stateTransition: StateTransition) => {
-                                    if(stateTransition === StateTransition.STATE_CHANGE_SUBMITTED){
+                                stateTransitionListener={(stateTransition: ProfileStateChangeTransition) => {
+                                    if(stateTransition === ProfileStateChangeTransition.STATE_CHANGE_SUBMITTED){
                                         setShowMutationBackdrop(true);
                                     }
                                     else{
@@ -371,6 +379,32 @@ const MyProfile: React.FC = () => {
                             />
                         </DialogContent>
 
+                    </Dialog>
+                }
+                {showPhoneNumberEditDialog &&
+                    <Dialog
+                        open={showPhoneNumberEditDialog}
+                        onClose={() => setShowPhoneNumberEditDialog(false)}
+                    >
+                        <DialogContent>
+                            <PhoneNumberEdit
+                                onCancel={() => setShowPhoneNumberEditDialog(false)}
+                                onSuccess={() => {
+                                    setShowPhoneNumberEditDialog(false);
+                                    refetch();
+                                }}
+                                userId={userInput.userId}
+                                stateTransitionListener={(stateTransition: ProfileStateChangeTransition) => {
+                                    if(stateTransition === ProfileStateChangeTransition.STATE_CHANGE_SUBMITTED){
+                                        setShowMutationBackdrop(true);
+                                    }
+                                    else{
+                                        setShowMutationBackdrop(false);
+                                    }
+                                }}
+
+                            />
+                        </DialogContent>
                     </Dialog>
                 }
                 {showAddRecoveryEmailDialog &&
@@ -388,8 +422,8 @@ const MyProfile: React.FC = () => {
                                     refetch();
                                 }}
                                 userId={userInput.userId}
-                                stateTransitionListener={(stateTransition: StateTransition) => {
-                                    if(stateTransition === StateTransition.STATE_CHANGE_SUBMITTED){
+                                stateTransitionListener={(stateTransition: ProfileStateChangeTransition) => {
+                                    if(stateTransition === ProfileStateChangeTransition.STATE_CHANGE_SUBMITTED){
                                         setShowMutationBackdrop(true);
                                     }
                                     else{
@@ -424,7 +458,8 @@ const MyProfile: React.FC = () => {
                                 </Alert>
                             }
                             <Grid2 container size={12} spacing={2}>
-                                <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
+                                {/* LEFT COLUMN */}
+                                <Grid2 size={{ xs: 12, md: 6 }}>
                                     <Grid2 marginBottom={"8px"}>
                                         <div>First Name</div>
                                         <TextField name="firstName" id="firstName"
@@ -434,7 +469,7 @@ const MyProfile: React.FC = () => {
                                             fullWidth={true} size="small"
                                         />
                                     </Grid2>
-                                    <Grid2 marginBottom={"8px"}>
+                                    <Grid2 marginBottom={"16px"}>
                                         <div>Last Name</div>
                                         <TextField name="lastName" id="lastName"
                                             disabled={profileIs3rdPartyControlled || isReadOnly}
@@ -443,28 +478,13 @@ const MyProfile: React.FC = () => {
                                             fullWidth={true} size="small"
                                         />
                                     </Grid2>
-                                </Grid2>
-                                <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                    <Grid2>
-                                        <Grid2 paddingLeft={"8px"} marginBottom={"16px"} container size={12}>
-                                            <Grid2 size={12}>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Switch
-                                                            name="enabled"
-                                                            disabled={true}
-                                                            checked={userInput.enabled}
-                                                        />
-                                                    }
-                                                    label="Enabled"
-                                                    sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
-                                                    labelPlacement="start"
-                                                />
-                                            </Grid2>
-                                        </Grid2>
+                                    <Grid2 marginBottom={"16px"}>
+                                        <Chip
+                                            label={userInput.enabled ? "Account Active" : "Account Disabled"}
+                                            color={userInput.enabled ? "success" : "error"}
+                                            size="small"
+                                        />
                                     </Grid2>
-                                </Grid2>
-                                <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Middle Name</div>
                                         <TextField name="middleName" id="middleName"
@@ -506,22 +526,21 @@ const MyProfile: React.FC = () => {
                                         >
                                             <MenuItem value={NAME_ORDER_EASTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_EASTERN)}</MenuItem>
                                             <MenuItem value={NAME_ORDER_WESTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_WESTERN)}</MenuItem>
-
                                         </Select>
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>
-                                        <div>Email</div>                                        
+                                        <div>Email</div>
                                         <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
                                             <Grid2 size={profileIs3rdPartyControlled || isReadOnly ? 12 : 11}>
                                                 <TextField name="email" id="email"
                                                     disabled={true}
-                                                    value={userInput.email}                                                    
+                                                    value={userInput.email}
                                                     fullWidth={true} size="small"
                                                 />
                                             </Grid2>
                                             {!(profileIs3rdPartyControlled || isReadOnly) &&
                                                 <Grid2 size={1}>
-                                                    <EditOutlinedIcon 
+                                                    <EditOutlinedIcon
                                                         sx={{cursor: "pointer"}}
                                                         onClick={() => {
                                                             setShowEmailEditDialog(true);
@@ -547,26 +566,26 @@ const MyProfile: React.FC = () => {
                                     </Grid2>
                                     {!recoveryEmail && tenantBean.getTenantMetaData().systemSettings.allowRecoveryEmail === true && !profileIs3rdPartyControlled &&
                                         <Grid2 marginTop={"24px"} marginBottom={"24px"} container spacing={1}>
-                                            <Grid2  size={11}>
+                                            <Grid2 size={11}>
                                                 <span style={{backgroundColor: DEFAULT_BACKGROUND_COLOR, color: "white", padding: "5px 16px", borderRadius: "16px" }}>
                                                     Add a recovery email
                                                 </span>
                                             </Grid2>
                                             <Grid2 size={1}>
-                                                <MailOutlineOutlinedIcon 
+                                                <MailOutlineOutlinedIcon
                                                     sx={{cursor: "pointer"}}
                                                     onClick={() => {
                                                         setShowAddRecoveryEmailDialog(true);
                                                     }}
                                                 />
-                                            </Grid2>                                            
+                                            </Grid2>
                                         </Grid2>
                                     }
-                                    {recoveryEmail &&  
+                                    {recoveryEmail &&
                                         <Grid2 marginBottom={"16px"}>
-                                            { !(profileIs3rdPartyControlled || isReadOnly) &&
+                                            {!(profileIs3rdPartyControlled || isReadOnly) &&
                                                 <Grid2 size={12} display={"flex"} justifyContent={"center"}>
-                                                    <SwapVertOutlinedIcon 
+                                                    <SwapVertOutlinedIcon
                                                         sx={{
                                                             cursor: "pointer",
                                                             border: "solid 1px lightgrey",
@@ -586,13 +605,13 @@ const MyProfile: React.FC = () => {
                                                 <Grid2 size={profileIs3rdPartyControlled || isReadOnly ? 12 : 11}>
                                                     <TextField name="recoveryEmail" id="recoveryEmail"
                                                         disabled={true}
-                                                        value={recoveryEmail.email}                                                        
+                                                        value={recoveryEmail.email}
                                                         fullWidth={true} size="small"
                                                     />
-                                                    </Grid2>
+                                                </Grid2>
                                                 {!(profileIs3rdPartyControlled || isReadOnly) &&
                                                     <Grid2 size={1}>
-                                                        <DeleteForeverOutlinedIcon 
+                                                        <DeleteForeverOutlinedIcon
                                                             sx={{cursor: "pointer"}}
                                                             onClick={() => {
                                                                 setShowConfirmDeleteRecoveryEmailDialog(true);
@@ -600,7 +619,7 @@ const MyProfile: React.FC = () => {
                                                         />
                                                     </Grid2>
                                                 }
-                                            </Grid2>                                            
+                                            </Grid2>
                                             <Grid2 size={12}>
                                                 <FormControlLabel
                                                     control={
@@ -614,63 +633,63 @@ const MyProfile: React.FC = () => {
                                                     sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
                                                     labelPlacement="start"
                                                 />
-                                            </Grid2>                                            
+                                            </Grid2>
                                         </Grid2>
                                     }
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Phone Number</div>
                                         <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
-                                            {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&                                                        
+                                            {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&
                                                 <Typography variant="caption" color="text.secondary">
                                                     ({intl.formatMessage({id: "OPTIONAL_PHONE_NUMBER_VALIDATION_DISCLAIMER"})})
-                                                </Typography>                                                        
+                                                </Typography>
                                             }
                                             {profileIs3rdPartyControlled || isReadOnly &&
                                                 <Grid2 size={12}>
                                                     <TextField name="phoneNumber" id="phoneNumber"
                                                         disabled={true}
                                                         value={userInput.phoneNumber}
-                                                        fullWidth={true} 
-                                                        size="small"                                                
+                                                        fullWidth={true}
+                                                        size="small"
                                                     />
                                                 </Grid2>
                                             }
                                             {/* If the user CAN edit their phone number, then how to display? If there is an SMS callback enalbed,
                                                 then only allow the user to edit via the validation dialog. If there is NOT an SMS callback enabled
-                                                then show the user the standard telephone input control. Note that this has nothing to do with 
+                                                then show the user the standard telephone input control. Note that this has nothing to do with
                                                 how the TENANT is configured with respect to the validation of phone number, but the global SYSTEM
                                                 SETTINGS take precedence on the user profile page. The reasons are:
                                                     1.  It confirms ownership at the point of intent. The user is actively making a change, which is
-                                                        the right moment to confirm they own the number. Storing an unverified number and waiting 
+                                                        the right moment to confirm they own the number. Storing an unverified number and waiting
                                                         for a policy trigger means we may never know if it's even real.
-                                                    2.  It avoids confusing gaps. If a user adds a phone number and then tries to log in by 
-                                                        phone at a tenant that allows it, getting blocked because the number is unverified is 
+                                                    2.  It avoids confusing gaps. If a user adds a phone number and then tries to log in by
+                                                        phone at a tenant that allows it, getting blocked because the number is unverified is
                                                         confusing, they will wonder why their phone number "doesn't work" when they already set it.
-                                                    3.  It keeps the mid-login validation flow as the exception, not the rule. That flow exists 
-                                                        for cases we cannot control (policy changes, provisioned accounts). Profile edits are 
+                                                    3.  It keeps the mid-login validation flow as the exception, not the rule. That flow exists
+                                                        for cases we cannot control (policy changes, provisioned accounts). Profile edits are
                                                         something we can control, so we should handle them cleanly upfront
                                             */}
-                                            {!(profileIs3rdPartyControlled || isReadOnly) && tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&                                                
+                                            {!(profileIs3rdPartyControlled || isReadOnly) && tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled === true &&
                                                 <>
                                                     <Grid2 size={11}>
                                                         <TextField name="phoneNumber" id="phoneNumber"
                                                             disabled={true}
                                                             value={userInput.phoneNumber}
-                                                            fullWidth={true} 
-                                                            size="small"                                                
+                                                            fullWidth={true}
+                                                            size="small"
                                                         />
                                                     </Grid2>
                                                     <Grid2 size={1}>
-                                                        <EditOutlinedIcon 
+                                                        <EditOutlinedIcon
                                                             sx={{cursor: "pointer"}}
                                                             onClick={() => {
-                                                                //setShowPhoneNumberEditDialog(true);
+                                                                setShowPhoneNumberEditDialog(true);
                                                             }}
                                                         />
                                                     </Grid2>
-                                                </>                                                    
+                                                </>
                                             }
-                                            {!(profileIs3rdPartyControlled || isReadOnly) && tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled !== true &&                                                
+                                            {!(profileIs3rdPartyControlled || isReadOnly) && tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled !== true &&
                                                 <>
                                                     <Grid2 size={12}>
                                                         <MuiTelInput
@@ -687,7 +706,7 @@ const MyProfile: React.FC = () => {
                                                             size="small"
                                                         />
                                                     </Grid2>
-                                                </>                                                    
+                                                </>
                                             }
                                         </Grid2>
                                     </Grid2>
@@ -703,8 +722,11 @@ const MyProfile: React.FC = () => {
                                             label="Phone Number Verified"
                                             sx={{ margin: "4px", justifyContent: 'space-between', fontSize: "1.15em", width: '100%' }}
                                             labelPlacement="start"
-                                        />                                        
+                                        />
                                     </Grid2>
+                                </Grid2>
+                                {/* RIGHT COLUMN */}
+                                <Grid2 size={{ xs: 12, md: 6 }}>
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Preferred Language</div>
                                         <Autocomplete
@@ -739,8 +761,83 @@ const MyProfile: React.FC = () => {
                                             fullWidth={true} size="small"
                                         />
                                     </Grid2>
+                                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'grey.50', border: '1px solid', borderColor: 'divider', marginBottom: '24px' }}>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Address</div>
+                                            <TextField name="address" id="address"
+                                                disabled={profileIs3rdPartyControlled || isReadOnly}
+                                                value={userInput.address} fullWidth={true} size="small"
+                                                onChange={(evt) => { userInput.address = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>(Optional) Apartment, suite, unit, building, floor</div>
+                                            <TextField name="addressline1" id="addressline1"
+                                                disabled={profileIs3rdPartyControlled || isReadOnly}
+                                                value={userInput.addressLine1}
+                                                onChange={(evt) => { userInput.addressLine1 = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
+                                                fullWidth={true} size="small"
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>City</div>
+                                            <TextField name="city" id="city"
+                                                disabled={profileIs3rdPartyControlled || isReadOnly}
+                                                value={userInput.city}
+                                                onChange={(evt) => { userInput.city = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
+                                                fullWidth={true} size="small"
+                                            />
+                                        </Grid2>
+                                        <Grid2 size={12} marginBottom={"16px"}>
+                                            <div>Country</div>
+                                            <Autocomplete
+                                                disabled={profileIs3rdPartyControlled || isReadOnly}
+                                                id="countryCode"
+                                                sx={{ paddingTop: "8px" }}
+                                                size="small"
+                                                renderInput={(params) => <TextField {...params} label="" />}
+                                                options={
+                                                    [{ countryCode: "", country: "" }, ...COUNTRY_CODES].map(
+                                                        (cc: CountryCodeDef) => {
+                                                            return { id: cc.countryCode, label: cc.country }
+                                                        }
+                                                    )
+                                                }
+                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                onChange={(_, value: any) => {
+                                                    userInput.countryCode = value.id;
+                                                    setUserInput({ ...userInput });
+                                                    setMarkDirty(true);
+                                                }}
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>State / Province / Region</div>
+                                            <StateProvinceRegionSelector
+                                                countryCode={userInput.countryCode || undefined}
+                                                initValue={userInput.stateRegionProvince || undefined}
+                                                isDisabled={profileIs3rdPartyControlled || isReadOnly}
+                                                onChange={(stateProvinceRegion: StateProvinceRegion | null) => {
+                                                    userInput.stateRegionProvince = stateProvinceRegion ? stateProvinceRegion.isoEntryCode : "";
+                                                    setUserInput({ ...userInput });
+                                                    setMarkDirty(true);
+                                                }}
+                                                small={true}
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"}>
+                                            <div>Postal Code</div>
+                                            <TextField name="postalCode" id="postalCode"
+                                                disabled={profileIs3rdPartyControlled || isReadOnly}
+                                                value={userInput.postalCode}
+                                                fullWidth={true} size="small"
+                                                onChange={(evt) => { userInput.postalCode = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
+                                            />
+                                        </Grid2>
+                                    </Box>
                                     <Grid2 marginBottom={"16px"}>
-                                        <div style={{ textDecoration: "underline", marginBottom: "8px" }}>Multi-factor Authentication</div>                                        
+                                        <div style={{ textDecoration: "underline", marginBottom: "8px" }}>Multi-factor Authentication</div>
                                         {userMfaDataLoading &&
                                             <div></div>
                                         }
@@ -779,82 +876,6 @@ const MyProfile: React.FC = () => {
                                                 )}
                                             </React.Fragment>
                                         }
-                                    </Grid2>                                    
-                                </Grid2>
-                                <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div>Address</div>
-                                        <TextField name="address" id="address"
-                                            disabled={profileIs3rdPartyControlled || isReadOnly}
-                                            value={userInput.address} fullWidth={true} size="small"
-                                            onChange={(evt) => { userInput.address = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
-                                        />
-                                    </Grid2>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div>(Optional) Apartment, suite, unit, building, floor</div>
-                                        <TextField name="addressline1" id="addressline1"
-                                            disabled={profileIs3rdPartyControlled || isReadOnly}
-                                            value={userInput.addressLine1}
-                                            onChange={(evt) => { userInput.addressLine1 = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
-                                            fullWidth={true} size="small"
-                                        />
-                                    </Grid2>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div>City</div>
-                                        <TextField name="city" id="city"
-                                            disabled={profileIs3rdPartyControlled || isReadOnly}
-                                            value={userInput.city}
-                                            onChange={(evt) => { userInput.city = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
-                                            fullWidth={true} size="small"
-
-                                        />
-                                    </Grid2>
-                                    <Grid2 size={12} marginBottom={"16px"}>
-                                        <div>Country</div>
-                                        <Autocomplete
-                                            disabled={profileIs3rdPartyControlled || isReadOnly}
-                                            id="countryCode"
-                                            sx={{ paddingTop: "8px" }}
-                                            size="small"
-                                            renderInput={(params) => <TextField {...params} label="" />}
-                                            options={
-                                                [{ countryCode: "", country: "" }, ...COUNTRY_CODES].map(
-                                                    (cc: CountryCodeDef) => {
-                                                        return { id: cc.countryCode, label: cc.country }
-                                                    }
-                                                )
-                                            }
-                                            value={getDefaultCountryCodeDef(userInput.countryCode || "")}
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            onChange={(_, value: any) => {
-                                                userInput.countryCode = value.id;
-                                                setUserInput({ ...userInput });
-                                                setMarkDirty(true);
-                                            }}
-                                        />
-                                    </Grid2>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div>State / Province / Region</div>
-                                        <StateProvinceRegionSelector
-                                            countryCode={userInput.countryCode || undefined}
-                                            initValue={userInput.stateRegionProvince || undefined}
-                                            isDisabled={profileIs3rdPartyControlled || isReadOnly}
-                                            onChange={(stateProvinceRegion: StateProvinceRegion | null) => {
-                                                userInput.stateRegionProvince = stateProvinceRegion ? stateProvinceRegion.isoEntryCode : "";
-                                                setUserInput({ ...userInput });
-                                                setMarkDirty(true);
-                                            }}
-                                            small={true}
-                                        />
-                                    </Grid2>
-                                    <Grid2 marginBottom={"16px"}>
-                                        <div>Postal Code</div>
-                                        <TextField name="postalCode" id="postalCode"
-                                            disabled={profileIs3rdPartyControlled || isReadOnly}
-                                            value={userInput.postalCode}
-                                            fullWidth={true} size="small"
-                                            onChange={(evt) => { userInput.postalCode = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
-                                        />
                                     </Grid2>
                                 </Grid2>
                             </Grid2>
@@ -898,25 +919,6 @@ const MyProfile: React.FC = () => {
     )
 }
 
-// const Wrapper: React.FC = () => {
-//     return (
-//         <Suspense>
-//             <MyProfile />
-//         </Suspense>
-//     )
-// }
+
 
 export default MyProfile;
-// //export default Wrapper;
-
-// "use client"
-
-// const MyProfile: React.FC = () => {
-
-//     return (
-//         <div></div>
-//     )
-// }
-
-// export default MyProfile;
-

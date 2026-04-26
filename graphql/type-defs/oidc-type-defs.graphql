@@ -413,6 +413,7 @@ type FederatedOIDCProviderTenantRel {
 }
 
 type CaptchaConfig {
+    captchaEnabled: Boolean!
     alias: String!
     projectId: String
     siteKey: String!
@@ -912,6 +913,7 @@ type TenantMetaData {
 }
 
 type RecaptchaMetaData {
+    captchaEnabled: Boolean!
     recaptchaSiteKey: String!
     useEnterpriseCaptcha: Boolean!
     useCaptchaV3: Boolean!
@@ -1799,6 +1801,7 @@ input Fido2KeyAuthenticationInput {
 }
 
 input CaptchaConfigInput {
+    captchaEnabled: Boolean!
     alias: String!
     projectId: String
     siteKey: String!

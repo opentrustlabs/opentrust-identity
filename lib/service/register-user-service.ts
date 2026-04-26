@@ -884,7 +884,7 @@ class RegisterUserService extends IdentityService {
         }
 
         const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changePhoneNumberSessionToken);
-        const index: number = await this.validateProfileChangeStep(arrChangeStates, response, ProfileState.ValidateEmail);
+        const index: number = await this.validateProfileChangeStep(arrChangeStates, response, ProfileState.ValidatePhone);
         if(index < 0){
             return response;
         }
@@ -913,18 +913,10 @@ class RegisterUserService extends IdentityService {
         }
 
         // If we made it here, then we can update the phone number and set validation to true
-        if(currentState.profileProperty === ProfileProperty.Email){
+        if(currentState.profileProperty === ProfileProperty.PhoneNumber){
             user.phoneNumber = currentState.profilePropertyValue;
             user.phoneNumberVerified = true;
             await identityDao.updateUser(user);
-        }
-        else{
-            const userRecoveryEmail: UserRecoveryEmail = {
-                email: currentState.profilePropertyValue,
-                emailVerified: true,
-                userId: currentState.userId
-            }
-            await identityDao.addRecoveryEmail(userRecoveryEmail);
         }
         await identityDao.deleteConfirmationToken(token);
 
@@ -980,7 +972,7 @@ class RegisterUserService extends IdentityService {
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileChangeError = ERROR_CODES.EC00145;
+            response.profileChangeError = ERROR_CODES.EC00013;
             return response;            
         }
 
@@ -1073,7 +1065,7 @@ class RegisterUserService extends IdentityService {
         }
         
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileChangeError = ERROR_CODES.EC00145;
+            response.profileChangeError = ERROR_CODES.EC00013;
             return response;            
         }
         const domain: string = getDomainFromEmail(formattedEmail);

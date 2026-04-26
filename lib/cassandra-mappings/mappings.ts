@@ -302,6 +302,7 @@ export const CAPTCHA_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
         tables: ["captcha_config"],
         columns: {
             "alias": "alias",
+            "captchaenabled": "captchaEnabled",
 			"projectid": "projectId",
 			"sitekey": "siteKey",
 			"apikey": "apiKey",

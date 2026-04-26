@@ -726,6 +726,7 @@ create TABLE user_profile_change_state (
 
 create TABLE captcha_config (
     alias VARCHAR2(256) PRIMARY KEY,
+    captchaenabled NUMBER(1) NOT NULL,
     projectid VARCHAR2(128),
     sitekey VARCHAR2(256) NOT NULL,
     apikey VARCHAR2(256) NOT NULL,

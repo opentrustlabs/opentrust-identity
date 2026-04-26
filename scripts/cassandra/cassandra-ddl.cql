@@ -976,6 +976,7 @@ create TABLE user_profile_change_state (
 
 create TABLE captcha_config (
     alias TEXT PRIMARY KEY,
+    captchaenabled BOOLEAN,
     projectid TEXT,
     sitekey TEXT,
     apikey TEXT,
