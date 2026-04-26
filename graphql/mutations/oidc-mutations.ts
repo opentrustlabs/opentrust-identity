@@ -1244,6 +1244,7 @@ export const SET_CAPTCHA_CONFIG_MUTATION = gql(`
     mutation setCaptchaConfig($captchaConfigInput: CaptchaConfigInput!){
         setCaptchaConfig(captchaConfigInput: $captchaConfigInput) {
             alias
+            captchaEnabled
             projectId
         }
     }

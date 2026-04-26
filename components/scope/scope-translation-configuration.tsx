@@ -300,17 +300,19 @@ const ScopeTranslationConfiguration: React.FC<ScopeTranslationConfigurationProps
 
                 </Dialog>
             }
-            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{ cursor: "pointer" }}
-                        onClick={() => {
-                            setShowCreateDialog(true);
-                        }}
-                    />
-                    <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Translation</div>
+            {canEdit &&
+                <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <AddBoxIcon
+                            sx={{ cursor: "pointer" }}
+                            onClick={() => {
+                                setShowCreateDialog(true);
+                            }}
+                        />
+                        <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Translation</div>
+                    </Grid2>
                 </Grid2>
-            </Grid2>
+            }
             <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 {canEdit &&
                     <Grid2 size={1}></Grid2>

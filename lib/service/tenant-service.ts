@@ -405,7 +405,9 @@ class TenantService {
         const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
         const recaptchaMetaData: RecaptchaMetaData | null = captchaConfig ? 
             {
+                alias: captchaConfig.alias,
                 recaptchaSiteKey: captchaConfig.siteKey,
+                captchaEnabled: captchaConfig.captchaEnabled,
                 useCaptchaV3: captchaConfig.useCaptchaV3,
                 useEnterpriseCaptcha: captchaConfig.useEnterpriseCaptcha
             } : 
@@ -975,9 +977,9 @@ class TenantService {
         }
 
         if(captchaConfigInput.useCaptchaV3 && !captchaConfigInput.minScoreThreshold){
-            throw new GraphQLError(ERROR_CODES.EC00194.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00194}});            
-
+            throw new GraphQLError(ERROR_CODES.EC00194.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00194}});
         }
+        
         if(captchaConfigInput.minScoreThreshold && (captchaConfigInput.minScoreThreshold > 1 || captchaConfigInput.minScoreThreshold < 0)){
             throw new GraphQLError(ERROR_CODES.EC00195.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00195}});            
         }

@@ -267,7 +267,7 @@
 	"SELECT_TENANT": "Selecionar Locatário",
 	"SELECT_PASSWORD_RECOVERY_OPTION": "Selecione a sua opção de recuperação de palavra-passe",
 	"USE_PRIMARY_EMAIL": "Usar o meu principal e-mail",
-	"USE_RECOVERY_EMAI": "Tenho um e-mail de recuperação que quero utilizar",
+	"USE_RECOVERY_EMAIL": "Tenho um e-mail de recuperação que quero utilizar",
 	"SUBMIT": "Enviar",
 	"ENTER_EMAIL_OR_PHONE_NUMBER": "E-mail ou número de telefone",
 	"REGISTER": "Registrar",
@@ -372,5 +372,7 @@
     "ERROR_INVALID_PHONE_NUMBER_FORMAT": "The phone number does not have a valid format.",
     "ERROR_UNABLE_SEND_PHONE_NUMBER_VALIDATION_CODE": "A error occurred when sending a validation code due to a missing or invalid phone number.",
     "ERROR_SMS_NOT_ENABLED_FOR_PASSWORD_RESET_TOKEN": "Password reset tokens cannot be sent via SMS.",
-    "ERROR_SMS_NOT_ENABLED": "SMS is not enabled."
+    "ERROR_SMS_NOT_ENABLED": "SMS is not enabled.",
+    "USE_PHONE": "Use phone",
+    "PASSWORD_RESET_TOKEN_MESSAGE": "A verification code has been sent. Please enter it below. The code is valid for 60 minutes."
 }

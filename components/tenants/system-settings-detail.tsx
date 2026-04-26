@@ -514,12 +514,28 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.alias}
-                                                label="Alias"
+                                                label="reCaptcha Action Name"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            
+                                        <Grid2 size={12} marginBottom={"8px"}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={captchaConfigInput.useEnterpriseCaptcha === true}
+                                                        onChange={(_, checked: boolean) => {
+                                                            captchaConfigInput.useEnterpriseCaptcha = checked;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                            setCaptchaConfigMarkDirty(true);
+                                                        }}
+                                                    />
+                                                }
+                                                label="Use Enterprise ReCaptcha"
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"} size={12}>                                            
                                             <TextField
                                                 id="projectId" name="projectId"
                                                 onChange={(evt) => {
@@ -528,7 +544,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.projectId}
-                                                label="Project ID (Optional)"
+                                                label="Project ID (Required only for enterprise reCaptcha)"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
@@ -651,25 +667,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 label="Min. Score Threshold (for V3 ReCaptcha) 0.0 to 1.0"
                                                 fullWidth={true}
                                             />
-                                        </Grid2>
-                                        <Grid2 size={12} marginBottom={"8px"}>
-                                            <FormControlLabel
-                                                control={
-                                                    <Switch
-                                                        checked={captchaConfigInput.useEnterpriseCaptcha === true}
-                                                        onChange={(_, checked: boolean) => {
-                                                            captchaConfigInput.useEnterpriseCaptcha = checked;
-                                                            setCaptchaConfigInput({...captchaConfigInput});
-                                                            setCaptchaConfigMarkDirty(true);
-                                                        }}
-                                                    />
-                                                }
-                                                label="Use Enterprise ReCaptcha"
-                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
-                                                labelPlacement="start"
-                                            />
-                                        </Grid2>
-                                        
+                                        </Grid2>                                        
                                     </Grid2>
                                     <Grid2 size={12}>
                                         <DetailSectionActionHandler
@@ -687,7 +685,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 
                                             }}
                                             markDirty={captchaConfigMarkDirty}
-                                            disableSubmit={false}
+                                            disableSubmit={captchaConfigInput.useEnterpriseCaptcha === true && (!captchaConfigInput.projectId || captchaConfigInput.projectId.length < 1)}
                                             enableRestoreDefault={data && data.getCaptchaConfig !== null}
                                             restoreDefaultHandler={() => {
                                                 setShowConfirmRecaptchaRemoveDialogOpen(true);

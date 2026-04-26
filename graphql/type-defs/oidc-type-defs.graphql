@@ -913,6 +913,7 @@ type TenantMetaData {
 }
 
 type RecaptchaMetaData {
+    alias: String!
     captchaEnabled: Boolean!
     recaptchaSiteKey: String!
     useEnterpriseCaptcha: Boolean!

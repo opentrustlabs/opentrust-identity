@@ -1190,6 +1190,7 @@ export const MAX_TOKEN_ENRICHMENT_RESPONSE_SIZE_BYTES=1000;
 // ************************************************************************** //
 // For Version 3 of captcha, default to a score of 0.7 for bot detection
 export const DEFAULT_CAPTCHA_V3_MINIMUM_SCORE=0.7;
+export const DEFAULT_CAPTCHA_ACTION_NAME="registration";
 
 // ************************************************************************** //
 // 

@@ -508,7 +508,7 @@ const Login: React.FC<LoginProps>= ({
                                         checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.Email}
                                     />
                                 </Grid2>
-                                <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
+                                <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAIL"})}</Grid2>
                                 <Grid2 size={1}>
                                     <RadioStyledCheckbox 
                                         onChange={() => {
@@ -521,14 +521,14 @@ const Login: React.FC<LoginProps>= ({
                                 </Grid2>
                                 {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled && tenantBean.getTenantMetaData().systemSettings.smsAllowPasswordResetOtp &&
                                     <>
-                                        <Grid2 size={11}>Use Phone{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
+                                        <Grid2 size={11}>{intl.formatMessage({id: "USE_PHONE"})}</Grid2>
                                         <Grid2 size={1}>
                                             <RadioStyledCheckbox 
                                                 onChange={() => {
-                                                    setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.RecoveryEmail)
+                                                    setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.PhoneNumber)
                                                     
                                                 }}
-                                                checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.RecoveryEmail}
+                                                checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.PhoneNumber}
                                             />
                                         </Grid2>
                                     </>

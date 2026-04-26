@@ -7,7 +7,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { PortalUserProfile, TenantLookAndFeel, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 import { CLIENT_ASSERTION_TYPE_JWT_BEARER, GRANT_TYPE_AUTHORIZATION_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST } from "@/utils/consts";
-import { RecaptchaResponse } from "../models/recaptcha";
+import { RecaptchaEnterpriseResponse, RecaptchaResponse } from "../models/recaptcha";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { render } from "@react-email/render";
@@ -306,7 +306,7 @@ class OIDCServiceUtils extends ServiceClientConfig {
     }
 
 
-    public async validateRecaptchaV3(apiKey: string, recaptchaToken: string): Promise<RecaptchaResponse>{
+    public async validateRecaptcha(apiKey: string, recaptchaToken: string): Promise<RecaptchaResponse>{
         
         let recaptchaResponse: RecaptchaResponse = {
             challenge_ts: "",
@@ -329,6 +329,29 @@ class OIDCServiceUtils extends ServiceClientConfig {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(error: any) {
             logWithDetails("error", `Error invoking Google recaptcha verification. ${error.message}`, {...error});            
+        }
+        return recaptchaResponse;
+    }
+
+    public async validateRecaptchaEnterprise(apiKey: string, recaptchaToken: string, project: string): Promise<RecaptchaEnterpriseResponse>{
+
+        let recaptchaResponse: RecaptchaEnterpriseResponse = {
+            name: "",
+            event: { token: "", siteKey: "" },
+            riskAnalysis: { score: 0, reasons: [] },
+            tokenProperties: { valid: false, hostname: "", action: "", createTime: "" }
+        }
+        try{
+            const response = await this.getAxiosInstance().post(
+                `https://recaptchaenterprise.googleapis.com/v1/projects/${project}/assessments?key=${apiKey}`,
+                { event: { token: recaptchaToken } },
+                { headers: { "Content-Type": "application/json" } }
+            );
+            recaptchaResponse = response.data;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(error: any) {
+            logWithDetails("error", `Error invoking Google reCAPTCHA Enterprise verification. ${error.message}`, {...error});
         }
         return recaptchaResponse;
     }

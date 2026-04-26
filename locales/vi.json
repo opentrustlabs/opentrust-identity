@@ -267,7 +267,7 @@
 	"SELECT_TENANT": "Chọn Người thuê nhà",
 	"SELECT_PASSWORD_RECOVERY_OPTION": "Chọn tùy chọn khôi phục mật khẩu của bạn",
 	"USE_PRIMARY_EMAIL": "Sử dụng email chính của tôi",
-	"USE_RECOVERY_EMAI": "Tôi có email khôi phục muốn sử dụng",
+	"USE_RECOVERY_EMAIL": "Tôi có email khôi phục muốn sử dụng",
 	"SUBMIT": "Gửi",
 	"ENTER_EMAIL_OR_PHONE_NUMBER": "Email hoặc số điện thoại",
 	"REGISTER": "Đăng ký",
@@ -372,5 +372,7 @@
     "ERROR_INVALID_PHONE_NUMBER_FORMAT": "The phone number does not have a valid format.",
     "ERROR_UNABLE_SEND_PHONE_NUMBER_VALIDATION_CODE": "A error occurred when sending a validation code due to a missing or invalid phone number.",
     "ERROR_SMS_NOT_ENABLED_FOR_PASSWORD_RESET_TOKEN": "Password reset tokens cannot be sent via SMS.",
-    "ERROR_SMS_NOT_ENABLED": "SMS is not enabled."
+    "ERROR_SMS_NOT_ENABLED": "SMS is not enabled.",
+    "USE_PHONE": "Use phone",
+    "PASSWORD_RESET_TOKEN_MESSAGE": "A verification code has been sent. Please enter it below. The code is valid for 60 minutes."
 }

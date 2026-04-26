@@ -17,7 +17,7 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import Kms from "../kms/kms";
-import { RecaptchaResponse } from "../models/recaptcha";
+import { RecaptchaEnterpriseResponse, RecaptchaResponse } from "../models/recaptcha";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
 import { containsScope } from "@/utils/authz-utils";
@@ -1492,21 +1492,36 @@ class RegisterUserService extends IdentityService {
             }
         }
 
-        // Check the recaptcha configuration and validate the recaptcha token
+        // Check the recaptcha configuration and validate the recaptcha token.
+        // 1.   Does the tenant require it? This can be ignored if recaptcha is dislabled or does not exist
+        // 2.   Is recaptcha enabled globally?        
+        // 3.   Is the site configured for enterprise recaptcha
+        // 4.   Which version of recaptcha is being used?
         if(isRegistration === true && tenant.registrationRequireCaptcha === true){
             const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
-            if(!captchaConfig){
-                throw new GraphQLError(ERROR_CODES.EC00190.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00190}});
-            }
-            const decryptedApiKey: string | null = await kms.decrypt(captchaConfig.apiKey);
-            const recaptchaResponse: RecaptchaResponse = await oidcServiceUtils.validateRecaptchaV3(decryptedApiKey || "", recaptchaToken || "");
-            if(!recaptchaResponse.success){
-                throw new GraphQLError(ERROR_CODES.EC00192.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00192}});
-            }
-            if(captchaConfig.useCaptchaV3 === true){
-                const minScore = captchaConfig.minScoreThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
-                if(recaptchaResponse.score < minScore){
-                    throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
+            if(captchaConfig && captchaConfig.captchaEnabled === true){
+                const decryptedApiKey: string | null = await kms.decrypt(captchaConfig.apiKey);
+                let successfulRecaptcha: boolean = false;
+                let v3Score: number = 0;
+            
+                if(captchaConfig.useEnterpriseCaptcha){
+                    const enterpriseResponse: RecaptchaEnterpriseResponse = await oidcServiceUtils.validateRecaptchaEnterprise(decryptedApiKey || "", recaptchaToken || "", captchaConfig.projectId || "");
+                    successfulRecaptcha = enterpriseResponse.tokenProperties.valid;
+                    v3Score = enterpriseResponse.riskAnalysis.score;                  
+                }
+                else{
+                    const recaptchaResponse: RecaptchaResponse = await oidcServiceUtils.validateRecaptcha(decryptedApiKey || "", recaptchaToken || "");
+                    successfulRecaptcha = recaptchaResponse.success;
+                    v3Score = recaptchaResponse.score;
+                }
+                if(!successfulRecaptcha){
+                    throw new GraphQLError(ERROR_CODES.EC00192.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00192}});
+                }
+                if(captchaConfig.useCaptchaV3 === true){
+                    const minScore = captchaConfig.minScoreThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
+                    if(v3Score < minScore){
+                        throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
+                    }
                 }
             }
         }

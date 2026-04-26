@@ -4,7 +4,7 @@ import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, Dia
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME, DEFAULT_TENANT_META_DATA, QUERY_PARAM_DEVICE_CODE_ID } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME, DEFAULT_TENANT_META_DATA, QUERY_PARAM_DEVICE_CODE_ID, DEFAULT_CAPTCHA_ACTION_NAME } from "@/utils/consts";
 import {  TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import { RegistrationState, StateProvinceRegion, TenantPasswordConfig, UserCreateInput, UserRegistrationState, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
@@ -42,8 +42,6 @@ import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 import { RegistrationConfigureValidatePhoneNumber } from "./configure-validate-phone-number";
 import { RegistrationValidatePhoneNumber } from "./validate-phone-number";
 
-
-
 export interface RegistrationComponentsProps {
     initialUserRegistrationState: UserRegistrationState,    
     onRegistrationCancelled: () => void,
@@ -51,34 +49,115 @@ export interface RegistrationComponentsProps {
     onUpdateEnd: (userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => void
 }
 
-const Register: React.FC = () => {
-    // CONTEXT VARIABLES
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-    const i18nContext = useInternationalizationContext();
-
-    if(tenantBean.getTenantMetaData().recaptchaMetaData?.captchaEnabled && tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha === true && tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === true) return (
-        <GoogleReCaptchaProvider
-            reCaptchaKey={tenantBean.getTenantMetaData().recaptchaMetaData?.recaptchaSiteKey || ""}
-            language={i18nContext.getLanguage()}
-            useRecaptchaNet={false}
-            useEnterprise={tenantBean.getTenantMetaData().recaptchaMetaData?.useEnterpriseCaptcha || false}
-            scriptProps={{
-                async: true, // optional, default to false,
-                defer: true, // optional, default to false
-                appendTo: 'body', // optional, default to "head", can be "head" or "body",
-                nonce: undefined // optional, default undefined
-            }}
-        >
-            <RegisterInnerComponent />
-        </GoogleReCaptchaProvider>
-    )
-
-    return (
-        <RegisterInnerComponent />
-    )
+// This implementation of the onGetCaptchaToken() is a NO-OP for 
+// the case where recaptcha is not enabled.
+interface RegisterInnerComponentProps {
+    onGetCaptchaToken: () => Promise<string | null>;
+    isCaptchaReady: boolean;
+    captchaWidget: React.ReactNode;
 }
 
-const RegisterInnerComponent: React.FC = () => {
+const Register: React.FC = () => {
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const i18nContext = useInternationalizationContext();
+    const meta = tenantBean.getTenantMetaData().recaptchaMetaData;
+    const requireCaptcha = tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha;
+    const alias = tenantBean.getTenantMetaData().recaptchaMetaData?.alias;
+
+    if (meta?.captchaEnabled && requireCaptcha && meta.useCaptchaV3 === true) {
+        return (
+            <RegisterV3Wrapper
+                siteKey={meta.recaptchaSiteKey || ""}
+                language={i18nContext.getLanguage()}
+                useEnterprise={meta.useEnterpriseCaptcha || false}
+            />
+        );
+    }
+    if (meta?.captchaEnabled && requireCaptcha && meta.useCaptchaV3 === false) {
+        return (
+            <RegisterV2Wrapper 
+                siteKey={meta.recaptchaSiteKey || ""} 
+                useEnterprise={meta.useEnterpriseCaptcha || false} 
+            />
+        );
+    }
+    return (
+        <RegisterInnerComponent 
+            onGetCaptchaToken={async () => null} 
+            isCaptchaReady={true} 
+            captchaWidget={null}
+        />
+    );
+}
+
+interface RegisterV3WrapperProps {
+    siteKey: string,
+    language: string,
+    useEnterprise: boolean,
+    alias?: string
+}
+
+const RegisterV3Wrapper: React.FC<RegisterV3WrapperProps> = ({ 
+    siteKey, 
+    language, 
+    useEnterprise,
+    alias
+}) => (
+    <GoogleReCaptchaProvider
+        reCaptchaKey={siteKey}
+        language={language}
+        useRecaptchaNet={false}
+        useEnterprise={useEnterprise}
+        scriptProps={{ async: true, defer: true, appendTo: 'body', nonce: undefined }}
+    >
+        <RegisterV3HookConsumer />
+    </GoogleReCaptchaProvider>
+);
+
+const RegisterV3HookConsumer: React.FC<{ alias?: string}>  = ({
+    alias
+}) => {
+    const { executeRecaptcha } = useGoogleReCaptcha();
+    const actionName = alias ? alias : DEFAULT_CAPTCHA_ACTION_NAME;
+    return (
+        <RegisterInnerComponent
+            onGetCaptchaToken={async () => executeRecaptcha ? await executeRecaptcha(actionName) : null}
+            isCaptchaReady={true}
+            captchaWidget={null}
+        />
+    );
+};
+
+const RegisterV2Wrapper: React.FC<{ siteKey: string; useEnterprise: boolean }> = ({ 
+    siteKey, 
+    useEnterprise 
+}) => {
+    const [token, setToken] = React.useState<string | null>(null);
+
+    if (useEnterprise && typeof window !== "undefined") {
+        (window as Window & { recaptchaOptions?: { enterprise: boolean } }).recaptchaOptions = { enterprise: true };
+    }
+    return (
+        <RegisterInnerComponent
+            onGetCaptchaToken={async () => token}
+            isCaptchaReady={token !== null}
+            captchaWidget={
+                <Grid2 marginBottom={"8px"} size={12}>
+                    <ReCAPTCHA 
+                        sitekey={siteKey} 
+                        onChange={(t: string | null) => setToken(t)} 
+                    />
+                </Grid2>
+            }
+        />
+    );
+};
+
+const RegisterInnerComponent: React.FC<RegisterInnerComponentProps> = ({ 
+    onGetCaptchaToken, 
+    isCaptchaReady, 
+    captchaWidget }
+) => {
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);    
@@ -88,8 +167,6 @@ const RegisterInnerComponent: React.FC = () => {
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const i18nContext = useInternationalizationContext();
     const intl = useIntl();
-
-    const { executeRecaptcha } = useGoogleReCaptcha();
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -148,8 +225,6 @@ const RegisterInnerComponent: React.FC = () => {
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [userRegistrationState, setUserRegistrationState] = React.useState<UserRegistrationState>(initUserRegistrationState);
     const [userClickedTermsAndConditionsLink, setUserClickedTermsAndConditionsLink] = React.useState<boolean>(false);
-    const [recaptchaToken, setRecaptchaToken] = React.useState<string | null>(null);
-
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
     const theme = useTheme();
@@ -256,16 +331,8 @@ const RegisterInnerComponent: React.FC = () => {
         setUserInput(initInput);
         setErrorMessage(null);
         setRegistrationPage(1);
-        setPasswordConfig(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
-        
-        // else{
-        //     if(!redirectUri){
-        //         router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
-        //     }
-        //     else{
-        //         router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
-        //     }
-        // }       
+        setPasswordConfig(DEFAULT_TENANT_PASSWORD_CONFIGURATION);       
+     
     }
 
 
@@ -307,33 +374,12 @@ const RegisterInnerComponent: React.FC = () => {
         if(tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions && !userInput.termsAndConditionsAccepted){
             bRetVal = false;
         }
-        if(
-            tenantBean.getTenantMetaData().recaptchaMetaData &&
-            tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === false &&
-            recaptchaToken === null
-        ){
-            bRetVal = false;
-        }
+        if(!isCaptchaReady){ bRetVal = false; }
         return bRetVal;
     }
 
     const checkRecaptchaAndRegisterUser = async () => {
-
-        let token: string | null = null;
-        if(
-            tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha && 
-            tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === true &&
-            executeRecaptcha
-        ) {
-            token = await executeRecaptcha("registration");
-        }
-        else if(
-            tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha && 
-            tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === false
-        ) {
-            token = recaptchaToken;
-        }
-
+        const token = await onGetCaptchaToken();
         registerUser({
             variables: {
                 tenantId: tenantId,
@@ -342,7 +388,7 @@ const RegisterInnerComponent: React.FC = () => {
                 deviceCodeId: deviceCodeId,
                 recaptchaToken: token
             }
-        });        
+        });
     }
 
     
@@ -728,16 +774,7 @@ const RegisterInnerComponent: React.FC = () => {
                                                 </Grid2>                                                
                                             </Grid2>
                                         }
-                                        {tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha === true && tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === false &&
-                                            <Grid2 marginBottom={"8px"} size={12}>
-                                                <ReCAPTCHA 
-                                                    sitekey={tenantBean.getTenantMetaData().recaptchaMetaData?.recaptchaSiteKey || ""} 
-                                                    onChange={(token: string | null) => {
-                                                        setRecaptchaToken(token);
-                                                    }} 
-                                                />
-                                            </Grid2>
-                                        }
+                                        {captchaWidget}
                                     </Grid2>
                                     <Stack 
                                         width={"100%"}

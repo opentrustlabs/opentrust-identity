@@ -93,7 +93,9 @@ export const TENANT_META_DATA_QUERY = gql(`
                 socialLoginProvider
             }
             recaptchaMetaData {
+                alias
                 recaptchaSiteKey
+                captchaEnabled
                 useEnterpriseCaptcha
                 useCaptchaV3
             }
@@ -746,6 +748,7 @@ export const CAPTCHA_CONFIG_QUERY = gql(`
     query getCaptchaConfig {
         getCaptchaConfig {
             alias
+            captchaEnabled
             projectId
             siteKey
             apiKey

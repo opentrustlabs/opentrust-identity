@@ -267,7 +267,7 @@
     "SELECT_TENANT": "Vybrat klienta",
     "SELECT_PASSWORD_RECOVERY_OPTION": "Vyberte možnost obnovení hesla",
     "USE_PRIMARY_EMAIL": "Použít můj primární e-mail",
-    "USE_RECOVERY_EMAI": "Mám obnovený e-mail, který chci použít",
+    "USE_RECOVERY_EMAIL": "Mám obnovený e-mail, který chci použít",
     "SUBMIT": "Odeslat",
     "ENTER_EMAIL_OR_PHONE_NUMBER": "E-mail nebo telefonní číslo",
     "REGISTER": "Registrovat",
@@ -372,5 +372,7 @@
     "ERROR_INVALID_PHONE_NUMBER_FORMAT": "The phone number does not have a valid format.",
     "ERROR_UNABLE_SEND_PHONE_NUMBER_VALIDATION_CODE": "A error occurred when sending a validation code due to a missing or invalid phone number.",
     "ERROR_SMS_NOT_ENABLED_FOR_PASSWORD_RESET_TOKEN": "Password reset tokens cannot be sent via SMS.",
-    "ERROR_SMS_NOT_ENABLED": "SMS is not enabled."
+    "ERROR_SMS_NOT_ENABLED": "SMS is not enabled.",
+    "USE_PHONE": "Use phone",
+    "PASSWORD_RESET_TOKEN_MESSAGE": "A verification code has been sent. Please enter it below. The code is valid for 60 minutes."
 }
