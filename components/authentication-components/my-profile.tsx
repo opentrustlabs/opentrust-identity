@@ -5,7 +5,7 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { ME_QUERY, TENANT_META_DATA_QUERY, USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { Alert, Autocomplete, Backdrop, Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Backdrop, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { getDefaultLanguageCodeDef, getDefaultCountryCodeDef } from "@/utils/client-utils";
 import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI, USER_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";

@@ -61,8 +61,7 @@ const Register: React.FC = () => {
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const i18nContext = useInternationalizationContext();
     const meta = tenantBean.getTenantMetaData().recaptchaMetaData;
-    const requireCaptcha = tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha;
-    const alias = tenantBean.getTenantMetaData().recaptchaMetaData?.alias;
+    const requireCaptcha = tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha;    
 
     if (meta?.captchaEnabled && requireCaptcha && meta.useCaptchaV3 === true) {
         return (
@@ -100,8 +99,7 @@ interface RegisterV3WrapperProps {
 const RegisterV3Wrapper: React.FC<RegisterV3WrapperProps> = ({ 
     siteKey, 
     language, 
-    useEnterprise,
-    alias
+    useEnterprise
 }) => (
     <GoogleReCaptchaProvider
         reCaptchaKey={siteKey}

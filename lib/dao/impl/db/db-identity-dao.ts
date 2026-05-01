@@ -1,5 +1,5 @@
 import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, UserFailedPasswordResetAttempts, UserProfileChangeState } from "@/graphql/generated/graphql-types";
-import IdentityDao, { TokenConfirmationType, UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
+import IdentityDao, { UserLookupType, UserRecoveryLookupType } from "../../identity-dao";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP } from "@/utils/consts";
 import { UserFido2CounterRel } from "@/lib/entities/user-fido2-counter-rel-entity";
 import RDBDriver from "@/lib/data-sources/rdb";
@@ -225,7 +225,7 @@ class DBIdentityDao extends IdentityDao {
         }
         
         const userRepo = await RDBDriver.getInstance().getUserRepository();
-        let u: User | null = await userRepo.findOne({
+        const u: User | null = await userRepo.findOne({
             where: where
         });
 

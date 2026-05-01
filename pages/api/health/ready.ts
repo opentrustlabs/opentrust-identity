@@ -39,7 +39,8 @@ async function checkSearch(): Promise<CheckStatus> {
         await searchDao.objectSearch({page: 1, perPage: 1, resultType: SearchResultType.Tenant}, []);
         return 'ok';
         
-    } catch(e) {
+    }
+    catch {
         return 'error';
     }
 }

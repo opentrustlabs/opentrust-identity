@@ -5,7 +5,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER } from "@/utils/consts";
 import {  createVerificationToken, generateRandomToken, generateUserCredential, getDomainFromEmail, VerificationToken } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -825,7 +825,7 @@ class RegisterUserService extends IdentityService {
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
 
-        let index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidatePhoneNumber);
+        const index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidatePhoneNumber);
         if(index < 0){
             return Promise.resolve(response);
         }
@@ -847,7 +847,7 @@ class RegisterUserService extends IdentityService {
 
         // Delete the confirmation token and update the user with a verified phone number.
         await identityDao.deleteConfirmationToken(verificationToken.hashedToken);
-        user.phoneNumberVerified === true;
+        user.phoneNumberVerified = true;
         await identityDao.updateUser(user);
 
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;

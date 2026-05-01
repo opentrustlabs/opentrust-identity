@@ -623,6 +623,9 @@ class DBTenantDao extends TenantDao {
         
         const systemSettingsRepo = await RDBDriver.getInstance().getSystemSettingsRepository();
 
+        // Need to just extract the entity properties for the db update, so we need to
+        // capture the non-column values, even if we do not use them.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {softwareVersion, systemCategories, ...entity} = systemSettings;
         const arr = await systemSettingsRepo.find();
         if(arr && arr.length > 0){
