@@ -120,6 +120,13 @@ const UserEntity = new EntitySchema({
             nullable: true,
             name: "phonenumber"
         },
+        phoneNumberVerified: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "phonenumberverified",
+            transformer: BooleanTransformer
+        },
         preferredLanguageCode: {
             type: String,
             primary: false,

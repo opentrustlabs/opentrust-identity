@@ -56,7 +56,7 @@ import UserEmailRecoveryEntity, { UserEmailRecovery } from "../entities/user-ema
 import SystemSettingsEntity from "../entities/system-settings-entity";
 import AuthorizationDeviceCodeDataEntity from "../entities/authorization-device-code-data-entity";
 import SecretShareEntity from "../entities/secret-share-entity";
-import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-change-state-entity";
+import UserProfileChangeStateEntity from "../entities/user-profile-change-state-entity";
 import UserAuthenticationHistoryEntity, { UserAuthenticationHistory } from "../entities/user-authentication-history-entity";
 import FederatedAuthTestEntity from "../entities/federated-auth-test-entity";
 import ClientFapiConfigurationEntity from "../entities/client-fapi-configuration-entity";
@@ -64,7 +64,7 @@ import ScopeTranslationEntity from "../entities/scope-translation-entity";
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
 
 import { DataSource, DefaultNamingStrategy, NamingStrategyInterface, Repository } from "typeorm";
-import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, FooterLink, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, ScopeTranslation, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, TokenEnrichmentConfiguration, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientFapiConfiguration, ClientScopeRel,  Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, FooterLink, MarkForDelete, PreAuthenticationState, UserProfileChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, ScopeTranslation, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, TokenEnrichmentConfiguration, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserFailedPasswordResetAttempts, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 import PushedAuthRequestEntity, { PushedAuthRequest } from "../entities/pushed-auth-request.entity";
 import ClientTokenEnrichmentConfigurationEntity from "../entities/client-token-enrichment-configuration-entity";
 
@@ -165,7 +165,7 @@ const entities = [
     UserEmailRecoveryEntity,
     AuthorizationDeviceCodeDataEntity,
     SecretShareEntity,
-    UserProfileChangeEmailStateEntity,
+    UserProfileChangeStateEntity,
     UserAuthenticationHistoryEntity,
     FederatedAuthTestEntity,
     ContactEntity,
@@ -236,7 +236,7 @@ class RDBDriver {
     userEmailRecoveryRepository: Repository<UserEmailRecovery>;
     authorizationDeviceCodeDataRepository: Repository<AuthorizationDeviceCodeData>;
     secretShareRepository: Repository<SecretShare>;
-    userProfileChangeEmailStateRepository: Repository<ProfileEmailChangeState>;
+    userProfileChangeStateRepository: Repository<UserProfileChangeState>;
     userAuthenticationHistoryRepository: Repository<UserAuthenticationHistory>;
     federatedAuthTestRepository: Repository<FederatedAuthTest>;
     contactRepository: Repository<Contact>;
@@ -783,12 +783,12 @@ class RDBDriver {
         }
         return RDBDriver.instance.secretShareRepository;
     }
-    public async getUserProfileChangeEmailStateRepository(): Promise<Repository<ProfileEmailChangeState>> {
-        if (!RDBDriver.instance.userProfileChangeEmailStateRepository) {
+    public async getUserProfileChangeStateRepository(): Promise<Repository<UserProfileChangeState>> {
+        if (!RDBDriver.instance.userProfileChangeStateRepository) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.userProfileChangeEmailStateRepository = driver.getRepository("userProfileEmailChangeState");
+            RDBDriver.instance.userProfileChangeStateRepository = driver.getRepository("userProfileChangeState");
         }
-        return RDBDriver.instance.userProfileChangeEmailStateRepository;
+        return RDBDriver.instance.userProfileChangeStateRepository;
     }
     public async getUserAuthenticationHistoryRepository(): Promise<Repository<UserAuthenticationHistory>> {
         if (!RDBDriver.instance.userAuthenticationHistoryRepository) {

@@ -44,7 +44,7 @@ const ValidatePasswordResetToken: React.FC<AuthenticationComponentsProps> = ({
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
                     <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>
-                        {intl.formatMessage({id: "VALIDATE_EMAIL_WITH_TOKEN"})}
+                        {intl.formatMessage({id: "PASSWORD_RESET_TOKEN_MESSAGE"})}
                     </div>
                     <TextField name="verificationCode" id="verificationCode"
                         value={verificationCode}

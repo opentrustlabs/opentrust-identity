@@ -27,6 +27,7 @@ export interface MyUserProfile {
     lastName: string,
     middleName: string | null,
     phoneNumber: string | null,
+    phoneNumberVerified: boolean,
     address: string | null,
     addressLine1: string | null,
     city: string | null,
@@ -69,6 +70,7 @@ export interface JWTPrincipal {
     preferred_username: string,
     profile: string,
     phone_number: string,
+    phone_number_verified: boolean,
     address: OIDCUserInfoAddress | null,
     updated_at: string,
     email: string,
@@ -96,16 +98,17 @@ export interface JWTPrincipal {
 export interface LegacyUserProfile {
     email: string
     emailVerified: boolean,
-    firstName: string
-    lastName: string
-    middleName: string | null
-    phoneNumber: string | null
+    firstName: string,
+    lastName: string,
+    middleName: string | null,
+    phoneNumber: string | null,
+    phoneNumberVerified: boolean | null,
     address: string,
     addressLine1: string | null,
     city: string,
     postalCode: string,
     stateRegionProvince: string | null,
-    countryCode: string
+    countryCode: string,
     preferredLanguageCode: string,    
     nameOrder: string
 }
@@ -136,6 +139,7 @@ export interface FederatedOIDCUserInfo {
     preferred_username: string,
     profile: string,
     phone_number: string,
+    phone_number_verified: boolean,
     address: OIDCUserInfoAddress | null,
     updated_at: string,
     email: string,

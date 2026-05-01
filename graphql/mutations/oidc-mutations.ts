@@ -787,8 +787,8 @@ export const AUTHENTICATE_USER = gql`
 `;
 
 export const AUTHENTICATE_HANDLE_FORGOT_PASSWORD = gql`
-    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String, $useRecoveryEmail: Boolean!) {
-        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken, useRecoveryEmail: $useRecoveryEmail){
+    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String, $forgotPasswordCommunicationMethod: ForgotPasswordCommunicationMethod!) {
+        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken, forgotPasswordCommunicationMethod: $forgotPasswordCommunicationMethod){
             ...UserAuthenticationStateResponseFragment
         }
     }
@@ -839,6 +839,26 @@ export const AUTHENTICATE_VALIDATE_SECURITY_KEY = gql`
 export const AUTHENTICATE_REGISTER_SECURITY_KEY = gql`
     mutation authenticateRegisterSecurityKey($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, $authenticationSessionToken: String!, $preAuthToken: String) {
         authenticateRegisterSecurityKey(userId: $userId, fido2KeyRegistrationInput: $fido2KeyRegistrationInput, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_CONFIGURE_VALIDATE_PHONE_NUMBER = gql`
+    mutation authenticateConfigureVerifyPhoneNumber($userId: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateConfigureVerifyPhoneNumber(userId: $userId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_VALIDATE_PHONE_NUMBER = gql`
+    mutation authenticateVerifyPhoneNumber($userId: String!, $token: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateVerifyPhoneNumber(userId: $userId, token: $token, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
             ...UserAuthenticationStateResponseFragment
         }
     }
@@ -1014,6 +1034,26 @@ export const REGISTER_VALIDATE_TOTP = gql`
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const REGISTER_CONFIGURE_VALIDATE_PHONE_NUMBER = gql`
+    mutation registerConfigureVerifyPhoneNumber($userId: String!, $registrationSessionToken: String!, $preAuthToken: String, $skip: Boolean!) {
+        registerConfigureVerifyPhoneNumber(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken, skip: $skip) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const REGISTER_VALIDATE_PHONE_NUMBER = gql`
+    mutation registerVerifyPhoneNumber($userId: String!, $registrationSessionToken: String!, $token: String!, $preAuthToken: String) {
+        registerVerifyPhoneNumber(userId: $userId, registrationSessionToken: $registrationSessionToken, token: $token, preAuthToken: $preAuthToken) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const REGISTER_CONFIGURE_SECURITY_KEY = gql`
     mutation registerConfigureSecurityKey($userId: String!, $registrationSessionToken: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput, $preAuthToken: String, $skip: Boolean!) {
         registerConfigureSecurityKey(userId: $userId, registrationSessionToken: $registrationSessionToken, fido2KeyRegistrationInput: $fido2KeyRegistrationInput, preAuthToken: $preAuthToken, skip: $skip) {
@@ -1055,6 +1095,14 @@ export const UPDATE_SYSTEM_SETTINGS_MUTATION = gql(`
             auditRecordRetentionPeriodDays
             noReplyEmail
             contactEmail
+            smsAlertOnAccountStatusChange
+            smsAlertOnEmailChange
+            smsAlertOnMFADeviceChange
+            smsAlertOnPasswordChange
+            smsAllowPasswordResetOtp
+            smsCallbackServiceEnabled
+            smsCallbackUri
+            smsSenderName
         }
     }
 `);
@@ -1100,19 +1148,19 @@ export const UNLOCK_USER_MUTATION = gql(`
 `);
 
 // Change email flows
-export const PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT = gql(`
-    fragment ProfileEmailChangeResponseFragment on ProfileEmailChangeResponse {
-        profileEmailChangeState {
-            changeEmailSessionToken
-            emailChangeState
-            email
+export const PROFILE_CHANGE_RESPONSE_FRAGMENT = gql(`
+    fragment UserProfileChangeResponseFragment on UserProfileChangeResponse {
+        profileChangeState {
+            changeProfileSessionToken
+            profileState
+            profileProperty
+            profilePropertyValue
             userId
             changeOrder
             changeStateStatus
             expiresAtMs
-            isPrimaryEmail
         }
-        profileEmailChangeError {
+        profileChangeError {
             errorCode
             errorMessage            
         }
@@ -1123,47 +1171,80 @@ export const PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT = gql(`
 export const PROFILE_HANDLE_EMAIL_CHANGE_MUTATION = gql`
     mutation profileHandleEmailChange($newEmail: String!) {
         profileHandleEmailChange(newEmail: $newEmail) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
 export const PROFILE_VALIDATE_EMAIL_MUTATION = gql`
     mutation profileValidateEmail($token: String!, $changeEmailSessionToken: String!) {
         profileValidateEmail(token: $token, changeEmailSessionToken: $changeEmailSessionToken) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
 export const PROFILE_CANCEL_EMAIL_CHANGE_MUTATION = gql`
     mutation profileCancelEmailChange($changeEmailSessionToken: String!) {
         profileCancelEmailChange(changeEmailSessionToken: $changeEmailSessionToken) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
 
 export const PROFILE_ADD_RECOVERY_EMAIL_MUTATION = gql`
     mutation profileAddRecoveryEmail($recoveryEmail: String!) {
         profileAddRecoveryEmail(recoveryEmail: $recoveryEmail) {
-            ...ProfileEmailChangeResponseFragment
+            ...UserProfileChangeResponseFragment
         }
     }
 
-    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
 `;
+
+export const PROFILE_HANDLE_PHONE_NUMBER_CHANGE_MUTATION = gql`
+    mutation profileHandlePhoneNumberChange($newPhoneNumber: String!) {
+        profileHandlePhoneNumberChange(newPhoneNumber: $newPhoneNumber) {
+            ...UserProfileChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+export const PROFILE_VALIDATE_PHONE_NUMBMER_MUTATION = gql`
+    mutation profileValidatePhoneNumberChange($token: String!, $changePhoneNumberSessionToken: String!) {
+        profileValidatePhoneNumberChange(token: $token, changePhoneNumberSessionToken: $changePhoneNumberSessionToken) {
+            ...UserProfileChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+export const PROFILE_CANCEL_PHONE_NUMBER_CHANGE_MUTATION = gql`
+    mutation profileCancelPhoneNumberChange($changePhoneNumberSessionToken: String!) {
+        profileCancelPhoneNumberChange(changePhoneNumberSessionToken: $changePhoneNumberSessionToken) {
+            ...UserProfileChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+
 
 export const SET_CAPTCHA_CONFIG_MUTATION = gql(`
     mutation setCaptchaConfig($captchaConfigInput: CaptchaConfigInput!){
         setCaptchaConfig(captchaConfigInput: $captchaConfigInput) {
             alias
+            captchaEnabled
             projectId
         }
     }

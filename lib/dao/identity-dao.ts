@@ -1,8 +1,10 @@
-import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState, UserFailedPasswordResetAttempts } from "@/graphql/generated/graphql-types";
+import { User, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, UserFailedPasswordResetAttempts, UserProfileChangeState } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone" | "federatedoidcproviderid";
 
 export type UserRecoveryLookupType = "id" | "email";
+
+export type TokenConfirmationType = "password_reset" | "validate_email" | "validate_phone_number"
 abstract class IdentityDao {
 
     abstract getFailedLogins(userId: string): Promise<Array<UserFailedLogin>>;
@@ -51,17 +53,11 @@ abstract class IdentityDao {
 
     abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 
-    abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
+    abstract saveConfirmationToken(userId: string, token: string, tokenVerificationType: string): Promise<void>;
 
-    abstract getUserByPasswordResetToken(token: string): Promise<User | null>;
+    abstract getUserByConfirmationToken(token: string): Promise<User | null>;
 
-    abstract deletePasswordResetToken(token: string): Promise<void>;
-
-    abstract saveEmailConfirmationToken(userId: string, token: string): Promise<void>;
-
-    abstract getUserByEmailConfirmationToken(token: string): Promise<User | null>;
-
-    abstract deleteEmailConfirmationToken(token: string): Promise<void>;
+    abstract deleteConfirmationToken(token: string): Promise<void>;
 
     /**
      * Creates a user (if they user does not already exist based on email or phone number) 
@@ -141,13 +137,13 @@ abstract class IdentityDao {
 
     abstract deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
 
-    abstract getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>;
+    abstract getProfileChangeStates(changeStateToken: string): Promise<Array<UserProfileChangeState>>;
 
-    abstract createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>;
+    abstract createProfileChangeStates(arrProfileChangeStates: Array<UserProfileChangeState>): Promise<Array<UserProfileChangeState>>;
     
-    abstract updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>;
+    abstract updateProfileChangeState(profileChangeState: UserProfileChangeState): Promise<UserProfileChangeState>;
 
-    abstract deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>;
+    abstract deleteProfileChangeState(profileChangeState: UserProfileChangeState): Promise<void>;
 
     abstract deleteExpiredData(): Promise<void>;
 

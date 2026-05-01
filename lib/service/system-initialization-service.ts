@@ -213,7 +213,8 @@ class SystemInitializationService {
             tenantName: systemInitializationInput.rootTenantInput.tenantName,
             tenantDescription: systemInitializationInput.rootTenantInput.tenantDescription,            
             tenantType: TENANT_TYPE_ROOT_TENANT,
-            verifyEmailOnSelfRegistration: systemInitializationInput.rootTenantInput.verifyEmailOnSelfRegistration
+            verifyEmailOnSelfRegistration: systemInitializationInput.rootTenantInput.verifyEmailOnSelfRegistration,
+            verifyPhoneNumberOnSelfRegistration: systemInitializationInput.rootTenantInput.verifyPhoneNumberOnSelfRegistration
         };
         await tenantDao.createRootTenant(tenant);
 
@@ -293,7 +294,8 @@ class SystemInitializationService {
             countryCode: systemInitializationInput.rootUserCreateInput.countryCode,
             middleName: systemInitializationInput.rootUserCreateInput.middleName,
             phoneNumber: systemInitializationInput.rootUserCreateInput.phoneNumber,
-            forcePasswordResetAfterAuthentication: false
+            forcePasswordResetAfterAuthentication: false,
+            phoneNumberVerified: false
         };
         
         await identityDao.createUser(user);        
@@ -346,7 +348,15 @@ class SystemInitializationService {
             systemId: randomUUID().toString(),
             auditRecordRetentionPeriodDays: systemInitializationInput.systemSettingsInput.auditRecordRetentionPeriodDays,
             contactEmail: systemInitializationInput.systemSettingsInput.contactEmail,
-            noReplyEmail: systemInitializationInput.systemSettingsInput.noReplyEmail
+            noReplyEmail: systemInitializationInput.systemSettingsInput.noReplyEmail,
+            smsAlertOnAccountStatusChange: systemInitializationInput.systemSettingsInput.smsAlertOnAccountStatusChange,
+            smsAlertOnEmailChange: systemInitializationInput.systemSettingsInput.smsAlertOnEmailChange,
+            smsAlertOnMFADeviceChange: systemInitializationInput.systemSettingsInput.smsAlertOnMFADeviceChange,
+            smsAlertOnPasswordChange: systemInitializationInput.systemSettingsInput.smsAlertOnPasswordChange,
+            smsAllowPasswordResetOtp: systemInitializationInput.systemSettingsInput.smsAllowPasswordResetOtp,
+            smsCallbackServiceEnabled: systemInitializationInput.systemSettingsInput.smsCallbackServiceEnabled,
+            smsCallbackUri: systemInitializationInput.systemSettingsInput.smsCallbackUri,
+            smsSenderName: systemInitializationInput.systemSettingsInput.smsSenderName
         };
         await tenantDao.updateSystemSettings(systemSettings);
 

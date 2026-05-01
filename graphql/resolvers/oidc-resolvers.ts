@@ -259,7 +259,8 @@ const resolvers: Resolvers = {
                 allowForgotPassword: false,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri,
+                verifyPhoneNumberOnSelfRegistration: tenantInput.verifyPhoneNumberOnSelfRegistration
             }
             await tenantService.updateRootTenant(tenant);        
             return tenant;
@@ -286,7 +287,8 @@ const resolvers: Resolvers = {
                 defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri,
+                verifyPhoneNumberOnSelfRegistration: tenantInput.verifyPhoneNumberOnSelfRegistration
             }
             await tenantService.createTenant(tenant);         
             return tenant; 
@@ -313,7 +315,8 @@ const resolvers: Resolvers = {
                 defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri,
+                verifyPhoneNumberOnSelfRegistration: tenantInput.verifyPhoneNumberOnSelfRegistration
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);          
             return updatedTenant;
@@ -767,7 +770,8 @@ const resolvers: Resolvers = {
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
                 markForDelete: false,
-                forcePasswordResetAfterAuthentication: false
+                forcePasswordResetAfterAuthentication: false,
+                phoneNumberVerified: userInput.phoneNumberVerified
             }
             await service.updateUser(user);
             return user;
@@ -874,9 +878,9 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
         },
-        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, useRecoveryEmail }, oidcContext) => {
+        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, forgotPasswordCommunicationMethod }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, useRecoveryEmail);
+            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, forgotPasswordCommunicationMethod);
         },
         authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
@@ -926,6 +930,14 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateHandleUserCodeInput(userCode);
         },
+        authenticateConfigureVerifyPhoneNumber: async(_: any, {authenticationSessionToken, userId, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateConfigureVerifyPhoneNumber(userId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateVerifyPhoneNumber: async(_: any, {authenticationSessionToken, userId, token, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateVerifyPhoneNumber(userId, token, authenticationSessionToken, preAuthToken || null);
+        },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId, recaptchaToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null, recaptchaToken || null);
@@ -961,6 +973,14 @@ const resolvers: Resolvers = {
         registerAddDuressPassword: async(_: any, { userId, password, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerAddDuressPassword(userId, password || null, skip, registrationSessionToken, preAuthToken || null);
+        },
+        registerConfigureVerifyPhoneNumber: async(_: any, { userId, registrationSessionToken, skip, preAuthToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerConfigureVerifyPhoneNumber(userId, registrationSessionToken, preAuthToken || null, skip);
+        },
+        registerVerifyPhoneNumber: async(_: any, { userId, registrationSessionToken, token, preAuthToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerVerifyPhoneNumber(userId, token, registrationSessionToken, preAuthToken || null);
         },
         cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken, deviceCodeId }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
@@ -1007,6 +1027,18 @@ const resolvers: Resolvers = {
         profileCancelEmailChange: async(_: any, { changeEmailSessionToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.profileCancelEmailChange(changeEmailSessionToken);
+        },
+        profileHandlePhoneNumberChange: async(_: any, { newPhoneNumber }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileHandlePhoneNumberChange(newPhoneNumber);
+        },
+        profileValidatePhoneNumberChange: async(_: any, { token, changePhoneNumberSessionToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileValidatePhoneNumberChange(changePhoneNumberSessionToken, token);
+        },
+        profileCancelPhoneNumberChange: async(_: any, {changePhoneNumberSessionToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileCancelPhoneNumberChange(changePhoneNumberSessionToken);
         },
         setCaptchaConfig: async(_: any, { captchaConfigInput }, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);

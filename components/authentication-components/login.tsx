@@ -4,9 +4,9 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_TENANT_META_DATA, LAYOUT_TYPE_SINGLE_COLUMN, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_LOOK_AND_FEEL, DEFAULT_TENANT_META_DATA, LAYOUT_TYPE_SINGLE_COLUMN, LAYOUT_TYPE_TWO_COLUMN, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, AuthenticationRequestedScope, ScopeTranslation } from "@/graphql/generated/graphql-types";
+import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, AuthenticationRequestedScope, ScopeTranslation, ForgotPasswordCommunicationMethod } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -33,6 +33,8 @@ import LanguageIcon from '@mui/icons-material/Language';
 import { useIntl } from 'react-intl';
 import { ValidateEmailOnAuthentication } from "./validate-email";
 import LoginLayout from "./login-layout";
+import { AuthenticationConfigureValidatePhoneNumber } from "./configure-validate-phone-number";
+import { AuthenticationValidatePhoneNumber } from "./validate-phone-number";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -101,7 +103,7 @@ const Login: React.FC<LoginProps>= ({
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
     const [showRecoveryEmailDialog, setShowRecoveryEmailDialog] = React.useState<boolean>(false);
-    const [useRecoveryEmail, setUseRecoveryEmail] = React.useState<boolean>(false);
+    const [forgotPasswordCommunicationMethod, setForgotPasswordCommunicationMethod] = React.useState<ForgotPasswordCommunicationMethod>(ForgotPasswordCommunicationMethod.Email);
     const [isLoginDisabled] = React.useState<boolean>( !(authorizationError === null || authorizationError === "") );
     const [authorizationScopeApprovalData, setAuthorizationScopeApprovalData] = React.useState<AuthorizationScopeApprovalData | null>(null);
     const [openLanguageSelector, setOpenLanguageSelector] = React.useState<boolean>(false);
@@ -110,9 +112,25 @@ const Login: React.FC<LoginProps>= ({
     const router = useRouter();
 
     // PAGE-LEVEL VARIABLES
-    const layoutType = tenantBean.getTenantMetaData().tenantLookAndFeel?.layouttype ?? LAYOUT_TYPE_SINGLE_COLUMN;
-    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : layoutType === LAYOUT_TYPE_SINGLE_COLUMN ? "650px" : "1280px";
-
+    // Capture layoutType once at mount. If tenantId was in the URL, tenant data is already
+    // loaded and the correct layout type is available. If tenant data loads later (after email
+    // entry), we keep the initial value to prevent the card from changing width mid-flow.
+    const [layoutType] = React.useState<string>(
+        tenantBean.getTenantMetaData().tenantLookAndFeel?.layouttype ?? LAYOUT_TYPE_SINGLE_COLUMN
+    );
+    //const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : layoutType === LAYOUT_TYPE_SINGLE_COLUMN ? "650px" : "1280px";
+    let maxWidth = "650px";
+    if(breakPoints.isSmall){
+        maxWidth = "90vw";
+    }
+    else if(breakPoints.isMedium){
+        maxWidth = "80vw";
+    }
+    else if(preAuthToken){
+        if(layoutType === LAYOUT_TYPE_TWO_COLUMN){
+            maxWidth = "1280px";
+        }
+    }
 
     // GRAPHQL FUNCTIONS
     const [ tenantMetadataLazyQuery ] = useLazyQuery(TENANT_META_DATA_QUERY, {               
@@ -393,7 +411,7 @@ const Login: React.FC<LoginProps>= ({
         return (
             <Paper
                 elevation={4}
-                sx={{ padding: 2, height: "100%", maxWidth: maxWidth }}
+                sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
             >
                 {(i18nContext.hasSelectedLanguage() !== true || openLanguageSelector) &&
                     <Dialog 
@@ -484,21 +502,37 @@ const Login: React.FC<LoginProps>= ({
                                 <Grid2 size={1}>
                                     <RadioStyledCheckbox 
                                         onChange={() => {
-                                            setUseRecoveryEmail(false);
+                                            setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.Email)
+                                            
                                         }}
-                                        checked={useRecoveryEmail === false}                                    
+                                        checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.Email}
                                     />
                                 </Grid2>
-                                <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
+                                <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAIL"})}</Grid2>
                                 <Grid2 size={1}>
                                     <RadioStyledCheckbox 
                                         onChange={() => {
-                                            setUseRecoveryEmail(true);
+                                            setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.RecoveryEmail)
+                                            
                                         }}
-                                        checked={useRecoveryEmail === true}
+                                        checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.RecoveryEmail}
                                     />
 
                                 </Grid2>
+                                {tenantBean.getTenantMetaData().systemSettings.smsCallbackServiceEnabled && tenantBean.getTenantMetaData().systemSettings.smsAllowPasswordResetOtp &&
+                                    <>
+                                        <Grid2 size={11}>{intl.formatMessage({id: "USE_PHONE"})}</Grid2>
+                                        <Grid2 size={1}>
+                                            <RadioStyledCheckbox 
+                                                onChange={() => {
+                                                    setForgotPasswordCommunicationMethod(ForgotPasswordCommunicationMethod.PhoneNumber)
+                                                    
+                                                }}
+                                                checked={forgotPasswordCommunicationMethod === ForgotPasswordCommunicationMethod.PhoneNumber}
+                                            />
+                                        </Grid2>
+                                    </>
+                                }
                             </Grid2>
                         </DialogContent>
                         <DialogActions>
@@ -517,7 +551,7 @@ const Login: React.FC<LoginProps>= ({
                                         variables: {
                                             authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
                                             preAuthToken: preAuthToken,
-                                            useRecoveryEmail: useRecoveryEmail
+                                            forgotPasswordCommunicationMethod: forgotPasswordCommunicationMethod
                                         }
                                     });
                                 }}
@@ -613,24 +647,32 @@ const Login: React.FC<LoginProps>= ({
                                         />
                                     </Grid2>
                                     <Grid2 size={12}>
-                                        <TextField
-                                            id="email"
-                                            required={true}
-                                            autoFocus={true}
-                                            autoComplete="email"
-                                            label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
-                                            name="email"
-                                            fullWidth
-                                            onChange={(evt) => setUsername(evt.target.value)}
-                                            onKeyDown={handleEnterButtonPress}
-                                            value={username}
-                                            disabled={isLoginDisabled}
+                                        <form 
+                                            onSubmit={(e) => {
+                                                e.preventDefault(); 
+                                                if(username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)){
+                                                    return;
+                                                }
+                                                handleUserNameInput();
+                                            }}
                                         >
-                                        </TextField>
+                                            <input type="hidden" name="username" autoComplete="username" />
+                                            <TextField
+                                                id="usrname"
+                                                required={true}
+                                                autoFocus={true}
+                                                autoComplete="username"
+                                                label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
+                                                name="username"
+                                                fullWidth
+                                                onChange={(evt) => setUsername(evt.target.value)}
+                                                onKeyDown={handleEnterButtonPress}
+                                                value={username}
+                                                disabled={isLoginDisabled}
+                                            />
+                                        </form>
                                     </Grid2>
-
                                 </Grid2>
-                                
                                 <Grid2 size={{ xs: 12 }}>
                                     <Stack
                                         direction={"row-reverse"}
@@ -710,25 +752,39 @@ const Login: React.FC<LoginProps>= ({
                         }                    
                         {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                             <React.Fragment>
-                                <Grid2 container size={12}>                                
-                                        <div style={{display: "hidden"}}>
-                                            <TextField
+                                <Grid2 container size={12} spacing={1}>
+                                    {/* Duplicating the username input to help out with password managers. Otherwise they may not auto-complete */}
+                                    <form 
+                                        style={{width: "100%"}}
+                                        onSubmit={(e) => { 
+                                            e.preventDefault(); /* call authenticateUser */ 
+                                            if(password === null || password.length < PASSWORD_MINIMUM_LENGTH){
+                                                return;
+                                            }
+                                            setErrorMessage(null);
+                                            authenticateUser({
+                                                variables: {
+                                                    username: username,
+                                                    password: password,
+                                                    tenantId: userAuthenticationState.tenantId,
+                                                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                    preAuthToken: userAuthenticationState.preAuthToken
+                                                }
+                                            });                                            
+                                        }}
+                                    >
+                                        <div style={{display: "none"}}>
+                                            <input
                                                 name="username"
                                                 autoComplete="username"
-                                                value={username}
-                                                type="hidden"
-                                                sx={{
-                                                    width: 0, // Sets the width to 0
-                                                    height: 0, // Sets the height to 0
-                                                    overflow: 'hidden', // Hides any overflowing content
-                                                    position: 'absolute', // Ensures it doesn't affect layout
-                                                    opacity: 0, // Makes it completely transparent
-                                                    pointerEvents: 'none', // Prevents interaction
-                                                }}
+                                                value={username || ""}
+                                                type="hidden"                                                
                                             />
                                         </div>
-                                        <Grid2  size={12}>
+                                        <Grid2 size={12}>
                                             <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({ id: "SIGN_IN" })}</div>
+                                        </Grid2>
+                                        <Grid2 size={12}>
                                             <TextField
                                                 type="password"
                                                 id="password"
@@ -739,31 +795,32 @@ const Login: React.FC<LoginProps>= ({
                                                 name="password"
                                                 fullWidth
                                                 onChange={(evt) => setPassword(evt.target.value)}
-                                                value={password}                                            
+                                                value={password}
                                             >
                                             </TextField>
-
                                         </Grid2>
-                                    
+                                    </form>
                                 </Grid2>
                                 
-                                {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
-                                    <Grid2 size={{ xs: 12 }}>
-                                        <Stack
-                                            direction={"row-reverse"}
+                                <Grid2 size={{ xs: 12 }}>
+                                    <Stack direction={"row-reverse"}>
+                                        <span
+                                            style={{
+                                                fontWeight: "bold",
+                                                fontSize: "0.9em",
+                                                textDecoration: "underline",
+                                                cursor: "pointer",
+                                                visibility: tenantBean.getTenantMetaData().tenant.allowForgotPassword ? "visible" : "hidden"
+                                            }}
+                                            onClick={() => {
+                                                setIsPasswordResetFlow(true);
+                                                setShowRecoveryEmailDialog(true);
+                                            }}
                                         >
-                                            <span 
-                                                style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
-                                                onClick={() => {
-                                                    setIsPasswordResetFlow(true);
-                                                    setShowRecoveryEmailDialog(true);                                                
-                                                }}
-                                            >
-                                                {intl.formatMessage({id: "FORGOT_PASSWORD"})}?
-                                            </span>                                            
-                                        </Stack>
-                                    </Grid2>
-                                }
+                                            {intl.formatMessage({id: "FORGOT_PASSWORD"})}?
+                                        </span>
+                                    </Stack>
+                                </Grid2>
                                 <Grid2 size={12}>
                                     <Stack
                                         direction={"row-reverse"}
@@ -771,14 +828,7 @@ const Login: React.FC<LoginProps>= ({
                                         <Button
                                             disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
                                             variant="contained"
-                                            onClick={() => {
-                                                // const form = document.getElementById("loginForm") as HTMLFormElement;
-                                                // (form.elements.namedItem("username") as HTMLInputElement).value = username || "";
-                                                // (form.elements.namedItem("password") as HTMLInputElement).value = password || "";
-                                                // setTimeout(() => {
-                                                //     form.submit()
-                                                // }, 50);
-                                                
+                                            onClick={() => {                                                
                                                 setErrorMessage(null);
                                                 authenticateUser({
                                                     variables: {
@@ -1005,6 +1055,38 @@ const Login: React.FC<LoginProps>= ({
                                 onUpdateStart={() => {
                                     setErrorMessage(null);
                                     setShowMutationBackdrop(true);
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ConfigureValidatePhoneNumber &&
+                            <AuthenticationConfigureValidatePhoneNumber
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
+                                }}
+                            />
+                        }
+                        {userAuthenticationState.authenticationState === AuthenticationState.ValidatePhoneNumber &&
+                            <AuthenticationValidatePhoneNumber
+                                initialUserAuthenticationState={userAuthenticationState}
+                                onAuthenticationCancelled={() => {
+                                    handleCancelAuthentication(userAuthenticationState);
+                                }}
+                                onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                    setShowMutationBackdrop(false);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                                }}
+                                onUpdateStart={() => {
+                                    setErrorMessage(null);
+                                    setShowMutationBackdrop(true)
                                 }}
                             />
                         }

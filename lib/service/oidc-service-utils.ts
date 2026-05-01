@@ -7,7 +7,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { PortalUserProfile, TenantLookAndFeel, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 import { CLIENT_ASSERTION_TYPE_JWT_BEARER, GRANT_TYPE_AUTHORIZATION_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST } from "@/utils/consts";
-import { RecaptchaResponse } from "../models/recaptcha";
+import { RecaptchaEnterpriseResponse, RecaptchaResponse } from "../models/recaptcha";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { render } from "@react-email/render";
@@ -17,8 +17,9 @@ import { SecretShare } from "@/components/email-templates/secret-share-template"
 import { OIDCTokenResponse } from "../models/token-response";
 import { base64Encode } from "@/utils/dao-utils";
 import JwtServiceUtils from "./jwt-service-utils";
-import { SmsMessageBody } from "../models/sms";
+import { SmsCallbackRequest } from "../models/sms";
 import ServiceClientConfig from "./service-client-config";
+import { ForgotPasswordOtp } from "@/components/email-templates/forgot-password-otp-template";
 
 const {
     SECURITY_EVENT_CALLBACK_URI,
@@ -205,12 +206,12 @@ class OIDCServiceUtils extends ServiceClientConfig {
         }
     }
 
-    public async sendSms(smsMessageBody: SmsMessageBody, authToken: string): Promise<void>{
+    public async sendSms(smsCallbackRequest: SmsCallbackRequest, authToken: string): Promise<void>{
         if(!SMS_SERVICE_WRAPPER_URI || SMS_SERVICE_WRAPPER_URI === ""){
             logWithDetails("error", "No SMS Service Wrapper URI was configured", {});
         }
         else{
-            const response: AxiosResponse = await this.getAxiosInstance().post(SMS_SERVICE_WRAPPER_URI, smsMessageBody, {
+            const response: AxiosResponse = await this.getAxiosInstance().post(SMS_SERVICE_WRAPPER_URI, smsCallbackRequest, {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${authToken}`
@@ -269,6 +270,19 @@ class OIDCServiceUtils extends ServiceClientConfig {
         this.invokeSecurityEventCallback(securityEvent, authToken);        
     }
 
+    public async invokeSmsCallback(authToken: string, smsCallbackRequest: SmsCallbackRequest, smsCallbackUri: string) {
+        this.getAxiosInstance().post(
+            smsCallbackUri, 
+            smsCallbackRequest,
+            {
+                headers: {
+                    "Authorization": `Bearer ${authToken}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        )
+    }
+
     public async invokeSecurityEventCallback(securityEvent: SecurityEvent, authToken: string | null){
         // Fire asynchronously, but if there is an error, log the error.
         if(SECURITY_EVENT_CALLBACK_URI){
@@ -292,7 +306,7 @@ class OIDCServiceUtils extends ServiceClientConfig {
     }
 
 
-    public async validateRecaptchaV3(apiKey: string, recaptchaToken: string): Promise<RecaptchaResponse>{
+    public async validateRecaptcha(apiKey: string, recaptchaToken: string): Promise<RecaptchaResponse>{
         
         let recaptchaResponse: RecaptchaResponse = {
             challenge_ts: "",
@@ -319,6 +333,29 @@ class OIDCServiceUtils extends ServiceClientConfig {
         return recaptchaResponse;
     }
 
+    public async validateRecaptchaEnterprise(apiKey: string, recaptchaToken: string, project: string): Promise<RecaptchaEnterpriseResponse>{
+
+        let recaptchaResponse: RecaptchaEnterpriseResponse = {
+            name: "",
+            event: { token: "", siteKey: "" },
+            riskAnalysis: { score: 0, reasons: [] },
+            tokenProperties: { valid: false, hostname: "", action: "", createTime: "" }
+        }
+        try{
+            const response = await this.getAxiosInstance().post(
+                `https://recaptchaenterprise.googleapis.com/v1/projects/${project}/assessments?key=${apiKey}`,
+                { event: { token: recaptchaToken } },
+                { headers: { "Content-Type": "application/json" } }
+            );
+            recaptchaResponse = response.data;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(error: any) {
+            logWithDetails("error", `Error invoking Google reCAPTCHA Enterprise verification. ${error.message}`, {...error});
+        }
+        return recaptchaResponse;
+    }
+
     public async sendEmailVerificationEmail(from: string, to: string, name: string, token: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string, contactEmail?: string): Promise<void> {
         const html = await render(
             React.createElement(
@@ -334,6 +371,24 @@ class OIDCServiceUtils extends ServiceClientConfig {
         );
 
         this.sendEmail(from, to, "Verify Email", undefined, html);
+    }
+
+    public async sendEmailForgotPasswordOpt(from: string, to: string, name: string, token: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string, contactEmail?: string): Promise<void> {
+        const html = await render(
+            React.createElement(
+                ForgotPasswordOtp, 
+                {
+                    name: name, 
+                    token: token, 
+                    tenantLookAndFeel: tenantLookAndFeel, 
+                    contactEmail: contactEmail,
+                    languageCode: languageCode
+                }
+            )
+        );
+
+        this.sendEmail(from, to, "Forgot Password", undefined, html);
+        
     }
 
     public async sendSecretEntryEmail(from: string, to: string, url: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string): Promise<void>{

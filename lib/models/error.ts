@@ -699,7 +699,7 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
     },
     EC00134: {
         errorCode: "EC00134",
-        errorKey: "ERROR_REGISTRATION_NO_USER_FOUND_FOR_EMAIL_VALIDATION_TOKEN",
+        errorKey: "ERROR_REGISTRATION_NO_USER_FOUND_FOR_VALIDATION_TOKEN",
         errorMessage: "The validation token you entered is invalid."
     },
     EC00135: {
@@ -1191,6 +1191,26 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00233",
         errorKey: "ERROR_INVALID_URI_FOR_TOKEN_ENRICHMENT_CALLBACK",
         errorMessage: "The URI is not valid for the token enrichment callback."
+    },
+    EC00234: {
+        errorCode: "EC00234",
+        errorKey: "ERROR_INVALID_PHONE_NUMBER_FORMAT",
+        errorMessage: "The phone number does not have a valid format."
+    },
+    EC00235: {
+        errorCode: "EC00235",
+        errorKey: "ERROR_UNABLE_SEND_PHONE_NUMBER_VALIDATION_CODE",
+        errorMessage: "A error occurred when sending a validation code due to a missing or invalid phone number."
+    },
+    EC00236: {
+        errorCode: "EC00236",
+        errorKey: "ERROR_SMS_NOT_ENABLED_FOR_PASSWORD_RESET_TOKEN",
+        errorMessage: "Password reset tokens cannot be sent via SMS."
+    },
+    EC00237: {
+        errorCode: "EC00237",
+        errorKey: "ERROR_SMS_NOT_ENABLED",
+        errorMessage: "SMS is not enabled."
     }
 }
 

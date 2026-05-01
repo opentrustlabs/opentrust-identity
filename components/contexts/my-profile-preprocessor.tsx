@@ -40,7 +40,7 @@ const ProfilePreProcessorContextProvider: React.FC<ProfilePreProcessorProviderPr
                 }
             }
         }        
-    }, [authSessionProps, authContextProps]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 
     return (

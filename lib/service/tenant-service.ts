@@ -405,7 +405,9 @@ class TenantService {
         const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
         const recaptchaMetaData: RecaptchaMetaData | null = captchaConfig ? 
             {
+                alias: captchaConfig.alias,
                 recaptchaSiteKey: captchaConfig.siteKey,
+                captchaEnabled: captchaConfig.captchaEnabled,
                 useCaptchaV3: captchaConfig.useCaptchaV3,
                 useEnterpriseCaptcha: captchaConfig.useEnterpriseCaptcha
             } : 
@@ -890,6 +892,7 @@ class TenantService {
     }
 
     public async updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput): Promise<SystemSettings> {
+        
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [SYSTEM_SETTINGS_UPDATE_SCOPE], null);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
@@ -924,7 +927,15 @@ class TenantService {
             systemId: existingSystemSettings.systemId !== "" ? existingSystemSettings.systemId : randomUUID().toString(),
             auditRecordRetentionPeriodDays: systemSettingsUpdateInput.auditRecordRetentionPeriodDays,
             contactEmail: systemSettingsUpdateInput.contactEmail,
-            noReplyEmail: systemSettingsUpdateInput.noReplyEmail
+            noReplyEmail: systemSettingsUpdateInput.noReplyEmail,
+            smsAlertOnAccountStatusChange: systemSettingsUpdateInput.smsAlertOnAccountStatusChange,
+            smsAlertOnEmailChange: systemSettingsUpdateInput.smsAlertOnEmailChange,
+            smsAlertOnMFADeviceChange: systemSettingsUpdateInput.smsAlertOnMFADeviceChange,
+            smsAlertOnPasswordChange: systemSettingsUpdateInput.smsAlertOnPasswordChange,
+            smsAllowPasswordResetOtp: systemSettingsUpdateInput.smsAllowPasswordResetOtp,
+            smsCallbackServiceEnabled: systemSettingsUpdateInput.smsCallbackServiceEnabled,
+            smsCallbackUri: systemSettingsUpdateInput.smsCallbackUri,
+            smsSenderName: systemSettingsUpdateInput.smsSenderName
         }
         
         await tenantDao.updateSystemSettings(systemSettings);
@@ -966,15 +977,16 @@ class TenantService {
         }
 
         if(captchaConfigInput.useCaptchaV3 && !captchaConfigInput.minScoreThreshold){
-            throw new GraphQLError(ERROR_CODES.EC00194.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00194}});            
-
+            throw new GraphQLError(ERROR_CODES.EC00194.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00194}});
         }
+        
         if(captchaConfigInput.minScoreThreshold && (captchaConfigInput.minScoreThreshold > 1 || captchaConfigInput.minScoreThreshold < 0)){
             throw new GraphQLError(ERROR_CODES.EC00195.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00195}});            
         }
 
         const captchaConfig: CaptchaConfig = {
             alias: captchaConfigInput.alias,
+            captchaEnabled: captchaConfigInput.captchaEnabled,
             apiKey: "",
             siteKey: captchaConfigInput.siteKey,
             useCaptchaV3: captchaConfigInput.useCaptchaV3,

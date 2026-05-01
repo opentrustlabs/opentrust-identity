@@ -18,7 +18,13 @@ export const TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
             "allowuserselfregistration": "allowUserSelfRegistration",
             "allowsociallogin": "allowSocialLogin",
             "allowanonymoususers": "allowAnonymousUsers",
-            "verifyemailonselfregistration": "verifyEmailOnSelfRegistration",
+            "verifyemailonselfregistration": {
+                name: "verifyEmailOnSelfRegistration",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
+            "verifyphonenumberonselfregistration": "verifyPhoneNumberOnSelfRegistration",
             "federatedauthenticationconstraint": "federatedAuthenticationConstraint",
             "markfordelete": "markForDelete",
             "tenanttype": "tenantType",
@@ -51,7 +57,13 @@ export const ROOT_TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} 
             "allowuserselfregistration": "allowUserSelfRegistration",
             "allowsociallogin": "allowSocialLogin",
             "allowanonymoususers": "allowAnonymousUsers",
-            "verifyemailonselfregistration": "verifyEmailOnSelfRegistration",
+            "verifyemailonselfregistration": {
+                name: "verifyEmailOnSelfRegistration",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
+            "verifyphonenumberonselfregistration": "verifyPhoneNumberOnSelfRegistration",
             "federatedauthenticationconstraint": "federatedAuthenticationConstraint",
             "markfordelete": "markForDelete",
             "tenanttype": "tenantType",
@@ -290,6 +302,7 @@ export const CAPTCHA_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
         tables: ["captcha_config"],
         columns: {
             "alias": "alias",
+            "captchaenabled": "captchaEnabled",
 			"projectid": "projectId",
 			"sitekey": "siteKey",
 			"apikey": "apiKey",
@@ -838,7 +851,15 @@ export const SYSTEM_SETTINGS_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
 			"enableportalaslegacyidp": "enablePortalAsLegacyIdp",
 			"auditrecordretentionperioddays": "auditRecordRetentionPeriodDays",
 			"noreplyemail": "noReplyEmail",
-			"contactemail": "contactEmail"
+			"contactemail": "contactEmail",
+            "smscallbackserviceenabled": "smsCallbackServiceEnabled",
+            "smscallbackuri": "smsCallbackUri",
+            "smssendername": "smsSenderName",
+            "smsallowpasswordresetotp": "smsAllowPasswordResetOtp",
+            "smsalertonpasswordchange": "smsAlertOnPasswordChange",
+            "smsalertonmfadevicechange": "smsAlertOnMFADeviceChange",
+            "smsalertonaccountstatuschange": "smsAlertOnAccountStatusChange",
+            "smsalertonemailchange": "smsAlertOnEmailChange",
         }
     }
 };
@@ -1142,7 +1163,7 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 			"countrycode": "countryCode",
 			"domain": "domain",
 			"email": "email",
-			"emailverified": "emailVerified",
+			"emailverified": "emailVerified",            
 			"enabled": "enabled",
 			"federatedoidcprovidersubjectid": "federatedOIDCProviderSubjectId",
 			"firstname": "firstName",
@@ -1151,6 +1172,12 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete",
             "forcepasswordresetafterauthentication": "forcePasswordResetAfterAuthentication"
@@ -1185,6 +1212,12 @@ export const USERS_BY_EMAIL_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }
@@ -1218,6 +1251,12 @@ export const USERS_BY_FEDERATED_OIDC_ID_MODEL:  {[key: string]: cassandra.mappin
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }
@@ -1251,6 +1290,12 @@ export const USERS_BY_PHONE_NUMBER_MODEL:  {[key: string]: cassandra.mapping.Mod
 			"middlename": "middleName",
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
+            "phonenumberverified": {
+                name: "phoneNumberVerified",
+                toModel(columnValue) {
+                    return !columnValue ? false : columnValue;
+                },
+            },
 			"preferredlanguagecode": "preferredLanguageCode",
 			"markfordelete": "markForDelete"
         }
@@ -1346,9 +1391,9 @@ export const USER_MFA_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
     }
 };
 
-export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "user_profile_email_change_state": {
-        tables: ["user_profile_email_change_state"],
+export const USER_PROFILE_CHANGE_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
+    "user_profile_change_state": {
+        tables: ["user_profile_change_state"],
         columns: {
             "userid": {
                 name: "userId",
@@ -1356,13 +1401,13 @@ export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.m
                     return columnValue.toString();
                 }
             },
-			"changeemailsessiontoken": "changeEmailSessionToken",
-			"emailchangestate": "emailChangeState",
-			"email": "email",
+			"changeprofilesessiontoken": "changeProfileSessionToken",
+			"profilestate": "profileState",
+            "profileproperty": "profileProperty",
+			"profilepropertyvalue": "profilePropertyValue",
 			"changeorder": "changeOrder",
 			"changestatestatus": "changeStateStatus",
-			"expiresatms": "expiresAtMs",
-			"isprimaryemail": "isPrimaryEmail"
+			"expiresatms": "expiresAtMs"
         }
     }
 };

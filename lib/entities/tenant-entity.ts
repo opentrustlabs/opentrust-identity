@@ -67,6 +67,13 @@ export const TenantEntity = new EntitySchema({
             name: "verifyemailonselfregistration",
             transformer: BooleanTransformer
         },
+        verifyPhoneNumberOnSelfRegistration: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "verifyphonenumberonselfregistration",
+            transformer: BooleanTransformer
+        },
         federatedAuthenticationConstraint: {
             type: String,
             primary: false,

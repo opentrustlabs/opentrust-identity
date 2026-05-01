@@ -10,6 +10,12 @@ const searchClient: OpenSearchClient = getOpenSearchClient();
 
 class OpenSearchDao implements SearchDao {
 
+    /**
+     * 
+     * @param searchInput 
+     * @param searchResultsTypesToOmit 
+     * @returns 
+     */
     public async objectSearch(searchInput: SearchInput, searchResultsTypesToOmit: Array<SearchResultType>): Promise<ObjectSearchResults> {
         // Build the BOOLEAN query, both in cases where there is a search term and where
         // there is not. We will almost always need to some kind of filters, whether for
@@ -400,6 +406,8 @@ class OpenSearchDao implements SearchDao {
             id: user.userId,
             index: SEARCH_INDEX_OBJECT_SEARCH
         });
+
+
         
         if (getResponse.body) {
             const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
@@ -459,6 +467,7 @@ class OpenSearchDao implements SearchDao {
         );
     }
 
+
     public async indexTenant(tenant: Tenant, rootTenant: Tenant){
         const document: ObjectSearchResultItem = {
             name: tenant.tenantName,
@@ -516,6 +525,7 @@ class OpenSearchDao implements SearchDao {
         });	
     }
 
+    
     public async indexAuthorizationGroup(group: AuthorizationGroup){
         const document: ObjectSearchResultItem = {
             name: group.groupName,
@@ -552,6 +562,7 @@ class OpenSearchDao implements SearchDao {
         });
     }
 
+    
     public async indexFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider){
         	const document: ObjectSearchResultItem = {
             name: federatedOIDCProvider.federatedOIDCProviderName,
@@ -573,6 +584,7 @@ class OpenSearchDao implements SearchDao {
         }); 
     }
 
+    
     public async indexSigningKey(key: SigningKey){
         const document: ObjectSearchResultItem = {
             name: key.keyName,
@@ -608,6 +620,7 @@ class OpenSearchDao implements SearchDao {
         });
     }
 
+    
     public async indexUser(user: User, owningTenantId: string, authzGroup: AuthorizationGroup | null){        
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
@@ -662,6 +675,7 @@ class OpenSearchDao implements SearchDao {
         }
     }
 
+    
     public async indexScope(scope: Scope, tenantId: string){
         const document: ObjectSearchResultItem = {
             name: scope.scopeName,
@@ -696,7 +710,6 @@ class OpenSearchDao implements SearchDao {
             body: relSearchDocument
         });
     } 
-    
     
     public async removerUserFromTenant(tenantId: string, userId: string): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

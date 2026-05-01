@@ -7,12 +7,18 @@ const {
 
 const CaptchaConfigEntity = new EntitySchema({
 
-
-    columns: {
+    columns: {        
         alias: {
             type: String,
             primary: true,
             name: "alias"
+        },
+        captchaEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "captchaenabled",
+            transformer: BooleanTransformer
         },
         projectId: {
             type: String,

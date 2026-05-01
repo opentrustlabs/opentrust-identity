@@ -35,6 +35,7 @@ create TABLE tenant (
     allowanonymoususers NUMBER(1) NOT NULL,
     allowsociallogin NUMBER(1) NOT NULL,
     verifyemailonselfregistration NUMBER(1) NOT NULL,
+    verifyphonenumberonselfregistration NUMBER(1) NOT NULL,
     federatedauthenticationconstraint VARCHAR2(128) NOT NULL,
     markfordelete NUMBER(1) NOT NULL,
     tenanttype VARCHAR2(128) NOT NULL,
@@ -127,6 +128,7 @@ create TABLE users (
     lastname VARCHAR2(128) NOT NULL,
     middlename VARCHAR2(128),
     phonenumber VARCHAR2(32),
+    phonenumberverified NUMBER(1) NOT NULL,
     address VARCHAR2(128),
     addressline1 VARCHAR2(128),
     city VARCHAR2(128),
@@ -708,8 +710,23 @@ create TABLE user_profile_email_change_state (
     FOREIGN KEY (userid) REFERENCES users(userid) 
 );
 
+create TABLE user_profile_change_state (
+    userid VARCHAR2(64) NOT NULL,    
+    profilestate VARCHAR2(64) NOT NULL,
+    changeprofilesessiontoken VARCHAR2(128) NOT NULL,
+    profileproperty VARCHAR2(64) NOT NULL,
+    profilepropertyvalue VARCHAR2(128) NOT NULL,
+    changeorder INT NOT NULL,
+    changestatestatus VARCHAR2(32) NOT NULL,
+    expiresatms NUMBER NOT NULL,
+    PRIMARY KEY (userid, changeprofilesessiontoken, profilestate),
+    FOREIGN KEY (userid) REFERENCES users(userid) 
+);
+
+
 create TABLE captcha_config (
     alias VARCHAR2(256) PRIMARY KEY,
+    captchaenabled NUMBER(1) NOT NULL,
     projectid VARCHAR2(128),
     sitekey VARCHAR2(256) NOT NULL,
     apikey VARCHAR2(256) NOT NULL,
@@ -727,6 +744,14 @@ create TABLE system_settings (
     auditrecordretentionperioddays INT,
     noreplyemail VARCHAR2(64),
     contactemail VARCHAR2(64),
+    smscallbackserviceenabled NUMBER(1) NOT NULL,
+    smscallbackuri VARCHAR2(256),
+    smssendername VARCHAR2(64),
+    smsallowpasswordresetotp NUMBER(1) NOT NULL,
+    smsalertonpasswordchange NUMBER(1) NOT NULL,
+    smsalertonmfadevicechange NUMBER(1) NOT NULL,
+    smsalertonaccountstatuschange NUMBER(1) NOT NULL,
+    smsalertonemailchange NUMBER(1) NOT NULL,
     FOREIGN KEY (rootclientid) REFERENCES client(clientid)
 );
 

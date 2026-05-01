@@ -1,6 +1,6 @@
 "use client";
 import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, PortalUserProfile, SecretObjectType, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
-import { Alert, Backdrop, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, Grid2, InputAdornment, Paper, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
+import { Alert, Backdrop, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Divider, FormControlLabel, Grid2, InputAdornment, Paper, Snackbar, Stack, Switch, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
@@ -26,8 +26,6 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
     systemSettings
 }) => {
 
-    
-
     // CONTEXT VARIABLES
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
@@ -42,11 +40,20 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
         enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
         auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
         noReplyEmail: systemSettings.noReplyEmail,
-        contactEmail: systemSettings.contactEmail
+        contactEmail: systemSettings.contactEmail,
+        smsAlertOnAccountStatusChange: systemSettings.smsAlertOnAccountStatusChange,
+        smsAlertOnEmailChange: systemSettings.smsAlertOnEmailChange,
+        smsAlertOnMFADeviceChange: systemSettings.smsAlertOnMFADeviceChange,
+        smsAlertOnPasswordChange: systemSettings.smsAlertOnPasswordChange,
+        smsAllowPasswordResetOtp: systemSettings.smsAllowPasswordResetOtp,
+        smsCallbackServiceEnabled: systemSettings.smsCallbackServiceEnabled,
+        smsCallbackUri: systemSettings.smsCallbackUri || "",
+        smsSenderName: systemSettings.smsSenderName || ""
     };
 
     const initCaptchaInput: CaptchaConfigInput = {
         alias: "",
+        captchaEnabled: false,
         apiKey: "",
         siteKey: "",
         useCaptchaV3: false,
@@ -78,7 +85,15 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                 enablePortalAsLegacyIdp: data.updateSystemSettings.enablePortalAsLegacyIdp,
                 auditRecordRetentionPeriodDays: data.updateSystemSettings.auditRecordRetentionPeriodDays,
                 contactEmail: data.updateSystemSettings.contactEmail,
-                noReplyEmail: data.updateSystemSettings.noReplyEmail
+                noReplyEmail: data.updateSystemSettings.noReplyEmail,
+                smsAlertOnAccountStatusChange: data.updateSystemSettings.smsAlertOnAccountStatusChange,
+                smsAlertOnEmailChange: data.updateSystemSettings.smsAlertOnEmailChange,
+                smsAlertOnMFADeviceChange: data.updateSystemSettings.smsAlertOnMFADeviceChange,
+                smsAlertOnPasswordChange: data.updateSystemSettings.smsAlertOnPasswordChange,
+                smsAllowPasswordResetOtp: data.updateSystemSettings.smsAllowPasswordResetOtp,
+                smsCallbackServiceEnabled: data.updateSystemSettings.smsCallbackServiceEnabled,
+                smsCallbackUri: data.updateSystemSettings.smsCallbackUri,
+                smsSenderName: data.updateSystemSettings.smsSenderName
             });
             setShowMutationSnackbar(true);
         },
@@ -95,6 +110,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                 const config: CaptchaConfig = data.getCaptchaConfig;                
                 const input: CaptchaConfigInput = {
                     alias: config.alias,
+                    captchaEnabled: config.captchaEnabled,
                     apiKey: config.apiKey,
                     siteKey: config.siteKey,
                     useCaptchaV3: config.useCaptchaV3,
@@ -321,8 +337,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             }}                         
                                         />                                        
                                     </Grid2>
-                                    <Grid2 marginBlock={"8px"} size={12}>
-                                        
+                                    <Grid2 marginBlock={"8px"} size={12}>                                        
                                         <TextField
                                             label="No-Reply Email"
                                             fullWidth={true}
@@ -335,8 +350,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         />                                        
                                     </Grid2>
 
-                                    <Grid2 marginBlock={"8px"} size={12}>
-                                        
+                                    <Grid2 marginBlock={"8px"} size={12}>                                        
                                         <TextField
                                             label="Contact Email"
                                             fullWidth={true}
@@ -347,6 +361,78 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
                                             }}                         
                                         />                                        
+                                    </Grid2>
+
+                                    <Divider />
+
+                                    <Grid2 size={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    value={systemSettingsUpdateInput.smsCallbackServiceEnabled}
+                                                    checked={systemSettingsUpdateInput.smsCallbackServiceEnabled}
+                                                    disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
+                                                    onChange={(_, checked: boolean) => {                                                
+                                                        systemSettingsUpdateInput.smsCallbackServiceEnabled = checked;
+                                                        if(checked === false){
+                                                            systemSettingsUpdateInput.smsAllowPasswordResetOtp = false;
+                                                            systemSettingsUpdateInput.smsCallbackUri = "";
+                                                            systemSettingsUpdateInput.smsSenderName = "";
+                                                        }
+                                                        setMarkDirty(true);
+                                                        setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                                    }}
+                                                />
+                                            }
+                                            label="Enable SMS Callback Service"
+                                            sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBlock={"8px"} size={12}>                                        
+                                        <TextField
+                                            label="SMS Callback URI"
+                                            fullWidth={true}
+                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope) || systemSettingsUpdateInput.smsCallbackServiceEnabled === false}
+                                            value={systemSettingsUpdateInput.smsCallbackUri || ""}
+                                            onChange={(evt) => {
+                                                systemSettingsUpdateInput.smsCallbackUri = evt.target.value;
+                                                setMarkDirty(true);
+                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                            }}                         
+                                        />                                        
+                                    </Grid2>
+                                    <Grid2 marginBlock={"8px"} size={12}>                                        
+                                        <TextField
+                                            label="SMS Sender Name (Optional)"
+                                            fullWidth={true}
+                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope) || systemSettingsUpdateInput.smsCallbackServiceEnabled === false}
+                                            value={systemSettingsUpdateInput.smsSenderName || ""}
+                                            onChange={(evt) => {
+                                                systemSettingsUpdateInput.smsSenderName = evt.target.value;
+                                                setMarkDirty(true);
+                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                            }}                         
+                                        />                                        
+                                    </Grid2>
+                                    <Grid2 size={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    value={systemSettingsUpdateInput.smsAllowPasswordResetOtp}
+                                                    checked={systemSettingsUpdateInput.smsAllowPasswordResetOtp}
+                                                    disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope) || systemSettingsUpdateInput.smsCallbackServiceEnabled === false}
+                                                    onChange={(_, checked: boolean) => {                                                
+                                                        systemSettingsUpdateInput.smsAllowPasswordResetOtp = checked;
+                                                        setMarkDirty(true);
+                                                        setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                                    }}
+                                                />
+                                            }
+                                            label="Enable SMS For Password Reset"
+                                            sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                            labelPlacement="start"
+                                        />
                                     </Grid2>
 
                                     {containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope) &&
@@ -365,7 +451,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     })
                                                 }}
                                                 markDirty={markDirty}
-                                                disableSubmit={false}                                                
+                                                disableSubmit={systemSettingsUpdateInput.smsCallbackServiceEnabled === true && !systemSettingsUpdateInput.smsCallbackUri?.startsWith("http")}                                                
                                             />
                                         </Grid2>
                                     }                                    
@@ -400,7 +486,25 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     <Grid2 sx={{marginBottom: "16px", textDecoration: "underline", fontWeight: "bold"}}>
                                         ReCaptcha Configuration
                                     </Grid2>
-                                    <Grid2 alignItems={"center"} container size={12} spacing={1}>                                        
+                                    <Grid2 alignItems={"center"} container size={12} spacing={1}>
+
+                                        <Grid2 size={12} marginBottom={"8px"}>                                            
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={captchaConfigInput.captchaEnabled === true}
+                                                        onChange={(_, checked: boolean) => {
+                                                            captchaConfigInput.captchaEnabled = checked;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                            setCaptchaConfigMarkDirty(true);
+                                                        }}
+                                                    />
+                                                }
+                                                label="ReCaptcha Enabled"
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
+                                            />
+                                        </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <TextField
                                                 id="captchaAlias" name="captchaAlias"
@@ -410,12 +514,28 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.alias}
-                                                label="Alias"
+                                                label="reCaptcha Action Name"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            
+                                        <Grid2 size={12} marginBottom={"8px"}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={captchaConfigInput.useEnterpriseCaptcha === true}
+                                                        onChange={(_, checked: boolean) => {
+                                                            captchaConfigInput.useEnterpriseCaptcha = checked;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                            setCaptchaConfigMarkDirty(true);
+                                                        }}
+                                                    />
+                                                }
+                                                label="Use Enterprise ReCaptcha"
+                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
+                                                labelPlacement="start"
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"} size={12}>                                            
                                             <TextField
                                                 id="projectId" name="projectId"
                                                 onChange={(evt) => {
@@ -424,7 +544,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.projectId}
-                                                label="Project ID (Optional)"
+                                                label="Project ID (Required only for enterprise reCaptcha)"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
@@ -547,25 +667,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 label="Min. Score Threshold (for V3 ReCaptcha) 0.0 to 1.0"
                                                 fullWidth={true}
                                             />
-                                        </Grid2>
-                                        <Grid2 size={12} marginBottom={"8px"}>
-                                            <FormControlLabel
-                                                control={
-                                                    <Switch
-                                                        checked={captchaConfigInput.useEnterpriseCaptcha === true}
-                                                        onChange={(_, checked: boolean) => {
-                                                            captchaConfigInput.useEnterpriseCaptcha = checked;
-                                                            setCaptchaConfigInput({...captchaConfigInput});
-                                                            setCaptchaConfigMarkDirty(true);
-                                                        }}
-                                                    />
-                                                }
-                                                label="Use Enterprise ReCaptcha"
-                                                sx={{ ml: 0, fontSize: "1.1em", justifyContent: 'space-between', width: '100%' }}
-                                                labelPlacement="start"
-                                            />
-                                        </Grid2>
-                                        
+                                        </Grid2>                                        
                                     </Grid2>
                                     <Grid2 size={12}>
                                         <DetailSectionActionHandler
@@ -583,7 +685,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 
                                             }}
                                             markDirty={captchaConfigMarkDirty}
-                                            disableSubmit={false}
+                                            disableSubmit={captchaConfigInput.useEnterpriseCaptcha === true && (!captchaConfigInput.projectId || captchaConfigInput.projectId.length < 1)}
                                             enableRestoreDefault={data && data.getCaptchaConfig !== null}
                                             restoreDefaultHandler={() => {
                                                 setShowConfirmRecaptchaRemoveDialogOpen(true);

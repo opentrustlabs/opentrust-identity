@@ -42,9 +42,7 @@ const AccessError: React.FC = () => {
     if(extendedMessage){
         errorMessage += " " + extendedMessage;
     }
-    console.log("checkpoint 1");
-    console.log("error Message: ", errorMessage)
-
+    
     return (
         <Alert sx={{maxWidth: breakPoints.isMedium ? "80vw" : "30vw", fontSize: "0.95em"}} severity="error">{errorMessage}</Alert>
     )

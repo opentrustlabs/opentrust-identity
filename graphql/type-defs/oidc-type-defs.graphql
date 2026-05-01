@@ -159,13 +159,16 @@ type Mutation {
     # Users can add recovery emails or swap emails only for themselves. The user id will be taken from
     # the requestors access token. This will return a registration response for entering
     # the validation token sent to their email.
-    profileHandleEmailChange(newEmail: String!): ProfileEmailChangeResponse!
-    profileValidateEmail(token: String!, changeEmailSessionToken: String!): ProfileEmailChangeResponse!
-    profileCancelEmailChange(changeEmailSessionToken: String!): ProfileEmailChangeResponse!    
-    profileAddRecoveryEmail(recoveryEmail: String!): ProfileEmailChangeResponse!
+    profileHandleEmailChange(newEmail: String!): UserProfileChangeResponse!
+    profileValidateEmail(token: String!, changeEmailSessionToken: String!): UserProfileChangeResponse!
+    profileCancelEmailChange(changeEmailSessionToken: String!): UserProfileChangeResponse!    
+    profileAddRecoveryEmail(recoveryEmail: String!): UserProfileChangeResponse!
     swapPrimaryAndRecoveryEmail: Boolean!
     # If user id is absent then take the user id of the user requesting the deletion.    
     deleteRecoveryEmail(userId: String!): Boolean!
+    profileHandlePhoneNumberChange(newPhoneNumber: String!): UserProfileChangeResponse!
+    profileValidatePhoneNumberChange(token: String!, changePhoneNumberSessionToken: String!): UserProfileChangeResponse!
+    profileCancelPhoneNumberChange(changePhoneNumberSessionToken: String!): UserProfileChangeResponse!
     
 
     ## Authentication Flows
@@ -173,7 +176,7 @@ type Mutation {
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String, deviceCodeId: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!    
-    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String, useRecoveryEmail: Boolean!): UserAuthenticationStateResponse!
+    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String, forgotPasswordCommunicationMethod: ForgotPasswordCommunicationMethod!): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -182,6 +185,8 @@ type Mutation {
     authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateAcceptTermsAndConditions(accepted: Boolean!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateVerifyEmailAddress(userId: String!, token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateConfigureVerifyPhoneNumber(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateVerifyPhoneNumber(userId: String!, token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
 
@@ -198,6 +203,8 @@ type Mutation {
     registerAddRecoveryEmail(userId: String!, recoveryEmail: String, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerVerifyRecoveryEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerAddDuressPassword(userId: String!, password: String, skip: Boolean!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureVerifyPhoneNumber(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerVerifyPhoneNumber(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String, deviceCodeId: String): UserRegistrationStateResponse!
 
     ## MFA Utilities
@@ -298,6 +305,12 @@ type Mutation {
 
 }
 
+enum ForgotPasswordCommunicationMethod {
+    EMAIL
+    RECOVERY_EMAIL
+    PHONE_NUMBER
+}
+
 enum ScopeFilterCriteria {
     EXISTING
     AVAILABLE
@@ -330,13 +343,14 @@ type Tenant {
     allowSocialLogin: Boolean!
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    verifyPhoneNumberOnSelfRegistration: Boolean!
     federatedAuthenticationConstraint: String!
     federatedauthenticationconstraintid: String
     markForDelete: Boolean!
     tenantType: String!
     tenanttypeid: String
     migrateLegacyUsers: Boolean!
-    allowLoginByPhoneNumber: Boolean!
+    allowLoginByPhoneNumber: Boolean!    
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
@@ -399,6 +413,7 @@ type FederatedOIDCProviderTenantRel {
 }
 
 type CaptchaConfig {
+    captchaEnabled: Boolean!
     alias: String!
     projectId: String
     siteKey: String!
@@ -470,6 +485,7 @@ type PortalUserProfile {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -502,6 +518,7 @@ type User {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -896,6 +913,8 @@ type TenantMetaData {
 }
 
 type RecaptchaMetaData {
+    alias: String!
+    captchaEnabled: Boolean!
     recaptchaSiteKey: String!
     useEnterpriseCaptcha: Boolean!
     useCaptchaV3: Boolean!
@@ -952,6 +971,8 @@ enum AuthenticationState {
     ENTER_EMAIL
     ENTER_USER_CODE
     VALIDATE_EMAIL
+    CONFIGURE_VALIDATE_PHONE_NUMBER
+    VALIDATE_PHONE_NUMBER
 }
 
 type ErrorDetail {
@@ -1003,6 +1024,9 @@ enum RegistrationState {
     VALIDATE_RECOVERY_EMAIL
     ADD_DURESS_PASSWORD_OPTIONAL
     UNREGISTERED
+    CONFIGURE_PHONE_NUMBER_VALIDATION_OPTIONAL
+    CONFIGURE_PHONE_NUMBER_VALIDATION_REQUIRED
+    VALIDATE_PHONE_NUMBER
 }
 
 type UserRegistrationStateResponse {
@@ -1027,29 +1051,36 @@ type UserRegistrationState {
     deviceCodeId: String
 }
 
-enum EmailChangeState {
+enum ProfileState {
     ENTER_EMAIL
     ERROR
     VALIDATE_EMAIL
+    ENTER_PHONE
+    VALIDATE_PHONE
     COMPLETED
 }
 
-type ProfileEmailChangeState {
-    changeEmailSessionToken: String!
-    emailChangeState: EmailChangeState!
-    email: String!
+enum ProfileProperty {
+    EMAIL
+    RECOVERY_EMAIL
+    PHONE_NUMBER
+}
+
+type UserProfileChangeState {
+    changeProfileSessionToken: String!
+    profileState: ProfileState!
+    profileProperty: ProfileProperty!
+    profilePropertyValue: String!
     userId: String!
     changeOrder: Int!
     changeStateStatus: String!
     expiresAtMs: Float!
-    isPrimaryEmail: Boolean!
 }
 
-type ProfileEmailChangeResponse {
-    profileEmailChangeState: ProfileEmailChangeState!
-    profileEmailChangeError: ErrorDetail
+type UserProfileChangeResponse {
+    profileChangeState: UserProfileChangeState!
+    profileChangeError: ErrorDetail
 }
-
 
 enum SecondFactorType {
     TOTP
@@ -1242,6 +1273,14 @@ type SystemSettings {
     auditRecordRetentionPeriodDays: Int
     noReplyEmail: String
     contactEmail: String
+    smsCallbackServiceEnabled: Boolean!
+    smsCallbackUri: String
+    smsSenderName: String
+    smsAllowPasswordResetOtp: Boolean!
+    smsAlertOnPasswordChange: Boolean!
+    smsAlertOnMFADeviceChange: Boolean!
+    smsAlertOnAccountStatusChange: Boolean!
+    smsAlertOnEmailChange: Boolean!
     systemCategories: [SystemCategory!]!
 }
 
@@ -1445,11 +1484,12 @@ input TenantCreateInput {
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    verifyPhoneNumberOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
     federatedAuthenticationConstraint: String!    
     tenantType: String!
     migrateLegacyUsers: Boolean!
-    allowLoginByPhoneNumber: Boolean!
+    allowLoginByPhoneNumber: Boolean!    
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
@@ -1467,6 +1507,7 @@ input TenantUpdateInput {
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    verifyPhoneNumberOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
     federatedAuthenticationConstraint: String!
     tenantType: String!
@@ -1685,6 +1726,7 @@ input UserCreateInput {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -1709,6 +1751,7 @@ input UserUpdateInput {
     lastName: String!
     middleName: String
     phoneNumber: String
+    phoneNumberVerified: Boolean!
     address: String
     addressLine1: String
     city: String
@@ -1759,6 +1802,7 @@ input Fido2KeyAuthenticationInput {
 }
 
 input CaptchaConfigInput {
+    captchaEnabled: Boolean!
     alias: String!
     projectId: String
     siteKey: String!
@@ -1776,6 +1820,14 @@ input SystemSettingsUpdateInput {
     auditRecordRetentionPeriodDays: Int
     noReplyEmail: String
     contactEmail: String
+    smsCallbackServiceEnabled: Boolean!
+    smsCallbackUri: String
+    smsSenderName: String
+    smsAllowPasswordResetOtp: Boolean!
+    smsAlertOnPasswordChange: Boolean!
+    smsAlertOnMFADeviceChange: Boolean!
+    smsAlertOnAccountStatusChange: Boolean!
+    smsAlertOnEmailChange: Boolean!
 }
 
 input SystemInitializationInput {

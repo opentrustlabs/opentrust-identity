@@ -23,6 +23,7 @@ const InitCaptchaConfiguration: React.FC<SystemInitializationConfigProps> = ({
     // STATE VARIABLES
     const initCaptchaInput: CaptchaConfigInput = {
         alias: "",
+        captchaEnabled: false,
         apiKey: "",
         siteKey: "",
         useCaptchaV3: false,
@@ -42,6 +43,18 @@ const InitCaptchaConfiguration: React.FC<SystemInitializationConfigProps> = ({
                 <Grid2 container size={12} spacing={1}>
                     <Grid2 size={12} marginBottom={"8px"} fontWeight={"bold"}>
                         ReCaptcha Configuration
+                    </Grid2>
+                    <Grid2 size={11} marginBottom={"8px"}>
+                        Enabled
+                    </Grid2>
+                    <Grid2 size={1}>
+                        <Checkbox
+                            checked={captchaConfigInput.useCaptchaV3 === true}
+                            onChange={(_, checked: boolean) => {
+                                captchaConfigInput.captchaEnabled = checked;
+                                setCaptchaConfigInput({...captchaConfigInput});
+                            }}
+                        />
                     </Grid2>
                     <Grid2 marginBottom={"8px"} size={12}>
                         <div>Alias</div>

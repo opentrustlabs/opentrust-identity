@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail, CaptchaConfig, TenantLookAndFeel, PreAuthenticationStateProtocolType } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail, CaptchaConfig, PreAuthenticationStateProtocolType, UserProfileChangeResponse, ProfileState, ProfileProperty, UserProfileChangeState } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
-import {  generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, QUERY_PARAM_PREAUTHN_TOKEN, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER } from "@/utils/consts";
+import {  createVerificationToken, generateRandomToken, generateUserCredential, getDomainFromEmail, VerificationToken } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthDao from "../dao/auth-dao";
@@ -17,10 +17,11 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import Kms from "../kms/kms";
-import { RecaptchaResponse } from "../models/recaptcha";
+import { RecaptchaEnterpriseResponse, RecaptchaResponse } from "../models/recaptcha";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
 import { containsScope } from "@/utils/authz-utils";
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -48,10 +49,7 @@ class RegisterUserService extends IdentityService {
     public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User> {
 
         // Always lower-case the email and format the phone number if it exists
-        userCreateInput.email = this.formatEmail(userCreateInput.email);
-        if(userCreateInput.phoneNumber){
-            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
-        }
+        userCreateInput.email = this.formatEmail(userCreateInput.email);        
 
         // Who is allowed to create a user and how? 
         // 1.   A service client with a scope of user.create
@@ -101,10 +99,7 @@ class RegisterUserService extends IdentityService {
         
         // Always lower-case the email and format the phone number if it exists
         // Always lower-case the email and format the phone number if it exists
-        userCreateInput.email = this.formatEmail(userCreateInput.email);
-        if(userCreateInput.phoneNumber){
-            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
-        }
+        userCreateInput.email = this.formatEmail(userCreateInput.email);        
 
         // Need to check to see if there is an active registration session happening with the
         // user, based on their email. If so, then return error if the session has not expired.
@@ -140,6 +135,23 @@ class RegisterUserService extends IdentityService {
             stateOrder.push(RegistrationState.ValidateEmail);
         }
 
+        // Rules for verifying phone numbers.
+        // 1.   The user added their optional phone number
+        // 2.   SMS has to be enabled system wide
+        // 3.   Does the tenant require phone number validation on registration or is it optional?
+        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        if(userCreateInput.phoneNumber && userCreateInput.phoneNumber.length > 0){
+            if(systemSettings.smsCallbackServiceEnabled && systemSettings.smsCallbackUri){
+                if(tenant.verifyEmailOnSelfRegistration){
+                    stateOrder.push(RegistrationState.ConfigurePhoneNumberValidationRequired);
+                    stateOrder.push(RegistrationState.ValidatePhoneNumber);
+                }
+                else{
+                    stateOrder.push(RegistrationState.ConfigurePhoneNumberValidationOptional);
+                    stateOrder.push(RegistrationState.ValidatePhoneNumber);
+                }
+            }
+        }
         
         if(tenantPasswordConfig.requireMfa === true){
             const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
@@ -169,7 +181,7 @@ class RegisterUserService extends IdentityService {
             stateOrder.push(RegistrationState.ValidateSecurityKey);
         }
 
-        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        
         if(systemSettings.allowRecoveryEmail){
             stateOrder.push(RegistrationState.AddRecoveryEmailOptional);
             if(tenant.verifyEmailOnSelfRegistration === true){
@@ -239,14 +251,28 @@ class RegisterUserService extends IdentityService {
         const index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidateEmail);
         if(index < 0){
             return Promise.resolve(response);
-        }        
+        }    
+        const verificationToken: VerificationToken = createVerificationToken(token);
+        
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
 
-        const validationError: ErrorDetail | null = await this.validateEmailToken(userId, token);
-        if(validationError){
+        if(user === null){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError = validationError;
+            response.registrationError = ERROR_CODES.EC00134;
             return Promise.resolve(response);
         }
+        else if(user.userId !== userId){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError = ERROR_CODES.EC00135;
+            return Promise.resolve(response);
+        }            
+        
+        // Go ahead and delete the token, and  update the user in the db and search index
+        identityDao.deleteConfirmationToken(verificationToken.hashedToken);
+        user.emailVerified = true;
+        await identityDao.updateUser(user);
+        // No need to wait on the search index updates
+        searchDao.updateSearchIndexUserDocuments(user);        
         
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
@@ -278,11 +304,12 @@ class RegisterUserService extends IdentityService {
         const index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidateRecoveryEmail);
         if(index < 0){
             return Promise.resolve(response);
-        }        
+        }
 
-        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        const verificationToken: VerificationToken = createVerificationToken(token);
+
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
         if(user === null){
-            await identityDao.deleteEmailConfirmationToken(token);
             response.userRegistrationState.registrationState = RegistrationState.Error;
             response.registrationError = ERROR_CODES.EC00134;
             return Promise.resolve(response);
@@ -294,8 +321,10 @@ class RegisterUserService extends IdentityService {
             return Promise.resolve(response);
         }
 
-        // For the one-time token, need to delete it in success case and        
-        await identityDao.deleteEmailConfirmationToken(token);
+        // For the one-time token, need to delete it at this point, even if we have subsequent
+        // errors. 
+        await identityDao.deleteConfirmationToken(verificationToken.hashedToken);
+
         const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("id", userId);
         if(!userRecoveryEmail){
             response.userRegistrationState.registrationState = RegistrationState.Error;
@@ -444,17 +473,14 @@ class RegisterUserService extends IdentityService {
 
             await identityDao.addRecoveryEmail({userId: arrUserRegistrationState[index].userId, email: recoveryEmail, emailVerified: false});
             if(tenant.verifyEmailOnSelfRegistration === true){
-                this.sentEmailValidationToken(user, recoveryEmail);
+                this.generateAndSendEmailValidationToken(user, recoveryEmail, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
             }
 
             arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
             await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
 
             const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 1];
-            if(nextRegistrationState.registrationState === RegistrationState.ValidateRecoveryEmail){
-                const token: string = generateRandomToken(8, "hex").toUpperCase();
-                await identityDao.saveEmailConfirmationToken(userId, token);
-            }
+            
             response.userRegistrationState = nextRegistrationState;
                     
             if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
@@ -706,50 +732,365 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve(response);
     }
 
-    public async profileHandleEmailChange(email: string): Promise<ProfileEmailChangeResponse> {
-        const formattedEmail = this.formatEmail(email);
-
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Error,
-                changeOrder: 0,
-                changeStateStatus: STATUS_INCOMPLETE,
+    public async registerConfigureVerifyPhoneNumber(userId: string, registrationSessionToken: string, preAuthToken: string | null, skip: boolean): Promise<UserRegistrationStateResponse> {
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
                 email: "",
                 expiresAtMs: 0,
-                isPrimaryEmail: false,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: skip ? RegistrationState.ConfigurePhoneNumberValidationOptional : RegistrationState.ConfigurePhoneNumberValidationRequired,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: ERROR_CODES.DEFAULT,
+        };
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+
+        let index: number = -1;
+        // If the user has elected to skip this step, then it must be an optional step and should be validated as such
+        if(skip === true){
+            index = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigurePhoneNumberValidationOptional);
+        }
+        // Otherwise this could either be a required step or an optional step that the user is selecting.
+        // If either one is >= 0 then use it as the index.
+        else{
+            const idxOptional = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigurePhoneNumberValidationOptional);
+            const idxRequired = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigurePhoneNumberValidationRequired);
+            if(idxOptional >= 0){
+                index = idxOptional;
+            }
+            else if(idxRequired >= 0){
+                index = idxRequired;
+            }
+        }
+        if(index < 0){            
+            return Promise.resolve(response);
+        }
+
+        if(skip === true){
+            // Then we can mark this as complete, as well as the validation step, which we do not need,
+            // and go to the step after. Since configuration and validation could be the last steps
+            // in the registration process, we may have to either generate an access token for the
+            // user or generate a redirect URI
+            arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+            arrUserRegistrationState[index + 1].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index + 1]);
+            const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 2];
+            response.userRegistrationState = nextRegistrationState;
+
+            if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
+            }
+        }
+        else {
+            // Need to send an SMS message with 8 alpha-numeric characters
+            const user: User | null = await identityDao.getUserBy("id", userId);
+            if(user && user.phoneNumber){
+
+                this.generateAndSendPhoneNumberValidationToken(user, user.phoneNumber, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER);
+
+                arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+                await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+                response.userRegistrationState = arrUserRegistrationState[index + 1];
+            }
+            else{
+                response.userRegistrationState = arrUserRegistrationState[index];
+                response.registrationError = ERROR_CODES.EC00235;
+            }
+        }
+        return Promise.resolve(response);
+
+    }
+
+    public async registerVerifyPhoneNumber(userId: string, token: string, registrationSessionToken: string, preAuthToken: string | null): Promise<UserRegistrationStateResponse>{
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: RegistrationState.ValidatePhoneNumber,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: ERROR_CODES.DEFAULT,
+        };
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+
+        let index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidatePhoneNumber);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+
+        const verificationToken: VerificationToken = createVerificationToken(token);
+
+        const user: User | null = await identityDao.getUserByConfirmationToken(verificationToken.hashedToken);
+        if(user === null){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError = ERROR_CODES.EC00134;
+            return Promise.resolve(response);
+        }
+               
+        if(user.userId !== userId){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError = ERROR_CODES.EC00135;
+            return Promise.resolve(response);
+        }
+
+        // Delete the confirmation token and update the user with a verified phone number.
+        await identityDao.deleteConfirmationToken(verificationToken.hashedToken);
+        user.phoneNumberVerified === true;
+        await identityDao.updateUser(user);
+
+        arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+        const nextRegistrationState = arrUserRegistrationState[index + 1];
+        response.userRegistrationState = nextRegistrationState;
+
+        if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+            await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
+        }
+
+        return Promise.resolve(response); 
+
+    }
+
+    public async profileValidatePhoneNumberChange(changePhoneNumberSessionToken: string, token: string): Promise<UserProfileChangeResponse> {
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
+                expiresAtMs: 0,
                 userId: ""
             },
-            profileEmailChangeError: ERROR_CODES.DEFAULT,
+            profileChangeError: ERROR_CODES.DEFAULT,
+        }
+
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileChangeError = ERROR_CODES.EC00145;
+            return response;            
+        }
+
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changePhoneNumberSessionToken);
+        const index: number = await this.validateProfileChangeStep(arrChangeStates, response, ProfileState.ValidatePhone);
+        if(index < 0){
+            return response;
+        }
+
+        const currentState: UserProfileChangeState = arrChangeStates[index];
+        if(currentState.userId !== this.oidcContext.portalUserProfile.userId){
+            response.profileChangeError = ERROR_CODES.EC00148;
+            return response;    
+        }
+
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileChangeError = ERROR_CODES.EC00013;
+            return response;            
+        }
+
+        const { hashedToken } = createVerificationToken(token);
+        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(hashedToken);
+        if(userByConfirmationToken === null){
+            response.profileChangeError = ERROR_CODES.EC00134;
+            return response;  
+        }
+        if(userByConfirmationToken.userId !== user.userId){
+            response.profileChangeError = ERROR_CODES.EC00135;
+            return response;  
+        }
+
+        // If we made it here, then we can update the phone number and set validation to true
+        if(currentState.profileProperty === ProfileProperty.PhoneNumber){
+            user.phoneNumber = currentState.profilePropertyValue;
+            user.phoneNumberVerified = true;
+            await identityDao.updateUser(user);
+        }
+        await identityDao.deleteConfirmationToken(token);
+
+        currentState.changeStateStatus = STATUS_COMPLETE;
+        await identityDao.updateProfileChangeState(currentState);
+        
+        // There should always be a final state, so update it as well...
+        const nextState: UserProfileChangeState = arrChangeStates[index + 1];
+        nextState.changeStateStatus = STATUS_COMPLETE;
+        response.profileChangeState = nextState;
+        
+        // Since there are no more states, delete all of the records
+        for(let i = 0; i < arrChangeStates.length; i++){
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
+        }
+        return response;
+    }
+
+    public async profileCancelPhoneNumberChange(changePhoneNumberSessionToken: string): Promise<UserProfileChangeResponse> {
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changePhoneNumberSessionToken);
+        for(let i = 0; i < arrChangeStates.length; i++){
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
+        }
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Completed,
+                changeOrder: 0,
+                changeStateStatus: STATUS_COMPLETE,
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
+                expiresAtMs: 0,
+                userId: ""
+            },
+            profileChangeError: ERROR_CODES.DEFAULT
+        }
+        return response;
+    }
+
+    public async profileHandlePhoneNumberChange(newPhoneNumber: string): Promise<UserProfileChangeResponse> {
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                profileProperty: ProfileProperty.PhoneNumber,
+                profilePropertyValue: "",
+                userId: "",
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                expiresAtMs: 0
+            },
+            profileChangeError: ERROR_CODES.DEFAULT,
+        }
+
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileChangeError = ERROR_CODES.EC00013;
+            return response;            
+        }
+
+        const isValidPhoneFormat = isValidPhoneNumber(newPhoneNumber);
+        if(!isValidPhoneFormat){
+            response.profileChangeError = ERROR_CODES.EC00234;
+            return response;
+        }
+
+        const systemSetting: SystemSettings = await tenantDao.getSystemSettings();
+        if(!systemSetting.smsCallbackServiceEnabled){
+            response.profileChangeError = ERROR_CODES.EC00237;
+            return response;
+        }
+
+        // If the user does not exist, or is in some disabled to locked status, or whose
+        // profile is managed by a federated OIDC provider, then error.
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileChangeError = ERROR_CODES.EC00013;
+            return response;            
+        }
+        if(user.locked === true || user.enabled === false || user.markForDelete){
+            response.profileChangeError = ERROR_CODES.EC00146;
+            return response; 
+        }
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId.length > 0){
+            response.profileChangeError = ERROR_CODES.EC00147;
+            return response;
+        }
+
+        // Is there already a user tied to this phone number?
+        const userByPhoneNumber: User | null = await identityDao.getUserBy("phone", newPhoneNumber);
+        if(userByPhoneNumber !== null){
+            response.profileChangeError = ERROR_CODES.EC00224;
+            return response;
+        }
+
+        const sessionToken: string = generateRandomToken(20, "hex");
+        const arrStates: Array<UserProfileChangeState> = [];
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.ValidatePhone,
+            profileProperty: ProfileProperty.PhoneNumber,
+            profilePropertyValue: newPhoneNumber,
+            userId: user.userId,
+            changeOrder: 0,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        arrStates.push({
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.Completed,
+            profileProperty: ProfileProperty.PhoneNumber,
+            profilePropertyValue: newPhoneNumber,
+            userId: user.userId,
+            changeOrder: 1,
+            changeStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
+        });
+
+        await identityDao.createProfileChangeStates(arrStates);
+        // Do not change the email yet. Only do that when the user has validated
+        // their email in the next step.
+        await this.generateAndSendPhoneNumberValidationToken(user, newPhoneNumber, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER);
+        
+        response.profileChangeState = arrStates[0];
+        return response;
+
+
+    }
+
+
+    public async profileHandleEmailChange(email: string): Promise<UserProfileChangeResponse> {
+        const formattedEmail = this.formatEmail(email);
+
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: email,
+                userId: "",
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                expiresAtMs: 0
+            },
+            profileChangeError: ERROR_CODES.DEFAULT,
         }
         
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
+            response.profileChangeError = ERROR_CODES.EC00013;
             return response;            
         }
         const domain: string = getDomainFromEmail(formattedEmail);
         if(domain.length === 0){
-            response.profileEmailChangeError = ERROR_CODES.EC00017;
+            response.profileChangeError = ERROR_CODES.EC00017;
             return response;           
         }
 
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00013;
+            response.profileChangeError = ERROR_CODES.EC00013;
             return response;            
         }
-        if(user.locked === true || user.enabled === false){
-            response.profileEmailChangeError = ERROR_CODES.EC00146;
+        if(user.locked === true || user.enabled === false || user.markForDelete){
+            response.profileChangeError = ERROR_CODES.EC00146;
             return response; 
         }
-        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
-            response.profileEmailChangeError = ERROR_CODES.EC00147;
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId.length > 0){
+            response.profileChangeError = ERROR_CODES.EC00147;
             return response;
         }
         const userByEmail: User | null = await identityDao.getUserBy("email", formattedEmail);
         const userByRecoveryEmail = await identityDao.getUserRecoveryEmailBy("email", formattedEmail);
         if(userByEmail !== null || userByRecoveryEmail !== null){
-            response.profileEmailChangeError = ERROR_CODES.EC00142;
+            response.profileChangeError = ERROR_CODES.EC00142;
             return response;            
         }
         
@@ -757,237 +1098,227 @@ class RegisterUserService extends IdentityService {
         // by going through SSO with their provider.
         const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
         if(federatedOIDCProvider){
-            response.profileEmailChangeError = ERROR_CODES.EC00144;
+            response.profileChangeError = ERROR_CODES.EC00144;
             return response;
         }
         const sessionToken: string = generateRandomToken(20, "hex");
-        const arrStates: Array<ProfileEmailChangeState> = [];
+        const arrStates: Array<UserProfileChangeState> = [];
         arrStates.push({
-            email: formattedEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.ValidateEmail,
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.ValidateEmail,
+            profileProperty: ProfileProperty.Email,
+            profilePropertyValue: formattedEmail,
+            userId: user.userId,
             changeOrder: 0,
             changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: true,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
         });
 
         arrStates.push({
-            email: formattedEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.Completed,
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.Completed,
+            profileProperty: ProfileProperty.Email,
+            profilePropertyValue: formattedEmail,
+            userId: user.userId,
             changeOrder: 1,
             changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: true
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
         });
 
-        await identityDao.createProfileEmailChangeStates(arrStates);
+        await identityDao.createProfileChangeStates(arrStates);
         // Do not change the email yet. Only do that when the user has validated
         // their email in the next step.
-        const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
-
-        response.profileEmailChangeState = arrStates[0];
+        await this.generateAndSendEmailValidationToken(user, email, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
+        
+        response.profileChangeState = arrStates[0];
         return response;
 
     }
-
-    public async profileAddRecoveryEmail(email: string): Promise<ProfileEmailChangeResponse> {   
+   
+    public async profileAddRecoveryEmail(email: string): Promise<UserProfileChangeResponse> {   
         
         const recoveryEmail = this.formatEmail(email);
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Error,
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
+                profileProperty: ProfileProperty.RecoveryEmail,
+                profilePropertyValue: email,
+                userId: "",
                 changeOrder: 0,
                 changeStateStatus: STATUS_INCOMPLETE,
-                email: "",
-                expiresAtMs: 0,
-                isPrimaryEmail: false,
-                userId: ""
+                expiresAtMs: 0
             },
-            profileEmailChangeError: ERROR_CODES.DEFAULT,
+            profileChangeError: ERROR_CODES.DEFAULT,
         }
 
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
         if(!systemSettings.allowRecoveryEmail){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
+            response.profileChangeError = ERROR_CODES.EC00145;
             return response;   
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
+            response.profileChangeError = ERROR_CODES.EC00145;
             return response;            
         }
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00013;
+            response.profileChangeError = ERROR_CODES.EC00013;
             return response;            
         }
         if(user.locked === true || user.enabled === false){
-            response.profileEmailChangeError = ERROR_CODES.EC00146;
+            response.profileChangeError = ERROR_CODES.EC00146;
             return response; 
         }
         if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
-            response.profileEmailChangeError = ERROR_CODES.EC00147;
+            response.profileChangeError = ERROR_CODES.EC00147;
             return response;
         }
 
         const recoveryEmailValidationResult = await this.validateRecoveryEmail(user.userId, recoveryEmail);
         if(recoveryEmailValidationResult.isValid === false){
-            response.profileEmailChangeError = recoveryEmailValidationResult.errorDetail;
+            response.profileChangeError = recoveryEmailValidationResult.errorDetail;
             return response;
         }
         
         const sessionToken: string = generateRandomToken(20, "hex");
-        const arrStates: Array<ProfileEmailChangeState> = [];
+        const arrStates: Array<UserProfileChangeState> = [];
         arrStates.push({
-            email: recoveryEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.ValidateEmail,
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.ValidateEmail,
+            profileProperty: ProfileProperty.RecoveryEmail,
+            profilePropertyValue: email,
+            userId: user.userId,
             changeOrder: 0,
             changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: false,
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
         });
 
         arrStates.push({
-            email: recoveryEmail,
-            expiresAtMs: Date.now() + (60 * 60 * 1000),
-            changeEmailSessionToken: sessionToken,
-            emailChangeState: EmailChangeState.Completed,
+            changeProfileSessionToken: sessionToken,
+            profileState: ProfileState.Completed,
+            profileProperty: ProfileProperty.RecoveryEmail,
+            profilePropertyValue: email,
+            userId: user.userId,
             changeOrder: 1,
             changeStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            isPrimaryEmail: false
+            expiresAtMs: Date.now() + (60 * 60 * 1000)
         });
 
-        await identityDao.createProfileEmailChangeStates(arrStates);
+        await identityDao.createProfileChangeStates(arrStates);
         // Do not add the recovery email to the table yet. Only do that when the user has validated
         // their email in the next step.
-        const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
-        
-        // Send an email to the user with the token value.        
-        let fromEmailAddr: string = "";        
-        if(systemSettings && systemSettings.noReplyEmail){
-            fromEmailAddr = systemSettings.noReplyEmail;
-        }
-        else{
-            fromEmailAddr = this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
-        }
-        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, emailConfirmationToken, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+        await this.generateAndSendEmailValidationToken(user, user.email, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);        
 
-        response.profileEmailChangeState = arrStates[0];
+        response.profileChangeState = arrStates[0];
         return response;
     }
 
-    public async profileValidateEmail(token: string, changeEmailSessionToken: string): Promise<ProfileEmailChangeResponse> {
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Error,
+    public async profileValidateEmail(token: string, changeProfileSessionToken: string): Promise<UserProfileChangeResponse> {
+        
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Error,
                 changeOrder: 0,
                 changeStateStatus: STATUS_INCOMPLETE,
-                email: "",
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
                 expiresAtMs: 0,
-                isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: ERROR_CODES.DEFAULT,
+            profileChangeError: ERROR_CODES.DEFAULT,
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00145;
+            response.profileChangeError = ERROR_CODES.EC00145;
             return response;            
         }
 
-        const arrChangeStates: Array<ProfileEmailChangeState> = await this.getSortedEmailChangeStates(changeEmailSessionToken);
-        const index: number = await this.validateEmailChangeStep(arrChangeStates, response, EmailChangeState.ValidateEmail);
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changeProfileSessionToken);
+        const index: number = await this.validateProfileChangeStep(arrChangeStates, response, ProfileState.ValidateEmail);
         if(index < 0){
             return response;
         }
 
-        const currentState: ProfileEmailChangeState = arrChangeStates[index];
+        const currentState: UserProfileChangeState = arrChangeStates[index];
         if(currentState.userId !== this.oidcContext.portalUserProfile.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00148;
+            response.profileChangeError = ERROR_CODES.EC00148;
             return response;    
         }
 
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00013;
+            response.profileChangeError = ERROR_CODES.EC00013;
             return response;            
         }
 
-        const userByConfirmationToken: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        const { hashedToken } = createVerificationToken(token);
+        const userByConfirmationToken: User | null = await identityDao.getUserByConfirmationToken(hashedToken);
         if(userByConfirmationToken === null){
-            response.profileEmailChangeError = ERROR_CODES.EC00134;
+            response.profileChangeError = ERROR_CODES.EC00134;
             return response;  
         }
         if(userByConfirmationToken.userId !== user.userId){
-            response.profileEmailChangeError = ERROR_CODES.EC00135;
+            response.profileChangeError = ERROR_CODES.EC00135;
             return response;  
         }
 
         // If we made it here, then we can update the email or add a new recovery email
-        if(currentState.isPrimaryEmail){
-            user.email = currentState.email;
+        if(currentState.profileProperty === ProfileProperty.Email){
+            user.email = currentState.profilePropertyValue;
             user.emailVerified = true;
             await identityDao.updateUser(user);
+            searchDao.updateSearchIndexUserDocuments(user);
         }
         else{
             const userRecoveryEmail: UserRecoveryEmail = {
-                email: currentState.email,
+                email: currentState.profilePropertyValue,
                 emailVerified: true,
                 userId: currentState.userId
             }
             await identityDao.addRecoveryEmail(userRecoveryEmail);
         }
-        await identityDao.deleteEmailConfirmationToken(token);
+        await identityDao.deleteConfirmationToken(token);
 
         currentState.changeStateStatus = STATUS_COMPLETE;
-        await identityDao.updateProfileEmailChangeState(currentState);
+        await identityDao.updateProfileChangeState(currentState);
         
         // There should always be a final state, so update it as well...
-        const nextState: ProfileEmailChangeState = arrChangeStates[index + 1];
+        const nextState: UserProfileChangeState = arrChangeStates[index + 1];
         nextState.changeStateStatus = STATUS_COMPLETE;
-        response.profileEmailChangeState = nextState;
+        response.profileChangeState = nextState;
         
         // Since there are no more states, delete all of the records
         for(let i = 0; i < arrChangeStates.length; i++){
-            await identityDao.deleteProfileEmailChangeState(arrChangeStates[i]);
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
         }
         return response;
 
     }
 
-    public async profileCancelEmailChange(changeEmailSessionToken: string): Promise<ProfileEmailChangeResponse> {
-        const arrChangeStates: Array<ProfileEmailChangeState> = await this.getSortedEmailChangeStates(changeEmailSessionToken);
+    public async profileCancelEmailChange(changeProfileSessionToken: string): Promise<UserProfileChangeResponse> {
+        const arrChangeStates: Array<UserProfileChangeState> = await this.getSortedProfileChangeStates(changeProfileSessionToken);
         for(let i = 0; i < arrChangeStates.length; i++){
-            await identityDao.deleteProfileEmailChangeState(arrChangeStates[i]);
+            await identityDao.deleteProfileChangeState(arrChangeStates[i]);
         }
-        const response: ProfileEmailChangeResponse = {
-            profileEmailChangeState: {
-                changeEmailSessionToken: "",
-                emailChangeState: EmailChangeState.Completed,
+        const response: UserProfileChangeResponse = {
+            profileChangeState: {
+                changeProfileSessionToken: "",
+                profileState: ProfileState.Completed,
                 changeOrder: 0,
                 changeStateStatus: STATUS_COMPLETE,
-                email: "",
+                profileProperty: ProfileProperty.Email,
+                profilePropertyValue: "",
                 expiresAtMs: 0,
-                isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: ERROR_CODES.DEFAULT
+            profileChangeError: ERROR_CODES.DEFAULT
         }
         return response;
     }
+
 
     /**
      * 
@@ -1063,43 +1394,45 @@ class RegisterUserService extends IdentityService {
      * @param changeEmailSessionToken 
      * @returns 
      */
-    protected async getSortedEmailChangeStates(changeEmailSessionToken: string): Promise<Array<ProfileEmailChangeState>> {
-        const arrChangeStates: Array<ProfileEmailChangeState> = await identityDao.getProfileEmailChangeStates(changeEmailSessionToken);
+    protected async getSortedProfileChangeStates(changeProfileSessionToken: string): Promise<Array<UserProfileChangeState>> {
+        const arrChangeStates: Array<UserProfileChangeState> = await identityDao.getProfileChangeStates(changeProfileSessionToken);
         arrChangeStates.sort(
-            (a: ProfileEmailChangeState, b: ProfileEmailChangeState) => a.changeOrder - b.changeOrder
+            (a: UserProfileChangeState, b: UserProfileChangeState) => a.changeOrder - b.changeOrder
         );
         return arrChangeStates;
     }
 
-    protected async validateEmailChangeStep(arrEmailChangeStates: Array<ProfileEmailChangeState>, response: ProfileEmailChangeResponse, expectedState: EmailChangeState): Promise<number> {
+    protected async validateProfileChangeStep(arrProfileChangeStates: Array<UserProfileChangeState>, response: UserProfileChangeResponse, expectedState: ProfileState): Promise<number> {
         let stepIndex: number = -1;
-        let expectedChangeState: ProfileEmailChangeState | null = null;
-        for(let i = 0; i < arrEmailChangeStates.length; i++){
-            if(arrEmailChangeStates[i].emailChangeState === expectedState){
+        let expectedChangeState: UserProfileChangeState | null = null;
+        for(let i = 0; i < arrProfileChangeStates.length; i++){
+            if(arrProfileChangeStates[i].profileState === expectedState){
                 stepIndex = i;
-                expectedChangeState = arrEmailChangeStates[i];
+                expectedChangeState = arrProfileChangeStates[i];
                 break;
             }
         }
         if(expectedChangeState === null){
-            response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-            response.profileEmailChangeError = ERROR_CODES.EC00149;
+            response.profileChangeState.profileState = ProfileState.Error;
+            response.profileChangeError = ERROR_CODES.EC00149;
             return stepIndex;
         }
         if(expectedChangeState.expiresAtMs < Date.now()){
-            response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-            response.profileEmailChangeError = ERROR_CODES.EC00149;
-            for(let i = 0; i < arrEmailChangeStates.length; i++){
-                await identityDao.deleteProfileEmailChangeState(arrEmailChangeStates[i]);
+            response.profileChangeState.profileState = ProfileState.Error;
+            response.profileChangeError = ERROR_CODES.EC00149;
+            for(let i = 0; i < arrProfileChangeStates.length; i++){
+                await identityDao.deleteProfileChangeState(arrProfileChangeStates[i]);
             }
             return -1;
         }
+        // If we have found an entry, but one of the previous entries is NOT marked
+        // as complete, then set an error.
         if(stepIndex > 0){
             for(let i = 0; i < stepIndex; i++){
-                const previousState: ProfileEmailChangeState = arrEmailChangeStates[i];
+                const previousState: UserProfileChangeState = arrProfileChangeStates[i];
                 if(previousState.changeStateStatus !== STATUS_COMPLETE){
-                    response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-                    response.profileEmailChangeError = ERROR_CODES.EC00149;
+                    response.profileChangeState.profileState = ProfileState.Error;
+                    response.profileChangeError = ERROR_CODES.EC00149;
                     stepIndex = -1;
                     break;
                 }
@@ -1140,33 +1473,55 @@ class RegisterUserService extends IdentityService {
             }
         }
 
+        // Does the email exist either as a primary email or a recovery email? If so, then fail.
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
         const recoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmailBy("email", userCreateInput.email);
         if (existingUser || recoveryAccount) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
         }
-        if(userCreateInput.phoneNumber){
+
+        // If there is a phone number supplied, then does it meet the formatting requirements?
+        if(userCreateInput.phoneNumber && userCreateInput.phoneNumber.length > 0){
             const userByPhone: User | null = await identityDao.getUserBy("phone", userCreateInput.phoneNumber);
             if(userByPhone){
                 throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
             }
+            const isValidPhoneFormat: boolean = isValidPhoneNumber(userCreateInput.phoneNumber);
+            if(!isValidPhoneFormat){
+                throw new GraphQLError(ERROR_CODES.EC00234.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00234}});
+            }
         }
 
-        // Check the recaptcha configuration and validate the recaptcha token
+        // Check the recaptcha configuration and validate the recaptcha token.
+        // 1.   Does the tenant require it? This can be ignored if recaptcha is dislabled or does not exist
+        // 2.   Is recaptcha enabled globally?        
+        // 3.   Is the site configured for enterprise recaptcha
+        // 4.   Which version of recaptcha is being used?
         if(isRegistration === true && tenant.registrationRequireCaptcha === true){
             const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
-            if(!captchaConfig){
-                throw new GraphQLError(ERROR_CODES.EC00190.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00190}});
-            }
-            const decryptedApiKey: string | null = await kms.decrypt(captchaConfig.apiKey);
-            const recaptchaResponse: RecaptchaResponse = await oidcServiceUtils.validateRecaptchaV3(decryptedApiKey || "", recaptchaToken || "");
-            if(!recaptchaResponse.success){
-                throw new GraphQLError(ERROR_CODES.EC00192.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00192}});
-            }
-            if(captchaConfig.useCaptchaV3 === true){
-                const minScore = captchaConfig.minScoreThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
-                if(recaptchaResponse.score < minScore){
-                    throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
+            if(captchaConfig && captchaConfig.captchaEnabled === true){
+                const decryptedApiKey: string | null = await kms.decrypt(captchaConfig.apiKey);
+                let successfulRecaptcha: boolean = false;
+                let v3Score: number = 0;
+            
+                if(captchaConfig.useEnterpriseCaptcha){
+                    const enterpriseResponse: RecaptchaEnterpriseResponse = await oidcServiceUtils.validateRecaptchaEnterprise(decryptedApiKey || "", recaptchaToken || "", captchaConfig.projectId || "");
+                    successfulRecaptcha = enterpriseResponse.tokenProperties.valid;
+                    v3Score = enterpriseResponse.riskAnalysis.score;                  
+                }
+                else{
+                    const recaptchaResponse: RecaptchaResponse = await oidcServiceUtils.validateRecaptcha(decryptedApiKey || "", recaptchaToken || "");
+                    successfulRecaptcha = recaptchaResponse.success;
+                    v3Score = recaptchaResponse.score;
+                }
+                if(!successfulRecaptcha){
+                    throw new GraphQLError(ERROR_CODES.EC00192.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00192}});
+                }
+                if(captchaConfig.useCaptchaV3 === true){
+                    const minScore = captchaConfig.minScoreThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
+                    if(v3Score < minScore){
+                        throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
+                    }
                 }
             }
         }
@@ -1237,6 +1592,7 @@ class RegisterUserService extends IdentityService {
             countryCode: userCreateInput.countryCode,
             middleName: userCreateInput.middleName,
             phoneNumber: userCreateInput.phoneNumber,
+            phoneNumberVerified: userCreateInput.phoneNumberVerified,
             preferredLanguageCode: userCreateInput.preferredLanguageCode,
             federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
             markForDelete: false,
@@ -1257,7 +1613,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.addUserCredential(userCredential);
 
         if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
-            this.sentEmailValidationToken(user, user.email);            
+            this.generateAndSendEmailValidationToken(user, user.email, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
         }
         await searchDao.updateObjectSearchIndex(tenant, user);
         await searchDao.updateUserTenantRelSearchIndex(tenant.tenantId, user);

@@ -1,32 +1,39 @@
 import { EntitySchema } from 'typeorm';
-import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
+import { getIntTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
 const {
     RDB_DIALECT
 } = process.env;
 
-const UserProfileChangeEmailStateEntity = new EntitySchema({
+
+const UserProfileChangeStateEntity = new EntitySchema({
     columns: {
         userId: {
             type: String,
             primary: true,
             name: "userid"
         },
-        changeEmailSessionToken: {
+        changeProfileSessionToken: {
             type: String,
             primary: true,
-            name: "changeemailsessiontoken"
+            name: "changeprofilesessiontoken"
         },
-        emailChangeState: {
+        profileState: {
             type: String,
             primary: true,
-            name: "emailchangestate"
+            name: "profilestate"
         },
-        email: {
+        profileProperty: {
             type: String,
             primary: false,
             nullable: false,
-            name: "email"
+            name: "profileproperty"
+        },
+        profilePropertyValue: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "profilepropertyvalue"
         },
         changeOrder: {
             type: getIntTypeForDriver(RDB_DIALECT || ""),
@@ -45,21 +52,14 @@ const UserProfileChangeEmailStateEntity = new EntitySchema({
             primary: false,
             nullable: false,
             name: "expiresatms"
-        },
-        isPrimaryEmail: {
-            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
-            primary: false,
-            nullable: false,
-            name: "isprimaryemail",
-            transformer: BooleanTransformer
         }
     },
 
-    tableName: "user_profile_email_change_state",
-    name: "userProfileEmailChangeState",
+    tableName: "user_profile_change_state",
+    name: "userProfileChangeState",
 
 });
 
 
 
-export default UserProfileChangeEmailStateEntity;
+export default UserProfileChangeStateEntity;

@@ -76,10 +76,13 @@ export const TENANT_META_DATA_QUERY = gql(`
                 registrationRequireCaptcha
                 registrationRequireTermsAndConditions
                 termsAndConditionsUri
+                verifyPhoneNumberOnSelfRegistration
             }
             systemSettings {
                 allowDuressPassword
                 allowRecoveryEmail
+                smsCallbackServiceEnabled
+                smsAllowPasswordResetOtp
             }
             socialOIDCProviders {
                 federatedOIDCProviderDescription
@@ -90,7 +93,9 @@ export const TENANT_META_DATA_QUERY = gql(`
                 socialLoginProvider
             }
             recaptchaMetaData {
+                alias
                 recaptchaSiteKey
+                captchaEnabled
                 useEnterpriseCaptcha
                 useCaptchaV3
             }
@@ -133,6 +138,7 @@ export const ME_QUERY = gql(`
             lastName
             middleName
             phoneNumber
+            phoneNumberVerified
             address
             addressLine1
             city
@@ -198,6 +204,7 @@ export const TENANT_DETAIL_QUERY = gql(`
             registrationRequireCaptcha
             registrationRequireTermsAndConditions
             termsAndConditionsUri
+            verifyPhoneNumberOnSelfRegistration
         }        
     }
 `);
@@ -351,6 +358,7 @@ export const USER_DETAIL_QUERY = gql(`
             enabled
             nameOrder
             markForDelete
+            phoneNumberVerified
             recoveryEmail {
                 userId
                 email
@@ -740,6 +748,7 @@ export const CAPTCHA_CONFIG_QUERY = gql(`
     query getCaptchaConfig {
         getCaptchaConfig {
             alias
+            captchaEnabled
             projectId
             siteKey
             apiKey
@@ -761,6 +770,14 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
             auditRecordRetentionPeriodDays
             noReplyEmail
             contactEmail
+            smsCallbackServiceEnabled
+            smsCallbackUri
+            smsSenderName
+            smsAllowPasswordResetOtp
+            smsAlertOnPasswordChange
+            smsAlertOnMFADeviceChange
+            smsAlertOnAccountStatusChange
+            smsAlertOnEmailChange
             systemCategories {
                 categoryName
                 categoryEntries {

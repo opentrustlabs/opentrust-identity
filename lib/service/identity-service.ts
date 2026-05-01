@@ -5,8 +5,8 @@ import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2Regi
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, DEFAULT_TENANT_LOOK_AND_FEEL, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_RESET_SCOPE, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PRINCIPAL_TYPE_END_USER, PRINCIPAL_TYPE_IAM_PORTAL_USER, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
-import { sha256HashPassword, pbkdf2HashPassword, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
+import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, DEFAULT_TENANT_LOOK_AND_FEEL, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_RESET_SCOPE, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PRINCIPAL_TYPE_END_USER, PRINCIPAL_TYPE_IAM_PORTAL_USER, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER } from "@/utils/consts";
+import { sha256HashPassword, pbkdf2HashPassword, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword, createVerificationToken, generateHash } from "@/utils/dao-utils";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
@@ -25,6 +25,8 @@ import OpenSearchDao from "../dao/impl/search/open-search-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import ScopeDao from "../dao/scope-dao";
+import { fillTemplate, PHONE_VERIFICATION_TRANSLATIONS, SmsCallbackRequest } from "../models/sms";
+import { isValidPhoneNumber } from "libphonenumber-js";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -83,7 +85,11 @@ class IdentityService {
                 },
                 additionalConstraintCheck: async function(oidcContext: OIDCContext) {
 
-                    if(oidcContext.rootTenant.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+                    if(userId === oidcContext.portalUserProfile?.userId){
+                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
+                    }
+
+                    else if(oidcContext.rootTenant.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
                         const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
                         const rel = userTenantRels.find(
                             (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
@@ -104,10 +110,7 @@ class IdentityService {
     public async updateUser(user: User): Promise<User> {
 
         // Always lower-case the email and format the phone number if it exists
-        user.email = this.formatEmail(user.email);
-        if(user.phoneNumber){
-            user.phoneNumber = this.formatPhoneNumber(user.phoneNumber)
-        }
+        user.email = this.formatEmail(user.email);        
 
         // If the user is making the update request on their own behalf, they still need user.update scope
         if(user.userId === this.oidcContext.portalUserProfile?.userId){
@@ -181,12 +184,18 @@ class IdentityService {
             user.domain = domain;
             user.emailVerified = false;            
         }
-        // Did the phone number change, and if so, is it unique?
+        // Did the phone number change, and if so, is it unique and does it pass the formatting requirement?
+        // 
         if(user.phoneNumber && user.phoneNumber !== existingUser.phoneNumber){
+            const isValidPhoneFormat: boolean = isValidPhoneNumber(user.phoneNumber);
+            if(!isValidPhoneFormat){
+                throw new GraphQLError(ERROR_CODES.EC00234.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00234}});
+            }
             const userByPhone: User | null = await identityDao.getUserBy("phone", user.phoneNumber);
             if(userByPhone){
                 throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
             }
+            user.phoneNumberVerified = false;
         }
 
         // Only the user themselves can reset this value by actually enter a new password during 
@@ -1090,6 +1099,12 @@ class IdentityService {
         if(!this.oidcContext.portalUserProfile){
             return null;
         }
+        // Rules for returning profiles or null
+        // 1.   Is the user on the /my-profile page or not? 
+        // 2.   If they are NOT on the profile page, it means they are either 
+        //          a.  Logged into the IAM tool itsef
+        //          b.  A service account requesting additional metadata about the account (such as scope)
+        //      In these 2 cases, return the profile. Otherwise return null
         else if(isMyProfileView === null || isMyProfileView === false){
             if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_IAM_PORTAL_USER || this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
                 return this.oidcContext.portalUserProfile;
@@ -1098,6 +1113,10 @@ class IdentityService {
                 return null;                            
             }
         }
+        // 3.   If they ARE on the /my-profile page then they MUST be a user who has
+        //      previous logged in using OIDC from a 3rd party. If they are an internal
+        //      user, then they cannot use the /my-profile page to view their profile,
+        //      they MUST use the user detail page of their account to modify their profile.
         else{            
             if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_END_USER){
                 return this.oidcContext.portalUserProfile;
@@ -1185,31 +1204,51 @@ class IdentityService {
         return response;
     }
 
-    protected async validateEmailToken(userId: string, token: string): Promise<ErrorDetail | null> {
-        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
-        if(user === null){
-            await identityDao.deleteEmailConfirmationToken(token);            
-            return ERROR_CODES.EC00134;            
-        }
-                
-        if(user.userId !== userId){            
-            return ERROR_CODES.EC00135;
-        }
+    /**
+     * The validation types supported are based on the 2 constants: VERIFICATION_TOKEN_TYPE_VALIDATE_PHONE_NUMBER | VERIFICATION_TOKEN_TYPE_PASSWORD_RESET
+     * @param user 
+     * @param to 
+     * @param validationType 
+     */
+    protected async generateAndSendPhoneNumberValidationToken(user: User, to: string, validationType: string): Promise<void> {
 
-        // For the one-time token, need to delete it in success case and
-        // update the user profile and this registration state to a status
-        // of complete and set the next state as the return value.
-        await identityDao.deleteEmailConfirmationToken(token);
-        user.emailVerified = true;
-        await identityDao.updateUser(user);
-        // No need to wait on the search index updates
-        searchDao.updateSearchIndexUserDocuments(user);
-        return null;
+        const { token, hashedToken } = createVerificationToken();
+
+        // Note that the message is sent in either of these cases is identital because it is so generic.
+        // "Your verification code is {VERIFICATION_CODE}. It expires in 15 minutes. If you did not request this code, you can ignore this message"
+        // See the sms.ts file for details.
+        await identityDao.saveConfirmationToken(user.userId, hashedToken, validationType);
+        const bodyEn = fillTemplate(PHONE_VERIFICATION_TRANSLATIONS.en, {"VERIFICATION_CODE": token});
+       
+        // Try to get the tranlsation, but if one does not exist then fallback to english.
+        const body = (user.preferredLanguageCode &&  PHONE_VERIFICATION_TRANSLATIONS[user.preferredLanguageCode]) ? 
+            fillTemplate(PHONE_VERIFICATION_TRANSLATIONS[user.preferredLanguageCode],  {"VERIFICATION_CODE": token}) :
+            bodyEn;
+
+        const systemSettings = await tenantDao.getSystemSettings();
+        const smsCallbackRequest: SmsCallbackRequest = {
+            languageCode: user.preferredLanguageCode || "en",
+            body: body,
+            bodyEn: bodyEn,
+            messageType: "phone_verification",
+            phoneNumber: to,
+            senderName: systemSettings.smsSenderName || ""
+        }
+        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+        oidcServiceUtils.invokeSmsCallback(authToken || "", smsCallbackRequest, systemSettings.smsCallbackUri || "");
     }
 
-    protected async sentEmailValidationToken(user: User, to: string): Promise<void> {
-        const token: string = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveEmailConfirmationToken(user.userId, token);
+    /**
+     * The validation types supported are based on the 2 constants: VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL | VERIFICATION_TOKEN_TYPE_PASSWORD_RESET
+     * @param user 
+     * @param to 
+     * @param validationType 
+     */
+    protected async generateAndSendEmailValidationToken(user: User, to: string, validationType: string): Promise<void> {
+        const { token, hashedToken } = createVerificationToken();
+
+        //await identityDao.saveConfirmationToken(user.userId, hashedToken, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL);
+        await identityDao.saveConfirmationToken(user.userId, hashedToken, validationType);
         
         // Send an email to the user with the token value.        
         let fromEmailAddr: string = "";
@@ -1222,7 +1261,13 @@ class IdentityService {
         }
         const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
         const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, to, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+        
+        if(validationType === VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL){
+            oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, to, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+        }
+        else if(validationType === VERIFICATION_TOKEN_TYPE_PASSWORD_RESET){
+            oidcServiceUtils.sendEmailForgotPasswordOpt(fromEmailAddr, to, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+        }
     }
 
     protected getPortalAuthenTokenTTLSeconds(): number {
@@ -1231,12 +1276,7 @@ class IdentityService {
 
     protected formatEmail(email: string): string {
         return email.toLowerCase();
-    }
-
-    protected formatPhoneNumber(phoneNumber: string): string {
-        const s = phoneNumber.replace(/\D/g, "");
-        return `+${s}`;
-    }
+    }    
     
 }
 

@@ -51,7 +51,8 @@ const RootUserConfiguration: React.FC<SystemInitializationConfigProps> = ({
         phoneNumber: systemInitInput.rootUserCreateInput.phoneNumber,
         preferredLanguageCode: systemInitInput.rootUserCreateInput.preferredLanguageCode,
         password: systemInitInput.rootUserCreateInput.password,
-        termsAndConditionsAccepted: false
+        termsAndConditionsAccepted: false,
+        phoneNumberVerified: false
     }
     // STATE VARIABLES
     const [userInput, setUserInput] = React.useState<UserCreateInput>(initInput);
