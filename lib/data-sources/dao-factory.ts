@@ -57,10 +57,6 @@ import GoogleKms from "../kms/google-kms";
 import AWSKms from "../kms/aws-kms";
 import AzureKms from "../kms/azure-kms";
 import TencentKms from "../kms/tencent-kms";
-// import GoogleKms from "../kms/google-kms";
-// import AWSKms from "../kms/aws-kms";
-// import AzureKms from "../kms/azure-kms";
-// import TencentKms from "../kms/tencent-kms";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const kmsStrategy = process.env.KMS_STRATEGY;
