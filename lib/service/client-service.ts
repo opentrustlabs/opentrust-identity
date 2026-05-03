@@ -10,6 +10,8 @@ import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { PolicyExecutor } from "@/lib/authorization/policy-executor";
+import { AUTH_RULE_GET_CLIENT_BY_ID, AUTH_RULE_CREATE_CLIENT } from "@/lib/authorization/authorization-policy";
 import ScopeDao from "../dao/scope-dao";
 import { isValidRedirectUri } from "@/utils/client-utils";
 import { ERROR_CODES } from "../models/error";
@@ -89,7 +91,75 @@ class ClientService {
         return client === null ? Promise.resolve(null) : Promise.resolve(client);
     }
 
+    public async getClientById2(clientId: string): Promise<Client | null> {
+        return PolicyExecutor.execute(
+            AUTH_RULE_GET_CLIENT_BY_ID,
+            clientId,
+            (id) => clientDao.getClientById(id),
+            this.oidcContext
+        );
+    }
+
     public async createClient(client: Client): Promise<Client> {
+        // Business precondition: parent tenant must exist and be active before any authz or business logic runs.
+        // This pattern applies to all tenant-bound objects (keys, auth groups, etc.).
+        const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
+        if (!tenant) {
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00008 } });
+        }
+        if (tenant.enabled === false || tenant.markForDelete === true) {
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00009 } });
+        }
+        if (!CLIENT_TYPES.includes(client.clientType)) {
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00031 } });
+        }
+        if (client.oidcEnabled === false && client.pkceEnabled === true) {
+            throw new GraphQLError(ERROR_CODES.EC00188.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00188 } });
+        }
+        if (client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)) {
+            throw new GraphQLError(ERROR_CODES.EC00187.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00187 } });
+        }
+        if (client.fapiEnabled === true && client.clientType === CLIENT_TYPE_DEVICE) {
+            throw new GraphQLError(ERROR_CODES.EC00231.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00231 } });
+        }
+
+        return PolicyExecutor.execute(
+            AUTH_RULE_CREATE_CLIENT,
+            client,
+            async (c) => {
+                if (c.fapiEnabled === true) {
+                    c.fapiEnabledAtMs = Date.now();
+                }
+
+                c.clientId = randomUUID().toString();
+                
+                const clientSecret = generateRandomToken(24, "hex");
+                const encryptedClientSecret = await kms.encrypt(clientSecret);
+                if (encryptedClientSecret === null) {
+                    throw new GraphQLError(ERROR_CODES.EC00032.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00032 } });
+                }
+                c.clientSecret = encryptedClientSecret;
+
+                await clientDao.createClient(c);
+                await this.updateSearchIndex(c);
+                c.clientSecret = clientSecret;
+                changeEventDao.addChangeEvent({
+                    objectId:        c.clientId,
+                    changedBy:       `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                    changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
+                    changeEventId:   randomUUID().toString(),
+                    changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                    changeTimestamp: Date.now(),
+                    data:            JSON.stringify({ ...c, clientSecret: "" })
+                });
+                return c;
+            },
+            this.oidcContext
+        );
+    }
+
+
+    public async createClient2(client: Client): Promise<Client> {
         const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
         if(!tenant){
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});

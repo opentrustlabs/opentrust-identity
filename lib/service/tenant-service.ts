@@ -9,6 +9,8 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { PolicyExecutor } from "@/lib/authorization/policy-executor";
+import { AUTH_RULE_GET_TENANT_BY_ID } from "@/lib/authorization/authorization-policy";
 import MarkForDeleteDao from "../dao/mark-for-delete-dao";
 import SchedulerDao from "../dao/scheduler-dao";
 import ClientDao from "../dao/client-dao";
@@ -108,6 +110,15 @@ class TenantService {
             return tenantDao.getTenants(tenantFilterIds);
         }
         return [];
+    }
+
+    public async getTenantById2(tenantId: string): Promise<Tenant | null> {
+        return PolicyExecutor.execute(
+            AUTH_RULE_GET_TENANT_BY_ID,
+            tenantId,
+            (id) => tenantDao.getTenantById(id),
+            this.oidcContext
+        );
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
