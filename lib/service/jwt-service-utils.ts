@@ -141,7 +141,9 @@ class JwtServiceUtils {
                 postalCode: null,
                 stateRegionProvince: null,
                 phoneNumberVerified: principal.phone_number_verified,
-                exts: principal.exts
+                exts: principal.exts,                
+                acr: "",
+                amr: []
             }
         }
         else if(principal.principal_type === PRINCIPAL_TYPE_ANONYMOUS_USER){            
@@ -185,7 +187,9 @@ class JwtServiceUtils {
                 postalCode: null,
                 stateRegionProvince: null,
                 phoneNumberVerified: principal.phone_number_verified,
-                exts: principal.exts
+                exts: principal.exts,
+                acr: principal.acr,
+                amr: principal.amr
             }
         }
         else{            
@@ -261,7 +265,9 @@ class JwtServiceUtils {
                 postalCode: user.postalCode || null,
                 stateRegionProvince: user.stateRegionProvince || null,
                 phoneNumberVerified: user.phoneNumberVerified,
-                exts: principal.exts
+                exts: principal.exts,
+                acr: principal.acr,
+                amr: principal.amr
             }
         }            
         
@@ -374,6 +380,7 @@ class JwtServiceUtils {
      * @param ttlInSeconds 
      * @returns 
      */
+    // TODO - Need to add the acr and amr values to this. What level of authn and what methods
     public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number, tokenType: string, client?: Client): Promise<{accessToken: string | null, principal: JWTPayload} | null> {
         const now = Date.now();
         const principal: JWTPayload = {
@@ -447,6 +454,7 @@ class JwtServiceUtils {
         }
 
         const now = Date.now();
+        // TODO - Need to add the acr and amr values to this. What level of authn and what methods
         const principal: JWTPayload = {
             sub: user.userId,
             iss: `${AUTH_DOMAIN}/api/${tenantId}`,
@@ -480,7 +488,9 @@ class JwtServiceUtils {
             client_id: clientId,
             client_name: client.clientName,
             client_type: client.clientType,
-            principal_type: PRINCIPAL_TYPE_END_USER
+            principal_type: PRINCIPAL_TYPE_END_USER,
+            acr: "",
+            amr: []
         };
 
         if(exts){

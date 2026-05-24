@@ -808,4 +808,11 @@ create TABLE client_token_enrichment_configuration (
     failuremode VARCHAR(32) NOT NULL,
     timeoutms INT NOT NULL,
     FOREIGN KEY (clientid) REFERENCES client(clientid)
-);  
+);
+
+CREATE TABLE tenant_cors_origin_rel (
+    tenantid VARCHAR(64) NOT NULL,
+    origin VARCHAR(512) NOT NULL,
+    PRIMARY KEY (tenantid, origin),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);

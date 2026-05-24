@@ -46,7 +46,9 @@ export interface MyUserProfile {
     expiresAtMs: number,
     authorizationGroups: Array<ProfileAuthorizationGroup>,
     principalType: string,
-    exts: Record<string, unknown> | null
+    exts: Record<string, unknown> | null,
+    acr: string,
+    amr: Array<string>
 };
 
 
@@ -88,7 +90,9 @@ export interface JWTPrincipal {
     cnf?: {
         'x5t#S256'?: string
     },
-    exts: Record<string, unknown> | null
+    exts: Record<string, unknown> | null,
+    acr: string,
+    amr: Array<string>
 }
 
 /**
@@ -144,7 +148,9 @@ export interface FederatedOIDCUserInfo {
     updated_at: string,
     email: string,
     email_verified: boolean,
-    locale: string | null    
+    locale: string | null
+    acr: string | null | undefined,
+    amr: Array<string> | null | undefined,
 }
 
 // street address is the full street address possibly separated by newlines

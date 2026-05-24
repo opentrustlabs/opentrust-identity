@@ -139,7 +139,8 @@ class ClientService {
                     throw new GraphQLError(ERROR_CODES.EC00032.errorCode, { extensions: { errorDetail: ERROR_CODES.EC00032 } });
                 }
                 c.clientSecret = encryptedClientSecret;
-
+                // Save the record with the encrypted secret, but return the record with the actual
+                // secret so that the user or client can save the value somewhere.
                 await clientDao.createClient(c);
                 await this.updateSearchIndex(c);
                 c.clientSecret = clientSecret;

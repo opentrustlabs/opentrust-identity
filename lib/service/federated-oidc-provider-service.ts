@@ -12,6 +12,8 @@ import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import ChangeEventDao from "../dao/change-event-dao";
+import { PolicyExecutor } from "../authorization/policy-executor";
+import { AUTH_RULE_CREATE_FEDERATED_OIDC_PROVIDER, AUTH_RULE_UPDATE_FEDERATED_OIDC_PROVIDER } from "../authorization/authorization-policy";
 
 
 const searchClient: Client = getOpenSearchClient();
@@ -89,92 +91,76 @@ class FederatedOIDCProviderService {
     }
 
     public async createFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{
-        const { isAuthorized, errorDetail } = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, null);
-        if(!isAuthorized){
-            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}}); 
-        }
-        
+
         const inputValidation = this.validateOIDCProviderInput(federatedOIDCProvider);        
         if(!inputValidation.valid){
             throw new GraphQLError(inputValidation.errorDetail.errorCode, {extensions: {errorDetail: inputValidation.errorDetail}});
         }
-        
-        if(federatedOIDCProvider.federatedOIDCProviderClientSecret && federatedOIDCProvider.federatedOIDCProviderClientSecret !== ""){
-            const encryptedSecret: string | null = await kms.encrypt(federatedOIDCProvider.federatedOIDCProviderClientSecret);
-            if(encryptedSecret === null){
-                throw new GraphQLError(ERROR_CODES.EC00019.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00019}});
-            }
-            else{
-                federatedOIDCProvider.federatedOIDCProviderClientSecret = encryptedSecret;
-            }
-        }
 
-        federatedOIDCProvider.federatedOIDCProviderId = randomUUID().toString();
-        await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
-        await this.updateSearchIndex(federatedOIDCProvider);
-        changeEventDao.addChangeEvent({
-            objectId: federatedOIDCProvider.federatedOIDCProviderId,
-            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
-            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
-            changeEventId: randomUUID().toString(),
-            changeEventType: CHANGE_EVENT_TYPE_CREATE,
-            changeTimestamp: Date.now(),
-            data: JSON.stringify({...federatedOIDCProvider, federatedOIDCProviderClientSecret: ""})
-        });
-        return Promise.resolve(federatedOIDCProvider);
+        const oidcProvider = await PolicyExecutor.execute(
+            AUTH_RULE_CREATE_FEDERATED_OIDC_PROVIDER,
+            federatedOIDCProvider,
+            async (provider) => {                
+                
+                if(provider.federatedOIDCProviderClientSecret && provider.federatedOIDCProviderClientSecret !== ""){
+                    const encryptedSecret: string | null = await kms.encrypt(provider.federatedOIDCProviderClientSecret);
+                    if(encryptedSecret === null){
+                        throw new GraphQLError(ERROR_CODES.EC00019.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00019}});
+                    }
+                    provider.federatedOIDCProviderClientSecret = encryptedSecret;                    
+                }
+
+                provider.federatedOIDCProviderId = randomUUID().toString();
+                await federatedOIDCProviderDao.createFederatedOidcProvider(provider);
+                await this.updateSearchIndex(provider);
+                changeEventDao.addChangeEvent({
+                    objectId: provider.federatedOIDCProviderId,
+                    changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                    changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
+                    changeEventId: randomUUID().toString(),
+                    changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                    changeTimestamp: Date.now(),
+                    data: JSON.stringify({...provider, federatedOIDCProviderClientSecret: ""})
+                });
+                return provider;
+            },
+            this.oidcContext
+        );
+        return oidcProvider;
+
     }
 
     protected validateOIDCProviderInput(federatedOIDCProvider: FederatedOidcProvider): {valid: boolean, errorDetail: ErrorDetail} {
+        // Note that We will allow the creation or update without a client secret where usePkce is false, because in some cases
+        // the federated OIDC owner may want to enter this themselves via the secret-sharing process.
         if(!federatedOIDCProvider.federatedOIDCProviderClientId || "" === federatedOIDCProvider.federatedOIDCProviderClientId){
             return {valid: false, errorDetail: ERROR_CODES.EC00020};
         }
+
         if(!federatedOIDCProvider.federatedOIDCProviderWellKnownUri || "" === federatedOIDCProvider.federatedOIDCProviderWellKnownUri){
             return {valid: false, errorDetail: ERROR_CODES.EC00021};
-        }
-        // We will allow the creation or update without a client secret because in some cases
-        // the federated OIDC owner may want to enter this themselves via the secret-sharing
-        // process
-        // if(!federatedOIDCProvider.federatedOIDCProviderClientSecret && !federatedOIDCProvider.usePkce){
-        //     return {valid: false, errorCode: "NO_CLIENT_SECRET_AND_PKCE_IS_NOT_ALLOWED"};
-        // }
+        }       
+
         if(!federatedOIDCProvider.federatedOIDCProviderName){
             return {valid: false, errorDetail: ERROR_CODES.EC00022};
         }
+
         if(!FEDERATED_OIDC_RESPONSE_TYPES.includes(federatedOIDCProvider.federatedOIDCProviderResponseType)){
             return {valid: false, errorDetail: ERROR_CODES.EC00228};
         }
+
         if(!FEDERATED_OIDC_PROVIDER_SUBJECT_TYPES.includes(federatedOIDCProvider.federatedOIDCProviderSubjectType)){
             return {valid: false, errorDetail: ERROR_CODES.EC00229};
         }
+
         return {valid: true, errorDetail: ERROR_CODES.NULL_ERROR}
     }
     
     public async updateFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{    
-        
-        const authorizedResult = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
-        if(!authorizedResult.isAuthorized){
-            throw new GraphQLError(authorizedResult.errorDetail.errorCode, {extensions: {errorDetail: authorizedResult.errorDetail}});
-        }
 
         const existingProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProvider.federatedOIDCProviderId);
         if(!existingProvider){
             throw new GraphQLError(ERROR_CODES.EC00023.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00023}});
-        }
-        // If the user intended to update the client secret, then overwrite the existing secret. Otherwise, just use the
-        // existing secret.                
-        if(federatedOIDCProvider.federatedOIDCProviderClientSecret === null || federatedOIDCProvider.federatedOIDCProviderClientSecret === ""){
-            if(existingProvider.federatedOIDCProviderClientSecret !== null && existingProvider.federatedOIDCProviderClientSecret !== ""){                
-                federatedOIDCProvider.federatedOIDCProviderClientSecret = existingProvider.federatedOIDCProviderClientSecret;
-            }   
-        }
-        else if(federatedOIDCProvider.federatedOIDCProviderClientSecret && federatedOIDCProvider.federatedOIDCProviderClientSecret !== ""){
-            const encryptedSecret: string | null = await kms.encrypt(federatedOIDCProvider.federatedOIDCProviderClientSecret);
-            if(encryptedSecret === null){
-                throw new GraphQLError(ERROR_CODES.EC00019.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00019}});
-            }
-            else{
-                federatedOIDCProvider.federatedOIDCProviderClientSecret = encryptedSecret;
-            }            
         }
 
         // Since the both the provider type and the social provider values are write-once, 
@@ -186,21 +172,47 @@ class FederatedOIDCProviderService {
         const { valid, errorDetail } = this.validateOIDCProviderInput(federatedOIDCProvider);
         if(!valid){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
-        }        
+        }
 
-        await federatedOIDCProviderDao.updateFederatedOidcProvider(federatedOIDCProvider);
-        await this.updateSearchIndex(federatedOIDCProvider);
-        this.bulkUpdateRelSearchRecord(federatedOIDCProvider);
-        changeEventDao.addChangeEvent({
-            objectId: federatedOIDCProvider.federatedOIDCProviderId,
-            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
-            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
-            changeEventId: randomUUID().toString(),
-            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
-            changeTimestamp: Date.now(),
-            data: JSON.stringify({...federatedOIDCProvider, federatedOIDCProviderClientSecret: ""})
-        });
-        return Promise.resolve(federatedOIDCProvider);
+        return PolicyExecutor.execute(
+            AUTH_RULE_UPDATE_FEDERATED_OIDC_PROVIDER,
+            federatedOIDCProvider,
+            async (provider) => {
+                // If the user intended to update the client secret, then overwrite the existing secret. Otherwise, just use the
+                // existing secret.                
+                if(provider.federatedOIDCProviderClientSecret === null || provider.federatedOIDCProviderClientSecret === ""){
+                    if(existingProvider.federatedOIDCProviderClientSecret !== null && existingProvider.federatedOIDCProviderClientSecret !== ""){                
+                        provider.federatedOIDCProviderClientSecret = existingProvider.federatedOIDCProviderClientSecret;
+                    }   
+                }
+                else if(provider.federatedOIDCProviderClientSecret && provider.federatedOIDCProviderClientSecret !== ""){
+                    const encryptedSecret: string | null = await kms.encrypt(provider.federatedOIDCProviderClientSecret);
+                    if(encryptedSecret === null){
+                        throw new GraphQLError(ERROR_CODES.EC00019.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00019}});
+                    }
+                    
+                    provider.federatedOIDCProviderClientSecret = encryptedSecret;            
+                }              
+
+                await federatedOIDCProviderDao.updateFederatedOidcProvider(provider);
+                await this.updateSearchIndex(provider);
+                this.bulkUpdateRelSearchRecord(provider);
+                changeEventDao.addChangeEvent({
+                    objectId: provider.federatedOIDCProviderId,
+                    changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                    changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
+                    changeEventId: randomUUID().toString(),
+                    changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                    changeTimestamp: Date.now(),
+                    data: JSON.stringify({...provider, federatedOIDCProviderClientSecret: ""})
+                });
+                return provider;
+
+            },
+            this.oidcContext
+        );
+
+        
     }
 
     protected async updateSearchIndex(federatedOIDCProvider: FederatedOidcProvider): Promise<void> {

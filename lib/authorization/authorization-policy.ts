@@ -1,7 +1,7 @@
-import { Client, Tenant } from '@/graphql/generated/graphql-types';
+import { Client, FederatedOidcProvider, Tenant } from '@/graphql/generated/graphql-types';
 import { OIDCContext } from '@/graphql/graphql-context';
 import { containsScope } from '@/utils/authz-utils';
-import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_UPDATE_SCOPE } from '@/utils/consts';
+import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_UPDATE_SCOPE } from '@/utils/consts';
 
 /**
  * TArgs          — type of the operation's input argument(s)
@@ -59,9 +59,7 @@ export function tenantScopedRule<TArgs = unknown, TResult = unknown, TConditionC
  * checkScope fails immediately for any non-root principal, regardless of their scopes.
  * All other steps are no-ops — root membership is confirmed in checkScope.
  */
-export function rootOnlyRule<TArgs = unknown, TResult = unknown, TConditionCtx = void>(
-    scopes: string | string[]
-): PolicyRule<TArgs, TResult, TConditionCtx> {
+export function rootOnlyRule<TArgs = unknown, TResult = unknown, TConditionCtx = void>(scopes: string | string[]): PolicyRule<TArgs, TResult, TConditionCtx> {
     return {
         checkScope: (ctx) =>
             ctx.portalUserProfile?.managementAccessTenantId === ctx.rootTenant.tenantId
@@ -127,3 +125,5 @@ export const AUTH_RULE_UPDATE_TENANT: PolicyRule<Tenant, Tenant> = rootOnlyRule(
 export const AUTH_RULE_CREATE_TENANT: PolicyRule<Tenant, Tenant> = rootOnlyRule(TENANT_CREATE_SCOPE);
 
 
+export const AUTH_RULE_CREATE_FEDERATED_OIDC_PROVIDER: PolicyRule<FederatedOidcProvider, FederatedOidcProvider> = rootOnlyRule(FEDERATED_OIDC_PROVIDER_CREATE_SCOPE);
+export const AUTH_RULE_UPDATE_FEDERATED_OIDC_PROVIDER: PolicyRule<FederatedOidcProvider, FederatedOidcProvider> = rootOnlyRule(FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE);

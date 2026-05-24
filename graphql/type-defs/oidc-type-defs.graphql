@@ -503,6 +503,8 @@ type PortalUserProfile {
     expiresAtMs: Float!
     principalType: String!    
     recoveryEmail: UserRecoveryEmail
+    authenticationLevel: String
+    authenticationMethod: [String!]
 }
 
 

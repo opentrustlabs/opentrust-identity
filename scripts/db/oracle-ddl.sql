@@ -817,3 +817,10 @@ create TABLE client_token_enrichment_configuration (
     timeoutms INT NOT NULL,
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
+
+CREATE TABLE tenant_cors_origin_rel (
+    tenantid VARCHAR2(64) NOT NULL,
+    origin VARCHAR2(512) NOT NULL,
+    PRIMARY KEY (tenantid, origin),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);

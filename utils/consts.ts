@@ -692,6 +692,12 @@ export const PRINCIPAL_TYPES=[
 export const SESSION_TOKEN_TYPE_REGISTRATION="REGISTRATION";
 export const SESSION_TOKEN_TYPE_AUTHENTICATION="AUTHENTICATION";
 
+
+// ************************************************************************** //
+// 
+//                  MFA-RELATED CONSTANTS
+// 
+// ************************************************************************** //
 export const MFA_AUTH_TYPE_NONE="NONE";
 export const MFA_AUTH_TYPE_TIME_BASED_OTP="TIME_BASED_OTP";
 export const MFA_AUTH_TYPE_FIDO2="FIDO2";
@@ -709,6 +715,37 @@ export const MFA_AUTH_TYPE_DISPLAY: Map<string, string> = new Map([
     [MFA_AUTH_TYPE_TIME_BASED_OTP, "TOTP - Requires an authenticator app"],
     [MFA_AUTH_TYPE_FIDO2, "Security Key"]
 ]);
+
+
+export const AUTHN_ASSURANCE_LEVEL_1 = "urn:opentrustlabs:acr:aal1";
+export const AUTHN_ASSURANCE_LEVEL_2_OTP = "urn:opentrustlabs:acr:aal2:totp";
+export const AUTHN_ASSURANCE_LEVEL_2_PASS_KEY = "urn:opentrustlabs:acr:aal2:passkey";
+export const AUTHN_ASSURANCE_LEVEL_3 = "urn:opentrustlabs:acr:aal3";
+export const AUTHN_ASSURANCE_LEVEL_PARANOID = "urn:opentrustlabs:acr:aal4";
+export const AUTHN_ASSURANCE_LEVELS_ORDERED = [
+    AUTHN_ASSURANCE_LEVEL_1,
+    AUTHN_ASSURANCE_LEVEL_2_OTP,
+    AUTHN_ASSURANCE_LEVEL_2_PASS_KEY,
+    AUTHN_ASSURANCE_LEVEL_3,
+    AUTHN_ASSURANCE_LEVEL_PARANOID
+];
+
+export const AUTHN_ASSURANCE_LEVEL_DISPLAY_MAP: Map<string, string> = new Map([
+    [AUTHN_ASSURANCE_LEVEL_1, "Password"],
+    [AUTHN_ASSURANCE_LEVEL_2_OTP, "Password plus TOTP"],
+    [AUTHN_ASSURANCE_LEVEL_2_PASS_KEY, "Passkey"],
+    [AUTHN_ASSURANCE_LEVEL_3, "Hardware Security Key"],
+    [AUTHN_ASSURANCE_LEVEL_PARANOID, "Password plus hardware security key"]
+]);
+
+
+export const AUTHN_METHOD_PASSWORD = "pwd";
+export const AUTHN_METHOD_OTP = "otp";
+export const AUTHN_METHOD_HWK = "hwk";
+export const AUTHN_METHOD_SWK = "skw";
+export const AUTHN_METHOD_FED = "fed";
+
+
 
 export const NAME_ORDER_EASTERN="EASTER_NAME_ORDER";
 export const NAME_ORDER_WESTERN="WESTERN_NAME_ORDER";

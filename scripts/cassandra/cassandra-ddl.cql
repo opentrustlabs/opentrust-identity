@@ -1080,3 +1080,9 @@ create TABLE client_token_enrichment_configuration (
     failuremode TEXT,
     timeoutms INT
 );
+
+CREATE TABLE tenant_cors_origin_rel (
+    tenantid UUID,
+    origin TEXT,
+    PRIMARY KEY (tenantid, origin)
+);
