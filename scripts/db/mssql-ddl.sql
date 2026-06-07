@@ -803,9 +803,15 @@ create TABLE client_token_enrichment_configuration (
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
 
-CREATE TABLE tenant_cors_origin_rel (
-    tenantid VARCHAR(64) NOT NULL,
-    origin VARCHAR(512) NOT NULL,
-    PRIMARY KEY (tenantid, origin),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+CREATE TABLE tenant_cors_origin_client_rel (
+    tenantid    VARCHAR(64)  NOT NULL,
+    origin      VARCHAR(256) NOT NULL,
+    clientid    VARCHAR(64)  NOT NULL,
+    redirecturi VARCHAR(512) NOT NULL,
+    PRIMARY KEY (tenantid, origin, clientid, redirecturi),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
+    FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
+
+CREATE INDEX tenant_cors_origin_client_rel_clientid_idx
+    ON tenant_cors_origin_client_rel(clientid);

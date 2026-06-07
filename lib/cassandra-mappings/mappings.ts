@@ -947,10 +947,10 @@ export const TENANT_LOOK_AND_FEEL_MODEL:  {[key: string]: cassandra.mapping.Mode
                     return columnValue.toString();
                 }
             },			
-			"authenticationheaderbackgroundcolor": "headerbackgroundcolor",
-            "authenticationheadertextcolor": "headertextcolor",
-            "authenticationlogouri": "logouri",
-            "authenticationheadertext": "headertext",
+			"headerbackgroundcolor": "headerbackgroundcolor",
+            "headertextcolor": "headertextcolor",
+            "logouri": "logouri",
+            "headertext": "headertext",
             "buttonbackgroundcolor": "buttonbackgroundcolor",
             "buttontextcolor": "buttontextcolor",
             "inputbordercolor": "inputbordercolor",

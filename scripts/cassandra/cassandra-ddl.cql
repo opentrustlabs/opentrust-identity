@@ -746,10 +746,10 @@ create TABLE tenant_anonymous_user_configuration (
 
 create TABLE tenant_look_and_feel (
     tenantid UUID PRIMARY KEY,
-    authenticationheaderbackgroundcolor TEXT,
-    authenticationheadertextcolor TEXT,    
-    authenticationlogouri TEXT,
-    authenticationheadertext TEXT,
+    headerbackgroundcolor TEXT,
+    headertextcolor TEXT,    
+    logouri TEXT,
+    headertext TEXT,
     buttonbackgroundcolor TEXT,
     buttontextcolor TEXT,
     inputbordercolor TEXT,
@@ -1081,8 +1081,18 @@ create TABLE client_token_enrichment_configuration (
     timeoutms INT
 );
 
-CREATE TABLE tenant_cors_origin_rel (
-    tenantid UUID,
-    origin TEXT,
-    PRIMARY KEY (tenantid, origin)
+CREATE TABLE tenant_cors_origin_client_rel (
+    tenantid    UUID,
+    origin      TEXT,
+    clientid    UUID,
+    redirecturi TEXT,
+    PRIMARY KEY ((tenantid, origin), clientid, redirecturi)
+);
+
+CREATE TABLE tenant_cors_origin_client_rel_by_client (
+    clientid    UUID,
+    tenantid    UUID,
+    origin      TEXT,
+    redirecturi TEXT,
+    PRIMARY KEY (clientid, tenantid, origin, redirecturi)
 );
