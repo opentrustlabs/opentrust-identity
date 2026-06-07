@@ -20,7 +20,7 @@ const maxLength = MAX_PLAIN_TEXT_LENGTH ? parseInt(MAX_PLAIN_TEXT_LENGTH) : MAX_
 // Replace the fast-crc32c library with one that is compatable with modern ES modules
 // Just disable lint checks for now.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const crc32c = require("fast-crc32c");
+import { crc32c } from '@node-rs/crc32';
 class GoogleKms extends CachingKms {
 
     public async encrypt(data: string, aad?: string): Promise<string | null> {
@@ -41,7 +41,7 @@ class GoogleKms extends CachingKms {
         }
 
         try{
-            const plaintextCrc32c = crc32c.calculate(data);
+            const plaintextCrc32c = crc32c(data);
             const [encryptResponse] = await client.encrypt({
                 name: keyName,
                 plaintext: data,
@@ -81,7 +81,7 @@ class GoogleKms extends CachingKms {
 
     public async decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
         try{
-            const ciphertextCrc32c = crc32c.calculate(data);
+            const ciphertextCrc32c = crc32c(data);
             const [decryptResponse ] = await client.decrypt({
                 name: keyName,
                 ciphertext: data,
@@ -92,7 +92,7 @@ class GoogleKms extends CachingKms {
             });
             
             if(decryptResponse.plaintext){
-                if(crc32c.calculate(decryptResponse.plaintext) !== Number(decryptResponse.plaintextCrc32c?.value)){
+                if(crc32c(decryptResponse.plaintext) !== Number(decryptResponse.plaintextCrc32c?.value)){
                     logWithDetails("error", "Error decrypting with Google KMS: CRC checked failed.");
                     return null;
                 }
