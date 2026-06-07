@@ -118,7 +118,7 @@ needs to be considered when making a selection.
 
 ### The software stack
 
-Node v20 or higher
+Node v24 or higher
 
 Opensearch v3.x
 
